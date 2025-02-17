@@ -119,17 +119,36 @@ export class PaintingController {
   -
   */
 
-  @Get('artwork_of_week')
+  /* TODO
+    1. GUI 만들기? => DB의 painting id를 찾는 것은 어렵기에
+       - painting 검색 후 나온 그림을 클릭으로 .json에 추가하기
+    2. API 예외 처리 => id가 없는 경우 response에 메세지 나옴/ 다른 그림의 id일 경우 예외 처리 필요
+   */
+  @Get('artwork-of-week')
   async getWeeklyArtworkData() {
-    const latestMonday: string = getLatestMonday();
+    const latestMonday = getLatestMonday();
     const path = CONFIG_FILE_PATH;
     let artworkFileName: string = `artwork_of_week_${latestMonday}.json`;
+
     if (!existsSync(path + artworkFileName)) {
       Logger.error(`there is no file : ${path + artworkFileName}`);
       artworkFileName = `artwork_of_week_default.json`;
     }
+    const obj = loadObjectFromJSON<WeeklyArtWorkSet>(path + artworkFileName);
 
-    return loadObjectFromJSON<WeeklyArtWorkSet>(path + artworkFileName);
+    const paintingIds = obj.data
+      .map((data) => data.painting.id)
+      .filter((id) => id !== null && id !== '');
+
+    if (paintingIds.length > 0) {
+      const paintings = await this.service.getByIds(paintingIds);
+      for (const painting of paintings) {
+        const target = obj.data.find((data) => data.painting.id === painting.id);
+        if (target) target.painting = painting;
+      }
+    }
+
+    return obj;
   }
 
   @Get('init')
