@@ -40,6 +40,7 @@
     "express": "^4.21.2",
     "nest-winston": "^1.9.7",
     "nestjs-cls": "^4.5.0",
+    "pg": "^8.13.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "typeorm": "^0.3.20",
