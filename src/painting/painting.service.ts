@@ -150,7 +150,7 @@ export class PaintingService {
       .leftJoinAndSelect('p.tags', 'tag')
       .leftJoinAndSelect('p.styles', 'style')
       .leftJoinAndSelect('p.artist', 'artist')
-      .where("p.title like '%' || :title || '%'", { title: dto.title })
+      .where("p.searchTitle like '%' || :title || '%'", { title: dto.title.toUpperCase() })
       .andWhere("artist.name like '%' || :artist || '%'", {
         artist: dto.artistName,
       });

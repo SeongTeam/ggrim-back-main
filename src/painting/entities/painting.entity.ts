@@ -25,6 +25,10 @@ export class Painting extends CustomBaseEntity {
   @IsString()
   title!: string;
 
+  @Column()
+  @IsString()
+  searchTitle!: string;
+
   @OneToOne(() => WikiArtPainting, {
     cascade: ['update', 'insert'],
   })
