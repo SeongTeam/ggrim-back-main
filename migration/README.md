@@ -36,8 +36,7 @@ $npm run typeorm:create-migration --name={file_name}
 
 2) run script command
 ```
-$npm run typeorm:generate-migration --name={file_name}
-```
+$node migration_action.js generate {file name}
 - this command generate migration file to update DB based on your newly modified codebase
 - ref : 
 
@@ -50,7 +49,7 @@ $npm run typeorm:generate-migration --name={file_name}
 
 2) run script command
 ```
-$npm run typeorm:run-migration --name={file_name}
+$node migration_action.js run 
 ```
 
 3) check DB 
@@ -63,8 +62,9 @@ $npm run typeorm:run-migration --name={file_name}
 1) Create or Generate Migration file
 
 2) run script command
+This command will undo only the last executed migration. You can execute this command multiple times to revert multiple migrations
 ```
-$npm run typeorm:run-migration --name={file_name}
+$node migration_action.js revert
 ```
 
 
