@@ -1,22 +1,23 @@
-# Main
+### PR Type (Please select one or more)
+- [x] Feature Addition
+- [ ] Feature Removal
+- [ ] Bug Fix
+- [ ] Chore, Doc, Refactor
+- [ ] Dependency, Environment Variable, or Build-related Update
 
-## Feat
-
-### Feautred App Module OR Directory OR Tool name
-- feat descrption1
-- feat descrption2
-
-### Feautred App Module OR Directory OR Tool name
-- feat descrption1
-- feat descrption2
+### Target Branch
+e.g., feat/login -> dev
+<br/>
 
 
-## Update
+# ${\textsf{\color{blue}Change}}$	
 
-### Updated App Module/Directory/Tool name
-- update descrption1
-- update description2
+### what 
+e.g., Added Google social login functionality during login.
 
-### Updated App Module/Directory/Tool name
-- update descrption1
-- update description2
+### why
+Describe the purpose of this pull request.
+
+
+### Test Results
+e.g., All code must function correctly before being merged into the base branch. You may include screenshots, GIFs, or a sample API to demonstrate the results.
