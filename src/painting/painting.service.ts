@@ -220,6 +220,10 @@ export class PaintingService {
     return paintings;
   }
 
+  /**
+   * - [] 중에서 0번째 index중 큰 순서로 이동 중에 DB에 없는 ID가 있으면 에러 발생
+   * - 에러가 발생 ID를 console에 출력해 줌 (typeorm 자체 기능)
+   */
   async getByIds(ids: string[]): Promise<Painting[]> {
     const query = this.repo
       .createQueryBuilder('p')
