@@ -34,6 +34,38 @@
       ]
     },
     {
+      "id": "Boy in a Red Vest",
+      "type": "NOTHING",
+      "cldId": "0",
+      "operatorDescription": "",
+      "painting": {
+        "version": 0,
+        "id": "1101123c-2633-4741-b3b3-7ba914c946ee",
+        "title": "Boy in a Red Vest",
+        "image_url": "",
+        "description": "",
+        "completition_year": 0,
+        "width": 0,
+        "height": 0,
+        "tags": [],
+        "styles": [],
+        "artist": {
+          "version": 0,
+          "id": "",
+          "name": "Paul Cezanne",
+          "image_url": "",
+          "birth_date": "",
+          "death_date": "",
+          "info_url": ""
+        }
+      },
+      "aspectRatio": [
+        "",
+        0,
+        0
+      ]
+    },
+    {
       "id": "Head of an Old Man",
       "type": "NOTHING",
       "cldId": "0",
@@ -85,6 +117,38 @@
           "version": 0,
           "id": "",
           "name": "Poul Cezanne",
+          "image_url": "",
+          "birth_date": "",
+          "death_date": "",
+          "info_url": ""
+        }
+      },
+      "aspectRatio": [
+        "",
+        0,
+        0
+      ]
+    },
+    {
+      "id": "Portrait of Emile Zola",
+      "type": "NOTHING",
+      "cldId": "0",
+      "operatorDescription": "",
+      "painting": {
+        "version": 0,
+        "id": "5b8ba031-d8a0-41d9-a1bd-6b9b9356df30",
+        "title": "Portrait of Emile Zola",
+        "image_url": "https://uploads7.wikiart.org/images/paul-cezanne/still-life-apples-and-pears-1887.jpg!Large.jpg",
+        "description": "",
+        "completition_year": 0,
+        "width": 0,
+        "height": 0,
+        "tags": [],
+        "styles": [],
+        "artist": {
+          "version": 0,
+          "id": "",
+          "name": "Paul Cezanne",
           "image_url": "",
           "birth_date": "",
           "death_date": "",

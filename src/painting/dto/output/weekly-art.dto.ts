@@ -10,6 +10,6 @@ interface WeeklyArtWork {
   type: string;
   cldId: string;
   operationDescription: string;
-  Painting: Painting;
+  painting: Painting;
   aspectRatio: string[];
 }
