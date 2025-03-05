@@ -33,6 +33,7 @@ export class PaintingService {
       .values([
         {
           title: dto.title,
+          searchTitle: dto.title.toUpperCase(),
           image_url: dto.image_url,
           description: dto.description,
           width: dto.width,
