@@ -231,7 +231,9 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 
   async searchQuiz(dto: SearchQuizDTO, page: number, paginationCount: number) {
     /*TODO
-      각 JSON 값이 string[]인지 확인 필요.
+      - [ ]각 JSON 값이 string[]인지 확인 필요.
+      - [ ] 배열의 각 원소가 공백("")인지 확인 필요.
+        - 공백값이 삽입되어 DB QUERY에 적용되면, 공백값과 일치하는 조건이 추가됨.
     */
     const tags = JSON.parse(dto.tags) as string[];
     const styles = JSON.parse(dto.styles) as string[];
