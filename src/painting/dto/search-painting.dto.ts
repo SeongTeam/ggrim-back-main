@@ -1,4 +1,4 @@
-import { IsJSON, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsOptional, IsString } from 'class-validator';
 
 export class SearchPaintingDTO {
   @IsString()
@@ -15,8 +15,9 @@ export class SearchPaintingDTO {
       - 서버쪽에서 파싱 로직을 사용해야함
     */
   @IsOptional()
-  @IsJSON()
-  tags: string = '[]';
+  @IsArray()
+  @IsString({ each: true })
+  tags: string[] = [];
 
   /*형식 
     JSON 문자열 
@@ -24,6 +25,7 @@ export class SearchPaintingDTO {
       - 서버쪽에서 파싱 로직을 사용해야함
     */
   @IsOptional()
-  @IsJSON()
-  styles: string = '[]';
+  @IsArray()
+  @IsString({ each: true })
+  styles: string[] = [];
 }
