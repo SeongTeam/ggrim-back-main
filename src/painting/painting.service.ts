@@ -118,6 +118,8 @@ export class PaintingService {
   async searchPainting(dto: SearchPaintingDTO, page: number, paginationCount: number) {
     /*TODO
     - 입력된 tag와 style이 유효한지 점검하기
+    - [ ] 배열의 각 원소가 공백인지 확인 필요.
+      - 공백값이 삽입되어 DB QUERY에 적용되면, 공백값과 일치하는 조건이 추가됨.
     */
     const targetTags = JSON.parse(dto.tags) as string[];
     const targetStyles = JSON.parse(dto.styles) as string[];
