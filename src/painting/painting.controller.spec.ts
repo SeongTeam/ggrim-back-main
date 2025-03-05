@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PaintingController } from './painting.controller';
-import { PaintingService } from './painting.service';
-import { Painting } from './entities/painting.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { MockRepository } from '../../test/_shared/mock/mock.repository';
+import { Painting } from './entities/painting.entity';
+import { PaintingController } from './painting.controller';
+import { PaintingService } from './painting.service';
 
 describe('PaintingController', () => {
   let controller: PaintingController;
