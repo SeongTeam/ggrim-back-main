@@ -116,7 +116,8 @@ export class PaintingController {
     return this.service.deleteOne(queryRunner, targetPainting);
   }
   /*TODO 
-  -
+  - [ ]`artwork_of_week_${latestMonday}.json` 파일 내용형식을 DB에 저장된 Painting ID로 명시하기
+  - [ ]artist 이름 표기 방식을 서양식으로 변경하기. 현재는 성 + 이름 으로 표기됨. 
   */
 
   @Get('artwork_of_week')
