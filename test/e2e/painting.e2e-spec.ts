@@ -75,5 +75,17 @@ describe('PaintingController (e2e)', () => {
           expect(res.body[1].title).toBe('Boy in a Red Vest');
         });
     });
+    it('400: ID로 그림 조회 실패 UUID 아님', async () => {
+      return request(app.getHttpServer())
+        .get('/painting/by-ids')
+        .query({
+          ids: ['3772cae78f', 'becaaa3'], // []에 원소가 1개면  "ids[]"": [{원소1}] 사용 가능
+        })
+        .expect(400)
+        .expect((res) => {
+          // 응답 데이터에서 title 확인
+          expect(res.body.message[0]).toBe('each value in ids must be a UUID');
+        });
+    });
   });
 });
