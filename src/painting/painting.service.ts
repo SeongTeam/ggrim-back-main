@@ -119,8 +119,8 @@ export class PaintingService {
     /*TODO
     - 입력된 tag와 style이 유효한지 점검하기
     */
-    const targetTags = JSON.parse(dto.tags) as string[];
-    const targetStyles = JSON.parse(dto.styles) as string[];
+    const targetTags = dto.tags as string[];
+    const targetStyles = dto.styles as string[];
     Logger.debug(`tags : ${JSON.stringify(targetTags)}`);
 
     const subQueryFilterByTag = await this.repo
