@@ -1,6 +1,6 @@
 import { Crud, CrudController, CrudRequest } from '@dataui/crud';
 import { Body, Controller, Post, Put, UsePipes, ValidationPipe } from '@nestjs/common';
-import { ServiceException } from '../../../_common/filter/exception/service/service-exception';
+import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { CreateTagDTO } from './dto/create-tag.dto';
 import { ReplaceTagDTO } from './dto/replace-tag.dto';
 import { Tag } from './entities/tag.entity';

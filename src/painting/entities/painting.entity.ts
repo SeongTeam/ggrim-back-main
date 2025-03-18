@@ -11,8 +11,8 @@ import {
 } from 'typeorm';
 import { Artist } from '../../artist/entities/artist.entity';
 import { CustomBaseEntity } from '../../db/entity/custom.base.entity';
-import { Style } from '../child-module/style/entities/style.entity';
-import { Tag } from '../child-module/tag/entities/tag.entity';
+import { Style } from '../../style/entities/style.entity';
+import { Tag } from '../../tag/entities/tag.entity';
 import { WikiArtPainting } from './wikiArt-painting.entity';
 
 @Entity()

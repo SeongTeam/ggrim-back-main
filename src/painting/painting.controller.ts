@@ -27,7 +27,6 @@ import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.intercep
 import { getLatestMonday } from '../utils/date';
 import { loadObjectFromJSON } from '../utils/json';
 import { CreatePaintingDTO } from './dto/create-painting.dto';
-import { FindPaintingQueryDTO } from './dto/find-painting.query.dto';
 import { WeeklyArtWorkSet } from './dto/output/weekly-art.dto';
 import { ReplacePaintingDTO } from './dto/replace-painting.dto';
 import { SearchPaintingDTO } from './dto/search-painting.dto';
@@ -42,6 +41,13 @@ export class PaintingController {
     @Inject(PaintingService) private readonly service: PaintingService,
     @Inject(S3Service) private readonly s3Service: S3Service,
   ) {}
+
+  @Get(':id')
+  async getById(@Param('id', ParseUUIDPipe) id: string) {
+    const paintings = await this.service.getByIds([id]);
+
+    return paintings[0];
+  }
 
   @Get('/')
   async searchPainting(
@@ -70,11 +76,6 @@ export class PaintingController {
     const map = await this.service.getColumnValueMap(columnName as keyof Painting);
 
     return [...map.values()];
-  }
-
-  @Get('by-ids')
-  async getById(@Query() dto: FindPaintingQueryDTO) {
-    return this.service.getByIds(dto.ids);
   }
 
   @Post()
@@ -116,13 +117,11 @@ export class PaintingController {
     return this.service.deleteOne(queryRunner, targetPainting);
   }
   /*TODO 
-  -
-  */
-
-  /* TODO
-    1. GUI 만들기? => DB의 painting id를 찾는 것은 어렵기에
+  - [ ]`artwork_of_week_${latestMonday}.json` 파일 내용형식을 DB에 저장된 Painting ID로 명시하기
+  - [ ]artist 이름 표기 방식을 서양식으로 변경하기. 현재는 성 + 이름 으로 표기됨. 
+  - [ ]GUI 만들기? => DB의 painting id를 찾는 것은 어렵기에
        - painting 검색 후 나온 그림을 클릭으로 .json에 추가하기
-    2. API 예외 처리 => id가 없는 경우 response에 메세지 나옴/ 다른 그림의 id일 경우 예외 처리 필요
+  - [ ]API 예외 처리 => id가 없는 경우 response에 메세지 나옴/ 다른 그림의 id일 경우 예외 처리 필요
    */
   @Get('artwork-of-week')
   async getWeeklyArtworkData() {

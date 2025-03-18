@@ -2,7 +2,7 @@ import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { isArrayEmpty } from '../../../utils/validator';
+import { isArrayEmpty } from '../utils/validator';
 import { Style } from './entities/style.entity';
 
 @Injectable()

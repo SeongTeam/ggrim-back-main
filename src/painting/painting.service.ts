@@ -5,11 +5,11 @@ import { ServiceException } from '../_common/filter/exception/service/service-ex
 import { ArtistService } from '../artist/artist.service';
 import { Artist } from '../artist/entities/artist.entity';
 import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.lib';
+import { Style } from '../style/entities/style.entity';
+import { StyleService } from '../style/style.service';
+import { Tag } from '../tag/entities/tag.entity';
+import { TagService } from '../tag/tag.service';
 import { isArrayEmpty, isFalsy, isNotFalsy } from '../utils/validator';
-import { Style } from './child-module/style/entities/style.entity';
-import { StyleService } from './child-module/style/style.service';
-import { Tag } from './child-module/tag/entities/tag.entity';
-import { TagService } from './child-module/tag/tag.service';
 import { CreatePaintingDTO } from './dto/create-painting.dto';
 import { ReplacePaintingDTO } from './dto/replace-painting.dto';
 import { SearchPaintingDTO } from './dto/search-painting.dto';
@@ -119,6 +119,8 @@ export class PaintingService {
   async searchPainting(dto: SearchPaintingDTO, page: number, paginationCount: number) {
     /*TODO
     - 입력된 tag와 style이 유효한지 점검하기
+    - [ ] 배열의 각 원소가 공백인지 확인 필요.
+      - 공백값이 삽입되어 DB QUERY에 적용되면, 공백값과 일치하는 조건이 추가됨.
     */
     const targetTags = dto.tags as string[];
     const targetStyles = dto.styles as string[];
