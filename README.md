@@ -29,6 +29,57 @@ Class UserController(private only service : UserService){
 }
 ``` 
 
+### HTTP API 
+
+1. 의미를 바로 알아볼 수 있도록 작성하고, 소문자를 사용한다. 
+❌ GET /users/writing ❌ GET /users/Post-Comments ⭕ GET /users/post-comments
+- URI가 길어지는 경우 언더바(_) 대신 하이픈(-)을 사용한다. 
+❌ GET /users/profile_image ⭕ GET /users/profile-image
+
+2. 리소스에 대한 행위를 HTTP Method로 표현한다.
+- ❌ get/users/ ⭕ GET /users/ resource
+
+|action | HTTP Method | Example |
+|-------|-------------|---------|
+|리소스 목록 조회|GET	|GET /users|
+리소스 단건 조회|	GET|	GET /users/{user_id}|
+리소스 생성	POST|	POST| /users|
+리소스 수정 (전체 수정)|	PUT|	PUT /users/{user_id}|
+리소스 수정 (부분 수정)|	PATCH|	PATCH /users/{user_id}|
+리소스 삭제|	DELETE|	DELETE /users/{user_id}|
+
+3. Resource는 되도록 명사를 사용한다. 
+❌ GET /users/show/1 ⭕ GET /users/1
+- 파일 확장자는 포함시키지 않는다.
+❌ GET /users/photo.jpg ⭕ GET /users/photo (이때, payload의 포맷은 headers에 accept를 사용한다.)
+- URI에 작성되는 영어는 단수형으로 작성한다.(이때, 반환되는 리소스가 복수 또는 단수인지는 확인해야한다.)
+❌ GET /product ⭕ GET /products
+- 리소스의 상태 변경이 필요한 경우, 동사를 사용할 수 있다.
+```http
+POST /auth/login # Post 요청으로 로그인 처리
+
+POST /auth/logout # Post 요청으로 로그아웃 처리
+```
+
+4. URI 사이에 연관 관계가 있는 경우 /리소스/고유ID/관계 있는 리소스 순으로 작성한다.
+❌ GET /users/profile/{user_id} ⭕ GET /users/{user_id}/profile
+
+```http
+GET /users/{user_id}/posts  # 특정 사용자의 모든 게시글 조회
+```
+
+```http
+GET /posts/{post_id}/comments  # 특정 게시글의 댓글 조회
+```
+
+```http
+POST /users/{user_id}/likes/posts/{post_id}
+```
+
+5. 마지막에 슬래시(/)를 포함하지 않는다. 
+❌ GET /users/ ⭕ GET /users
+- 후행 슬래시(/)는 의미가 전혀 없고 혼란을 야기할 수 있다.
+
 ## BoilerPlate Code
 
 ref : https://awesome-nestjs.com/resources/boilerplate.html
