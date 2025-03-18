@@ -27,7 +27,6 @@ import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.intercep
 import { getLatestMonday } from '../utils/date';
 import { loadObjectFromJSON } from '../utils/json';
 import { CreatePaintingDTO } from './dto/create-painting.dto';
-import { FindPaintingQueryDTO } from './dto/find-painting.query.dto';
 import { WeeklyArtWorkSet } from './dto/output/weekly-art.dto';
 import { ReplacePaintingDTO } from './dto/replace-painting.dto';
 import { SearchPaintingDTO } from './dto/search-painting.dto';
@@ -42,6 +41,13 @@ export class PaintingController {
     @Inject(PaintingService) private readonly service: PaintingService,
     @Inject(S3Service) private readonly s3Service: S3Service,
   ) {}
+
+  @Get(':id')
+  async getById(@Param('id', ParseUUIDPipe) id: string) {
+    const paintings = await this.service.getByIds([id]);
+
+    return paintings[0];
+  }
 
   @Get('/')
   async searchPainting(
@@ -70,11 +76,6 @@ export class PaintingController {
     const map = await this.service.getColumnValueMap(columnName as keyof Painting);
 
     return [...map.values()];
-  }
-
-  @Get('by-ids')
-  async getById(@Query() dto: FindPaintingQueryDTO) {
-    return this.service.getByIds(dto.ids);
   }
 
   @Post()
@@ -120,7 +121,7 @@ export class PaintingController {
   - [ ]artist 이름 표기 방식을 서양식으로 변경하기. 현재는 성 + 이름 으로 표기됨. 
   */
 
-  @Get('artwork_of_week')
+  @Get('artwork-of-week')
   async getWeeklyArtworkData() {
     const latestMonday: string = getLatestMonday();
     const path = CONFIG_FILE_PATH;
