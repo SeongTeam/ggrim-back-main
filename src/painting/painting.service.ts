@@ -5,11 +5,11 @@ import { ServiceException } from '../_common/filter/exception/service/service-ex
 import { ArtistService } from '../artist/artist.service';
 import { Artist } from '../artist/entities/artist.entity';
 import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.lib';
+import { Style } from '../style/entities/style.entity';
+import { StyleService } from '../style/style.service';
+import { Tag } from '../tag/entities/tag.entity';
+import { TagService } from '../tag/tag.service';
 import { isArrayEmpty, isFalsy, isNotFalsy } from '../utils/validator';
-import { Style } from './child-module/style/entities/style.entity';
-import { StyleService } from './child-module/style/style.service';
-import { Tag } from './child-module/tag/entities/tag.entity';
-import { TagService } from './child-module/tag/tag.service';
 import { CreatePaintingDTO } from './dto/create-painting.dto';
 import { ReplacePaintingDTO } from './dto/replace-painting.dto';
 import { SearchPaintingDTO } from './dto/search-painting.dto';

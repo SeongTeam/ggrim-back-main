@@ -12,6 +12,8 @@ import { ArtistModule } from './artist/artist.module';
 import { S3Module } from './aws/s3.module';
 import { PaintingModule } from './painting/painting.module';
 import { QuizModule } from './quiz/quiz.module';
+import { StyleModule } from './style/style.module';
+import { TagModule } from './tag/tag.modue';
 import { TypeORMConfig } from './utils/typeorm.config';
 
 const ENV = process.env[NODE_ENV];
@@ -33,6 +35,8 @@ const ENV = process.env[NODE_ENV];
     }),
     LoggerModule,
     CommonModule,
+    TagModule,
+    StyleModule,
     PaintingModule,
     ArtistModule,
     QuizModule,

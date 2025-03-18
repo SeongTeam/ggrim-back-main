@@ -2,9 +2,9 @@ import { IsNumber, IsString } from 'class-validator';
 import { Column, Entity, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Artist } from '../../artist/entities/artist.entity';
 import { CustomBaseEntity } from '../../db/entity/custom.base.entity';
-import { Style } from '../../painting/child-module/style/entities/style.entity';
-import { Tag } from '../../painting/child-module/tag/entities/tag.entity';
 import { Painting } from '../../painting/entities/painting.entity';
+import { Style } from '../../style/entities/style.entity';
+import { Tag } from '../../tag/entities/tag.entity';
 import { QUIZ_TIME_LIMIT } from '../const';
 import { QUIZ_TYPE } from '../type';
 
