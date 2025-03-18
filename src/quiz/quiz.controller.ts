@@ -128,7 +128,7 @@ export class QuizController implements CrudController<Quiz> {
     return ret;
   }
 
-  @Get('quiz_of_week')
+  @Get('quiz-of-week')
   async getWeeklyArtData() {
     const latestMonday: string = getLatestMonday();
     const path = CONFIG_FILE_PATH;
