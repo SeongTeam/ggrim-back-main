@@ -33,6 +33,7 @@ export class PaintingService {
       .values([
         {
           title: dto.title,
+          searchTitle: dto.title.toUpperCase(),
           image_url: dto.image_url,
           description: dto.description,
           width: dto.width,
@@ -121,8 +122,8 @@ export class PaintingService {
     - [ ] 배열의 각 원소가 공백인지 확인 필요.
       - 공백값이 삽입되어 DB QUERY에 적용되면, 공백값과 일치하는 조건이 추가됨.
     */
-    const targetTags = JSON.parse(dto.tags) as string[];
-    const targetStyles = JSON.parse(dto.styles) as string[];
+    const targetTags = dto.tags as string[];
+    const targetStyles = dto.styles as string[];
     Logger.debug(`tags : ${JSON.stringify(targetTags)}`);
 
     const subQueryFilterByTag = await this.repo
@@ -222,6 +223,10 @@ export class PaintingService {
     return paintings;
   }
 
+  /**
+   * - [] 중에서 0번째 index중 큰 순서로 이동 중에 DB에 없는 ID가 있으면 에러 발생
+   * - 에러가 발생 ID를 console에 출력해 줌 (typeorm 자체 기능)
+   */
   async getByIds(ids: string[]): Promise<Painting[]> {
     const query = this.repo
       .createQueryBuilder('p')
