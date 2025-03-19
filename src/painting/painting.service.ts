@@ -1,6 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { existsSync } from 'fs';
 import { QueryRunner, Repository } from 'typeorm';
+import { CONFIG_FILE_PATH } from '../_common/const/default.value';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { ArtistService } from '../artist/artist.service';
 import { Artist } from '../artist/entities/artist.entity';
@@ -9,8 +11,11 @@ import { Style } from '../style/entities/style.entity';
 import { StyleService } from '../style/style.service';
 import { Tag } from '../tag/entities/tag.entity';
 import { TagService } from '../tag/tag.service';
+import { getLatestMonday } from '../utils/date';
+import { loadObjectFromJSON } from '../utils/json';
 import { isArrayEmpty, isFalsy, isNotFalsy } from '../utils/validator';
 import { CreatePaintingDTO } from './dto/create-painting.dto';
+import { WeeklyArtWorkSet } from './dto/output/weekly-art.dto';
 import { ReplacePaintingDTO } from './dto/replace-painting.dto';
 import { SearchPaintingDTO } from './dto/search-painting.dto';
 import { Painting } from './entities/painting.entity';
@@ -475,5 +480,31 @@ export class PaintingService {
       );
     }
     return painting;
+  }
+
+  public async getWeeklyPaintings() {
+    const latestMonday = getLatestMonday();
+    const path = CONFIG_FILE_PATH;
+    let artworkFileName: string = `artwork_of_week_${latestMonday}.json`;
+
+    if (!existsSync(path + artworkFileName)) {
+      Logger.error(`there is no file : ${path + artworkFileName}`);
+      artworkFileName = `artwork_of_week_default.json`;
+    }
+    const obj = loadObjectFromJSON<WeeklyArtWorkSet>(path + artworkFileName);
+
+    const paintingIds = obj.data
+      .map((data) => data.painting.id)
+      .filter((id) => id !== null && id !== '');
+
+    if (paintingIds.length > 0) {
+      const paintings = await this.getByIds(paintingIds);
+      for (const painting of paintings) {
+        const target = obj.data.find((data) => data.painting.id === painting.id);
+        if (target) target.painting = painting;
+      }
+    }
+
+    return obj;
   }
 }

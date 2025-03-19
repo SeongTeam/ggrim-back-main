@@ -16,7 +16,6 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { existsSync } from 'fs';
 import { QueryRunner } from 'typeorm';
 import { CONFIG_FILE_PATH } from '../_common/const/default.value';
 import { AWS_BUCKET, AWS_INIT_FILE_KEY_PREFIX } from '../_common/const/env-keys.const';
@@ -25,9 +24,7 @@ import { S3Service } from '../aws/s3.service';
 import { DBQueryRunner } from '../db/query-runner/decorator/query-runner.decorator';
 import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.interceptor';
 import { getLatestMonday } from '../utils/date';
-import { loadObjectFromJSON } from '../utils/json';
 import { CreatePaintingDTO } from './dto/create-painting.dto';
-import { WeeklyArtWorkSet } from './dto/output/weekly-art.dto';
 import { ReplacePaintingDTO } from './dto/replace-painting.dto';
 import { SearchPaintingDTO } from './dto/search-painting.dto';
 import { Painting } from './entities/painting.entity';
@@ -125,29 +122,7 @@ export class PaintingController {
    */
   @Get('artwork-of-week')
   async getWeeklyArtworkData() {
-    const latestMonday = getLatestMonday();
-    const path = CONFIG_FILE_PATH;
-    let artworkFileName: string = `artwork_of_week_${latestMonday}.json`;
-
-    if (!existsSync(path + artworkFileName)) {
-      Logger.error(`there is no file : ${path + artworkFileName}`);
-      artworkFileName = `artwork_of_week_default.json`;
-    }
-    const obj = loadObjectFromJSON<WeeklyArtWorkSet>(path + artworkFileName);
-
-    const paintingIds = obj.data
-      .map((data) => data.painting.id)
-      .filter((id) => id !== null && id !== '');
-
-    if (paintingIds.length > 0) {
-      const paintings = await this.service.getByIds(paintingIds);
-      for (const painting of paintings) {
-        const target = obj.data.find((data) => data.painting.id === painting.id);
-        if (target) target.painting = painting;
-      }
-    }
-
-    return obj;
+    return this.service.getWeeklyPaintings();
   }
 
   @Get('init')
