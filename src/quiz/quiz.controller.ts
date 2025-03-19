@@ -5,7 +5,6 @@ import {
   DefaultValuePipe,
   Get,
   Inject,
-  Logger,
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
@@ -15,14 +14,12 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { existsSync } from 'fs';
 import { CONFIG_FILE_PATH } from '../_common/const/default.value';
 import { AWS_BUCKET, AWS_INIT_FILE_KEY_PREFIX } from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { IPaginationResult } from '../_common/interface';
 import { S3Service } from '../aws/s3.service';
 import { getLatestMonday } from '../utils/date';
-import { loadObjectFromJSON } from '../utils/json';
 import { CATEGORY_VALUES } from './const';
 import { SearchQuizDTO } from './dto/SearchQuiz.dto';
 import { CreateQuizDTO } from './dto/create-quiz.dto';
@@ -126,19 +123,6 @@ export class QuizController implements CrudController<Quiz> {
     };
 
     return ret;
-  }
-
-  @Get('quiz-of-week')
-  async getWeeklyArtData() {
-    const latestMonday: string = getLatestMonday();
-    const path = CONFIG_FILE_PATH;
-    let quizFileName: string = `quiz_of_week_${latestMonday}.json`;
-    if (!existsSync(path + quizFileName)) {
-      Logger.error(`there is no file : ${path + quizFileName}`);
-      quizFileName = `quiz_of_week_default.json`;
-    }
-
-    return loadObjectFromJSON<WeeklyQuizSet>(path + quizFileName);
   }
 
   @Get('init')
