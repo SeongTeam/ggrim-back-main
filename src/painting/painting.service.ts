@@ -493,18 +493,25 @@ export class PaintingService {
     }
     const obj = loadObjectFromJSON<WeeklyArtWorkSet>(path + artworkFileName);
 
-    const paintingIds = obj.data
-      .map((data) => data.painting.id)
-      .filter((id) => id !== null && id !== '');
-
-    if (paintingIds.length > 0) {
-      const paintings = await this.getByIds(paintingIds);
-      for (const painting of paintings) {
-        const target = obj.data.find((data) => data.painting.id === painting.id);
-        if (target) target.painting = painting;
+    const paintingIdSet = new Set<string>();
+    obj.data.forEach((data) => {
+      const id = data.painting.id;
+      if (id && id.trim().length > 0) {
+        paintingIdSet.add(id);
       }
+    });
+
+    if (paintingIdSet.size == 0) {
+      throw Error('Weekly Paintings must exist ');
+    }
+    const MAX_LENGTH = 20;
+    if (paintingIdSet.size > MAX_LENGTH) {
+      throw Error(`Weekly Paintings must lower than ${MAX_LENGTH}`);
     }
 
-    return obj;
+    //validate set
+    const validPaintings = await this.getByIds([...paintingIdSet.values()]);
+
+    return validPaintings;
   }
 }

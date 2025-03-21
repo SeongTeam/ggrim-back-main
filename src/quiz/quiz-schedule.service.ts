@@ -58,10 +58,10 @@ export class QuizScheduleService {
   }
 
   async initialize() {
-    const weeklyArtworks = await this.paintingService.getWeeklyPaintings();
-    const fixedContexts: QuizContext[] = weeklyArtworks.data.map((artwork) => {
+    const weeklyPaintings = await this.paintingService.getWeeklyPaintings();
+    const fixedContexts: QuizContext[] = weeklyPaintings.map((p) => {
       return {
-        artist: artwork.painting.artist.name,
+        artist: p.artist.name,
         page: 0,
       };
     });
