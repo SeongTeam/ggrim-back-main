@@ -160,6 +160,13 @@ export class QuizController implements CrudController<Quiz> {
     return this.service.updateQuiz(id, dto);
   }
 
+  // TODO: 퀴즈 검색 로직 개선
+  // - [ ] 제목으로 검색할 수 있도록 로직 추가하기
+  // - [ ] <추가 작업>
+  // ! 주의: <경고할 사항>
+  // ? 질문: <의문점 또는 개선 방향>
+  // * 참고: <관련 정보나 링크>
+
   @Get('')
   async searchQuiz(
     @Query() dto: SearchQuizDTO,
