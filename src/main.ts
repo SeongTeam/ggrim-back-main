@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { AppModule } from './app.module';
+import { QuizScheduleService } from './quiz/quiz-schedule.service';
 import { winstonLogger } from './utils/winston.config';
 
 async function bootstrap() {
@@ -8,6 +9,8 @@ async function bootstrap() {
     bufferLogs: true,
     logger: winstonLogger,
   });
+  const quizScheduleService = app.get(QuizScheduleService);
+  quizScheduleService.initialize();
   await app.listen(3000);
 }
 bootstrap();
