@@ -1,6 +1,7 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { Mutex, MutexInterface, withTimeout } from 'async-mutex';
 import * as assert from 'node:assert';
+import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { LoggerService } from '../Logger/logger.service';
 import { PaintingService } from '../painting/painting.service';
 import { QuizContext } from './interface/quiz-context';
@@ -36,13 +37,18 @@ export class QuizScheduleService {
     @Inject(forwardRef(() => QuizService)) private readonly quizService: QuizService,
     @Inject(forwardRef(() => LoggerService)) private readonly logger: LoggerService,
   ) {
+    Logger.log('construct class', QuizScheduleService.name);
     this._contextHashMap = new Map<string, ContextHashNode>();
     this._scheduler = new Array(this.SCHEDULER_SIZE).fill(this.SCHEDULER_EMPTY);
     this._schedulerIdx = 0;
     this.mutex = withTimeout(
       new Mutex(),
       this.MUTEX_TIMEOUT_MS,
-      new Error(`[${QuizScheduleService.name}]Timeout Mutex  Release ${this.MUTEX_TIMEOUT_MS}`),
+      new ServiceException(
+        'SERVICE_RUN_TIMEOUT',
+        'INTERNAL_SERVER_ERROR',
+        `[${QuizScheduleService.name}]Timeout Mutex  Release ${this.MUTEX_TIMEOUT_MS}`,
+      ),
     );
     this.optimizerTimer = null;
   }
