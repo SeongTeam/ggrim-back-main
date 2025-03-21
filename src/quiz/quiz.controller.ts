@@ -21,6 +21,7 @@ import { ServiceException } from '../_common/filter/exception/service/service-ex
 import { IPaginationResult } from '../_common/interface';
 import { ArtistService } from '../artist/artist.service';
 import { S3Service } from '../aws/s3.service';
+import { PaintingService } from '../painting/painting.service';
 import { StyleService } from '../style/style.service';
 import { TagService } from '../tag/tag.service';
 import { getLatestMonday } from '../utils/date';
@@ -32,6 +33,7 @@ import { QuizContextDTO } from './dto/quiz-context.dto';
 import { ScheduleQuizQueryDTO } from './dto/schedule-quiz.query.dto';
 import { UpdateQuizDTO } from './dto/update-quiz.dto';
 import { Quiz } from './entities/quiz.entity';
+import { QuizContext } from './interface/quiz-context';
 import { QuizScheduleService } from './quiz-schedule.service';
 import { QuizService } from './quiz.service';
 import { QuizCategory } from './type';
@@ -83,6 +85,7 @@ export class QuizController implements CrudController<Quiz> {
     @Inject(TagService) private readonly tagService: TagService,
     @Inject(StyleService) private readonly styleService: StyleService,
     @Inject(ArtistService) private readonly artistService: ArtistService,
+    @Inject(PaintingService) private readonly paintingService: PaintingService,
     @Inject(S3Service) private readonly s3Service: S3Service,
   ) {}
 
@@ -235,5 +238,17 @@ export class QuizController implements CrudController<Quiz> {
         },
       );
     }
+  }
+
+  async initialize() {
+    const weeklyPaintings = await this.paintingService.getWeeklyPaintings();
+
+    const fixedContexts: QuizContext[] = weeklyPaintings.map((p) => {
+      return {
+        artist: p.artist.name,
+        page: 0,
+      };
+    });
+    this.scheduleService.initialize(fixedContexts);
   }
 }

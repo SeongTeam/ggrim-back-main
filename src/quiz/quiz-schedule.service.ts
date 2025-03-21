@@ -4,7 +4,6 @@ import * as assert from 'node:assert';
 import { randomInt } from 'node:crypto';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { LoggerService } from '../Logger/logger.service';
-import { PaintingService } from '../painting/painting.service';
 import { ResponseQuizDTO } from './dto/output/response-schedule-quiz.dto';
 import { SearchQuizDTO } from './dto/SearchQuiz.dto';
 import { Quiz } from './entities/quiz.entity';
@@ -37,7 +36,6 @@ export class QuizScheduleService {
 
   // TODO forwardRef 사용법 공식문서 정확히 읽기 적용하기
   constructor(
-    @Inject(forwardRef(() => PaintingService)) private readonly paintingService: PaintingService,
     @Inject(forwardRef(() => QuizService)) private readonly quizService: QuizService,
     @Inject(forwardRef(() => LoggerService)) private readonly logger: LoggerService,
   ) {
@@ -57,15 +55,7 @@ export class QuizScheduleService {
     this.optimizerTimer = null;
   }
 
-  async initialize() {
-    const weeklyPaintings = await this.paintingService.getWeeklyPaintings();
-    const fixedContexts: QuizContext[] = weeklyPaintings.map((p) => {
-      return {
-        artist: p.artist.name,
-        page: 0,
-      };
-    });
-
+  async initialize(fixedContexts: QuizContext[]) {
     if (fixedContexts.length > this.SCHEDULER_SIZE) {
       //해당 로그는 사용자 요청과 관련없으므로 Logger를 사용
       Logger.error(`init fail. ` + `${JSON.stringify(fixedContexts, null, 2)}`);
