@@ -1,6 +1,6 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { Mutex, MutexInterface, withTimeout } from 'async-mutex';
-import assert from 'node:assert';
+import * as assert from 'node:assert';
 import { LoggerService } from '../Logger/logger.service';
 import { PaintingService } from '../painting/painting.service';
 import { QuizContext } from './interface/quiz-context';
