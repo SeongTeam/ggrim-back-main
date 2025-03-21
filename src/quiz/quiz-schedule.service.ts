@@ -1,15 +1,9 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { Mutex, MutexInterface, withTimeout } from 'async-mutex';
 import * as assert from 'node:assert';
-import { randomInt } from 'node:crypto';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { LoggerService } from '../Logger/logger.service';
-import { ResponseQuizDTO } from './dto/output/response-schedule-quiz.dto';
-import { SearchQuizDTO } from './dto/SearchQuiz.dto';
-import { Quiz } from './entities/quiz.entity';
 import { QuizContext } from './interface/quiz-context';
-import { QuizStatus } from './interface/quiz-status';
-import { QuizService } from './quiz.service';
 
 type QuizContextID = string;
 
@@ -35,10 +29,7 @@ export class QuizScheduleService {
   private optimizerTimer: NodeJS.Timeout | null;
 
   // TODO forwardRef 사용법 공식문서 정확히 읽기 적용하기
-  constructor(
-    @Inject(forwardRef(() => QuizService)) private readonly quizService: QuizService,
-    @Inject(forwardRef(() => LoggerService)) private readonly logger: LoggerService,
-  ) {
+  constructor(@Inject(forwardRef(() => LoggerService)) private readonly logger: LoggerService) {
     Logger.log('construct class', QuizScheduleService.name);
     this._contextHashMap = new Map<string, ContextHashNode>();
     this._scheduler = new Array(this.SCHEDULER_SIZE).fill(this.SCHEDULER_EMPTY);
@@ -71,51 +62,15 @@ export class QuizScheduleService {
     });
   }
 
-  async scheduleQuiz(status?: QuizStatus): Promise<ResponseQuizDTO> {
-    const INIT_IDX = -1;
-    if (!status || (status && status.currentIdx == status.endIdx)) {
-      const context = await this.scheduleContext();
-      status = {
-        context,
-        currentIdx: INIT_IDX,
-        endIdx: INIT_IDX,
-      };
-    }
+  async requestDeleteContext(context: QuizContext) {
+    const contextID = this.transformHashKey(context);
 
-    const { artist, tag, style, page } = status.context;
-    const dto: SearchQuizDTO = {
-      artist: JSON.stringify(artist ? [artist] : []),
-      tags: JSON.stringify(tag ? [tag] : []),
-      styles: JSON.stringify(style ? [style] : []),
-    };
-    const paginationCount = 20;
-
-    const quizList: Quiz[] = await this.quizService.searchQuiz(dto, page, paginationCount);
-
-    //delete invalid Quiz-context
-    if (quizList.length === 0) {
-      const contextID = this.transformHashKey(status.context);
-
-      await this.mutex.runExclusive(() => {
-        if (this._contextHashMap.has(contextID)) {
-          this.deleteContext(contextID);
-        }
-      });
-      return this.scheduleQuiz();
-    }
-
-    status.endIdx = quizList.length - 1;
-
-    if (status.currentIdx === INIT_IDX) {
-      status.currentIdx = randomInt(quizList.length);
-    } else {
-      status.currentIdx = (status.currentIdx + 1) % quizList.length;
-    }
-
-    return {
-      quiz: quizList[status.currentIdx],
-      status,
-    };
+    return await this.mutex.runExclusive(() => {
+      if (this._contextHashMap.has(contextID)) {
+        return this.deleteContext(contextID);
+      }
+      return false;
+    });
   }
 
   // TODO: 스케줄링 균형성 향상

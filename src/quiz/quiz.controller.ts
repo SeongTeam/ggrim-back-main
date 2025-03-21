@@ -29,6 +29,7 @@ import { CATEGORY_VALUES } from './const';
 import { SearchQuizDTO } from './dto/SearchQuiz.dto';
 import { CreateQuizDTO } from './dto/create-quiz.dto';
 import { GenerateQuizQueryDTO } from './dto/generate-quiz.query.dto';
+import { ResponseQuizDTO } from './dto/output/response-schedule-quiz.dto';
 import { QuizContextDTO } from './dto/quiz-context.dto';
 import { ScheduleQuizQueryDTO } from './dto/schedule-quiz.query.dto';
 import { UpdateQuizDTO } from './dto/update-quiz.dto';
@@ -120,57 +121,42 @@ export class QuizController implements CrudController<Quiz> {
   }
 
   @Get('schedule')
-  async getScheduledQuiz(@Query() dto: ScheduleQuizQueryDTO) {
+  async getScheduledQuiz(@Query() dto: ScheduleQuizQueryDTO): Promise<ResponseQuizDTO> {
     Logger.log(`context : `, dto.context);
-    if (dto.context && dto.currentIndex && dto.endIndex) {
-      const { context, currentIndex: currentIdx, endIndex: endIdx } = dto;
-      const { artist, tag, style } = dto.context;
-      const validations = [
-        { value: artist, service: this.artistService, entity: 'artist', column: 'name' },
-        { value: tag, service: this.tagService, entity: 'tag', column: 'name' },
-        { value: style, service: this.styleService, entity: 'style', column: 'name' },
-      ];
-      for (const validation of validations) {
-        const { value, service, entity } = validation;
-        if (value) {
-          const isFind = await service.findOneBy({ name: value });
-          if (!isFind) {
-            throw new ServiceException(
-              'ENTITY_NOT_FOUND',
-              'BAD_REQUEST',
-              `${value} is not validate to ${entity}`,
-            );
-          }
-        }
-      }
-      return this.scheduleService.scheduleQuiz({ context, currentIdx, endIdx });
-    }
+    const QUIZ_PAGINATION = 20;
+    const MAX_RETRY = 10;
+    let attempt = 0;
+    for (attempt = 0; attempt < MAX_RETRY; attempt++) {
+      const context: QuizContext = await this.extractContext(dto);
 
-    Logger.log('initial schedule', QuizController.name);
-    return this.scheduleService.scheduleQuiz();
+      const searchDTO: SearchQuizDTO = await this.buildSearchDTO(context);
+
+      const quizList: Quiz[] = await this.service.searchQuiz(
+        searchDTO,
+        context.page,
+        QUIZ_PAGINATION,
+      );
+      if (quizList.length === 0) {
+        await this.scheduleService.requestDeleteContext(context);
+        dto.context = undefined;
+        continue;
+      }
+
+      const isContextChanged = dto.context !== context;
+      const currentIndex = isContextChanged ? undefined : dto.currentIndex;
+
+      return new ResponseQuizDTO(quizList, context, currentIndex);
+    }
+    throw new ServiceException(
+      `SERVICE_RUN_ERROR`,
+      `INTERNAL_SERVER_ERROR`,
+      `No available quizzes after multiple attempts`,
+    );
   }
 
   @Post('schedule')
   async addQuizContext(@Body() dto: QuizContextDTO) {
-    const { artist, tag, style } = dto;
-    const validations = [
-      { value: artist, service: this.artistService, entity: 'artist', column: 'name' },
-      { value: tag, service: this.tagService, entity: 'tag', column: 'name' },
-      { value: style, service: this.styleService, entity: 'style', column: 'name' },
-    ];
-    for (const validation of validations) {
-      const { value, service, entity } = validation;
-      if (value) {
-        const isFind = await service.findOneBy({ name: value });
-        if (!isFind) {
-          throw new ServiceException(
-            'ENTITY_NOT_FOUND',
-            'BAD_REQUEST',
-            `${value} is not validate to ${entity}`,
-          );
-        }
-      }
-    }
+    this.validateQuizContextDTO(dto);
 
     return this.scheduleService.requestAddContext([dto]);
   }
@@ -250,5 +236,46 @@ export class QuizController implements CrudController<Quiz> {
       };
     });
     this.scheduleService.initialize(fixedContexts);
+  }
+
+  async validateQuizContextDTO(quizContext: QuizContextDTO): Promise<void> {
+    const { artist, tag, style } = quizContext;
+    const validations = [
+      { value: artist, service: this.artistService, entity: 'artist', column: 'name' },
+      { value: tag, service: this.tagService, entity: 'tag', column: 'name' },
+      { value: style, service: this.styleService, entity: 'style', column: 'name' },
+    ];
+    for (const validation of validations) {
+      const { value, service, entity } = validation;
+      if (value) {
+        const isFind = await service.findOneBy({ name: value });
+        if (!isFind) {
+          throw new ServiceException(
+            'ENTITY_NOT_FOUND',
+            'BAD_REQUEST',
+            `${value} is not validate to ${entity}`,
+          );
+        }
+      }
+    }
+  }
+
+  private async extractContext(dto: ScheduleQuizQueryDTO): Promise<QuizContext> {
+    const { context, currentIndex, endIndex } = dto;
+    if (context && currentIndex && endIndex) {
+      if (currentIndex !== endIndex) {
+        this.validateQuizContextDTO(context);
+        return context;
+      }
+    }
+    return await this.scheduleService.scheduleContext();
+  }
+
+  private buildSearchDTO(context: QuizContext): SearchQuizDTO {
+    return {
+      artist: JSON.stringify(context.artist ? [context.artist] : []),
+      tags: JSON.stringify(context.tag ? [context.tag] : []),
+      styles: JSON.stringify(context.style ? [context.style] : []),
+    };
   }
 }
