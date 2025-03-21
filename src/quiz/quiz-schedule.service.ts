@@ -347,6 +347,12 @@ export class QuizScheduleService {
     });
   }
 
+  /*
+  * return 
+       - true : success add or already exist
+       - false : fail add without already exist
+  */
+
   private addContexts(contexts: QuizContext[], isFixed: boolean = false): boolean {
     if (!this.mutex.isLocked()) {
       return false;
@@ -401,6 +407,7 @@ export class QuizScheduleService {
       });
       return true;
     } catch (e: unknown) {
+      // rollback when error
       const statistic = tasks.reduce(
         (acc, { status }) => ({ ...acc, [status]: acc[status] + 1 }),
         {} as { ADDED: 0; EXISTED: 0; FAILED: 0 } as Record<'ADDED' | 'EXISTED' | 'FAILED', number>,
