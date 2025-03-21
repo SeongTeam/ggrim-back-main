@@ -19,7 +19,10 @@ import { CONFIG_FILE_PATH } from '../_common/const/default.value';
 import { AWS_BUCKET, AWS_INIT_FILE_KEY_PREFIX } from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { IPaginationResult } from '../_common/interface';
+import { ArtistService } from '../artist/artist.service';
 import { S3Service } from '../aws/s3.service';
+import { StyleService } from '../style/style.service';
+import { TagService } from '../tag/tag.service';
 import { getLatestMonday } from '../utils/date';
 import { CATEGORY_VALUES } from './const';
 import { SearchQuizDTO } from './dto/SearchQuiz.dto';
@@ -29,6 +32,7 @@ import { QuizContextDTO } from './dto/quiz-context.dto';
 import { ScheduleQuizQueryDTO } from './dto/schedule-quiz.query.dto';
 import { UpdateQuizDTO } from './dto/update-quiz.dto';
 import { Quiz } from './entities/quiz.entity';
+import { QuizScheduleService } from './quiz-schedule.service';
 import { QuizService } from './quiz.service';
 import { QuizCategory } from './type';
 
@@ -69,11 +73,16 @@ import { QuizCategory } from './type';
     },
   },
 })
+//TODO whitelist 옵션 추가하여 보안강화하기
 @UsePipes(new ValidationPipe({ transform: true }))
 @Controller('quiz')
 export class QuizController implements CrudController<Quiz> {
   constructor(
     public service: QuizService,
+    @Inject(QuizScheduleService) private readonly scheduleService: QuizScheduleService,
+    @Inject(TagService) private readonly tagService: TagService,
+    @Inject(StyleService) private readonly styleService: StyleService,
+    @Inject(ArtistService) private readonly artistService: ArtistService,
     @Inject(S3Service) private readonly s3Service: S3Service,
   ) {}
 
@@ -105,6 +114,37 @@ export class QuizController implements CrudController<Quiz> {
     // const classInstance = plainToInstance(QuizContextDTO, dto, { enableImplicitConversion: true });
     // Logger.log('transformation :' + JSON.stringify(classInstance));
     return dto;
+  }
+
+  @Get('schedule')
+  async getScheduledQuiz(@Query() dto: ScheduleQuizQueryDTO) {
+    Logger.log(`context : `, dto.context);
+    if (dto.context && dto.currentIndex && dto.endIndex) {
+      const { context, currentIndex: currentIdx, endIndex: endIdx } = dto;
+      const { artist, tag, style } = dto.context;
+      const validations = [
+        { value: artist, service: this.artistService, entity: 'artist', column: 'name' },
+        { value: tag, service: this.tagService, entity: 'tag', column: 'name' },
+        { value: style, service: this.styleService, entity: 'style', column: 'name' },
+      ];
+      for (const validation of validations) {
+        const { value, service, entity } = validation;
+        if (value) {
+          const isFind = await service.findOneBy({ name: value });
+          if (!isFind) {
+            throw new ServiceException(
+              'ENTITY_NOT_FOUND',
+              'BAD_REQUEST',
+              `${value} is not validate to ${entity}`,
+            );
+          }
+        }
+      }
+      return this.scheduleService.scheduleQuiz({ context, currentIdx, endIdx });
+    }
+
+    Logger.log('initial schedule', QuizController.name);
+    return this.scheduleService.scheduleQuiz();
   }
 
   /*TODO
