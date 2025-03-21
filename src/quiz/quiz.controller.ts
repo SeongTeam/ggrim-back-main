@@ -5,6 +5,7 @@ import {
   DefaultValuePipe,
   Get,
   Inject,
+  Logger,
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
@@ -24,7 +25,8 @@ import { CATEGORY_VALUES } from './const';
 import { SearchQuizDTO } from './dto/SearchQuiz.dto';
 import { CreateQuizDTO } from './dto/create-quiz.dto';
 import { GenerateQuizQueryDTO } from './dto/generate-quiz.query.dto';
-import { WeeklyQuizSet } from './dto/output/weekly-quiz.dto';
+import { QuizContextDTO } from './dto/quiz-context.dto';
+import { ScheduleQuizQueryDTO } from './dto/schedule-quiz.query.dto';
 import { UpdateQuizDTO } from './dto/update-quiz.dto';
 import { Quiz } from './entities/quiz.entity';
 import { QuizService } from './quiz.service';
@@ -92,6 +94,17 @@ export class QuizController implements CrudController<Quiz> {
   @Get('random')
   async generateNew(@Query() dto: GenerateQuizQueryDTO) {
     return this.service.generateQuizByValue(dto.category, dto.keyword);
+  }
+
+  @Get('quizContext')
+  async getQuizContext(
+    @Query()
+    dto: QuizContextDTO,
+  ) {
+    Logger.log('test api:' + JSON.stringify(dto));
+    // const classInstance = plainToInstance(QuizContextDTO, dto, { enableImplicitConversion: true });
+    // Logger.log('transformation :' + JSON.stringify(classInstance));
+    return dto;
   }
 
   /*TODO
