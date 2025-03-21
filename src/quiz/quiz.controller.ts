@@ -147,6 +147,31 @@ export class QuizController implements CrudController<Quiz> {
     return this.scheduleService.scheduleQuiz();
   }
 
+  @Post('schedule')
+  async addQuizContext(@Body() dto: QuizContextDTO) {
+    const { artist, tag, style } = dto;
+    const validations = [
+      { value: artist, service: this.artistService, entity: 'artist', column: 'name' },
+      { value: tag, service: this.tagService, entity: 'tag', column: 'name' },
+      { value: style, service: this.styleService, entity: 'style', column: 'name' },
+    ];
+    for (const validation of validations) {
+      const { value, service, entity } = validation;
+      if (value) {
+        const isFind = await service.findOneBy({ name: value });
+        if (!isFind) {
+          throw new ServiceException(
+            'ENTITY_NOT_FOUND',
+            'BAD_REQUEST',
+            `${value} is not validate to ${entity}`,
+          );
+        }
+      }
+    }
+
+    return this.scheduleService.requestAddContext([dto]);
+  }
+
   /*TODO
     - DB transaction 로직 추가하기
   */
