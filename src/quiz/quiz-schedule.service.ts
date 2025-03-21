@@ -3,14 +3,9 @@ import { Mutex, MutexInterface, withTimeout } from 'async-mutex';
 import assert from 'node:assert';
 import { LoggerService } from '../Logger/logger.service';
 import { PaintingService } from '../painting/painting.service';
+import { QuizContext } from './interface/quiz-context';
+import { QuizStatus } from './interface/quiz-status';
 import { QuizService } from './quiz.service';
-
-export interface QuizContext {
-  artist?: string;
-  tag?: string;
-  style?: string;
-  page: number;
-}
 
 type QuizContextID = string;
 
@@ -25,8 +20,6 @@ type ContextHashMap = Map<QuizContextID, ContextHashNode>;
 
 @Injectable()
 export class QuizScheduleService {
-  // TODO forwardRef 사용법 공식문서 정확히 읽기 적용하기
-
   private SCHEDULER_SIZE = 10;
   private SCHEDULER_EMPTY = 'SCHEDULER_EMPTY';
   private MUTEX_TIMEOUT_MS = 10000;
@@ -37,6 +30,7 @@ export class QuizScheduleService {
   private mutex: MutexInterface;
   private optimizerTimer: NodeJS.Timeout | null;
 
+  // TODO forwardRef 사용법 공식문서 정확히 읽기 적용하기
   constructor(
     @Inject(forwardRef(() => PaintingService)) private readonly paintingService: PaintingService,
     @Inject(forwardRef(() => QuizService)) private readonly quizService: QuizService,
