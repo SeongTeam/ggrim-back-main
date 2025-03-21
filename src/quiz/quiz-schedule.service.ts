@@ -102,6 +102,18 @@ export class QuizScheduleService {
 
     const quizList: Quiz[] = await this.quizService.searchQuiz(dto, page, paginationCount);
 
+    //delete invalid Quiz-context
+    if (quizList.length === 0) {
+      const contextID = this.transformHashKey(status.context);
+
+      await this.mutex.runExclusive(() => {
+        if (this._contextHashMap.has(contextID)) {
+          this.deleteContext(contextID);
+        }
+      });
+      return this.scheduleQuiz();
+    }
+
     status.endIdx = quizList.length - 1;
 
     if (status.currentIdx === INIT_IDX) {
