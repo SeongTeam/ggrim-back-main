@@ -49,6 +49,16 @@ export class PaintingController {
     return paintings[0];
   }
 
+  /**
+   * 사용법 {domain}/paintings?ids=id1&id2&id3
+   * ex) localhost:3000/paintings?ids=111&222&333 ,
+   */
+  @Get()
+  async getByIds(@Query('ids') ids: string[]) {
+    const paintings = await this.service.getByIds(ids);
+    return paintings;
+  }
+
   @Get('/')
   async searchPainting(
     @Query() dto: SearchPaintingDTO,
