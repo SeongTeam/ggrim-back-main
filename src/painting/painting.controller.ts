@@ -32,7 +32,7 @@ import { ReplacePaintingDTO } from './dto/replace-painting.dto';
 import { SearchPaintingDTO } from './dto/search-painting.dto';
 import { Painting } from './entities/painting.entity';
 import { PaintingService } from './painting.service';
-import { IPaginationResult } from './responseDTO';
+import { IPaginationResult, ShortPaintingResponseDTO } from './responseDTO';
 
 @UsePipes(new ValidationPipe({ transform: true }))
 @Controller('painting')
@@ -55,12 +55,17 @@ export class PaintingController {
     @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
   ) {
     const paginationCount = 50;
-    const data: Painting[] = await this.service.searchPainting(dto, page, paginationCount);
+    const foundPaintings: Painting[] = await this.service.searchPainting(
+      dto,
+      page,
+      paginationCount,
+    );
+    const data = foundPaintings.map((painting) => new ShortPaintingResponseDTO(painting));
 
-    const ret: IPaginationResult<Painting> = {
+    const ret: IPaginationResult<ShortPaintingResponseDTO> = {
       data,
-      isMore: data.length === paginationCount,
-      count: data.length,
+      isMore: foundPaintings.length === paginationCount,
+      count: foundPaintings.length,
       pagination: page,
     };
 
