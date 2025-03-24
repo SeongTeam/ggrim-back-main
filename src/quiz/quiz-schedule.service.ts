@@ -1,6 +1,5 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { Mutex, MutexInterface, withTimeout } from 'async-mutex';
-import * as assert from 'node:assert';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { LoggerService } from '../Logger/logger.service';
 import { QuizContext } from './interface/quiz-context';
@@ -58,7 +57,7 @@ export class QuizScheduleService {
     await this.mutex.runExclusive(() => {
       this.addContexts(fixedContexts, true);
 
-      assert(this._scheduler.length !== 0);
+      this.logger.assertOrLog(this._scheduler.length !== 0);
     });
   }
 
@@ -110,13 +109,13 @@ export class QuizScheduleService {
       const id: QuizContextID = this._scheduler[idx];
 
       // TODO: assert 로직 개선
-      // - [ ] production/dev 모드에 따라 assert 동작 다르게하기
+      // - [x] production/dev 모드에 따라 assert 동작 다르게하기
       //  -> js에선 production 빌드시 assert가 함께 컴파일되므로, production에서는 에러로그가 발생하도록 해야한다.
       // - [ ] <추가 작업>
       // ! 주의: <경고할 사항>
       // ? 질문: <의문점 또는 개선 방향>
       // * 참고: <관련 정보나 링크>
-      assert(this._contextHashMap.has(id), `schedule context must exist`);
+      this.logger.assertOrLog(this._contextHashMap.has(id), `schedule context must exist`);
 
       if (!this._contextHashMap.has(id)) {
         const e = Error(`${id} is not in hashMap`);
@@ -136,7 +135,7 @@ export class QuizScheduleService {
 
       const node: ContextHashNode = this._contextHashMap.get(id)!;
       node.scheduleCount++;
-      assert(
+      this.logger.assertOrLog(
         this._schedulerIdx === node.schedulerIndex,
         `Should synchronize idx and node's index` +
           `this._schedulerIdx : ${this._schedulerIdx}` +
@@ -419,7 +418,7 @@ export class QuizScheduleService {
     }
 
     if (!this._contextHashMap.has(contextID)) {
-      assert(false, `can't delete not-existed ID. ${contextID}`);
+      this.logger.assertOrLog(false, `can't delete not-existed ID. ${contextID}`);
     }
 
     const deletedNode: ContextHashNode = this._contextHashMap.get(contextID)!;
@@ -506,7 +505,10 @@ export class QuizScheduleService {
     let count = 0;
 
     this._scheduler.forEach((id) => {
-      assert(this._contextHashMap.has(id), 'scheduled context ID should has context node');
+      this.logger.assertOrLog(
+        this._contextHashMap.has(id),
+        'scheduled context ID should has context node',
+      );
       if (this._contextHashMap.get(id)!.isFixed) {
         count++;
       }
