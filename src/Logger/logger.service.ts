@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
+import * as assert from 'assert';
 import { ClsService } from 'nestjs-cls';
 import { TYPE_DEFAULT_VALUE } from '../_common/const/default.value';
+import { NODE_ENV } from '../_common/const/env-keys.const';
+
+const isProduction = process.env[NODE_ENV] === 'production';
 
 export interface ILogContext {
   className: string;
@@ -37,6 +41,24 @@ export class LoggerService {
   }
   warn(message: any, context: ILogContext) {
     return this.logger.warn(message, this.getFullContext(context));
+  }
+
+  assertOrLog(condition: boolean, message?: string): void {
+    if (!isProduction) {
+      assert(condition, message);
+      return;
+    }
+
+    if (!condition) {
+      const stack = new Error().stack;
+      const callerInfo = stack?.split('\n')[2]?.trim();
+      const formattedMessage = `[ASSERTION ERROR] ${message || 'Assertion Failed'}`;
+      this.logger.error(
+        formattedMessage,
+        callerInfo,
+        this.getFullContext({ className: LoggerService.name }),
+      );
+    }
   }
 
   private getFullContext(ctx: ILogContext) {
