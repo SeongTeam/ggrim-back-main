@@ -76,7 +76,7 @@ import { QuizCategory } from './type';
     },
   },
 })
-//TODO whitelist 옵션 추가하여 보안강화하기
+//TODO whitelist 옵션 추가하여 보안강화 고려하기
 @UsePipes(new ValidationPipe({ transform: true }))
 @Controller('quiz')
 export class QuizController implements CrudController<Quiz> {
@@ -153,7 +153,8 @@ export class QuizController implements CrudController<Quiz> {
       `No available quizzes after multiple attempts`,
     );
   }
-
+  // TODO: 응답 객체 개선하기
+  // ? 질문: context 삽입 결과를 요청자에게 알려줄 필요가있는가? 성공할 수도 실패할 수 도 있는데.
   @Post('schedule')
   async addQuizContext(@Body() dto: QuizContextDTO) {
     this.validateQuizContextDTO(dto);
