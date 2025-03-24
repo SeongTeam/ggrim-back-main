@@ -80,6 +80,48 @@ POST /users/{user_id}/likes/posts/{post_id}
 ❌ GET /users/ ⭕ GET /users
 - 후행 슬래시(/)는 의미가 전혀 없고 혼란을 야기할 수 있다.
 
+### TODO Convention
+
+-   템플릿은 다음과 같다.
+-   // 또는 /\* \*/을 사용한다.
+
+```ts
+// TODO: <설명>
+// - [ ] <할 일>
+//  -> <할 일 > 설명 ( 생략가능 )
+// - [ ] <추가 작업>
+// ! 주의: <경고할 사항>
+// ? 질문: <의문점 또는 개선 방향>
+// * 참고: <관련 정보나 링크>
+```
+
+-   예시
+
+```ts
+// TODO: 로그인 폼 UI 개선
+// - [ ] 에러 메시지 추가
+// - [ ] 버튼 클릭 시 로딩 스피너 표시
+// ! 주의: 다크 모드에서 색상이 깨질 가능성 있음
+// ? 질문: Tailwind에서 애니메이션 효과 적용하는 방법 고려
+// * 참고: https://tailwindcss.com/docs/animation
+
+function LoginForm() {
+    return <form>{/* 로그인 폼 */}</form>;
+}
+
+// TODO: 유저 인증 기능 구현
+// - [ ] JWT 토큰 발급 및 검증
+// - [ ] 비밀번호 해싱 및 저장
+// ! 주의: refresh token 저장 시 보안 고려 필요
+// ? 질문: 세션 방식과 JWT 중 어떤 것이 더 적절할까?
+// * 참고: https://docs.nestjs.com/security/authentication
+
+@Post('login')
+async login(@Body() loginDto: LoginDto) {
+  return this.authService.login(loginDto);
+}
+```
+
 ## BoilerPlate Code
 
 ref : https://awesome-nestjs.com/resources/boilerplate.html
