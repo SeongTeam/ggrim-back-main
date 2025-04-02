@@ -37,6 +37,7 @@ $npm run typeorm:create-migration --name={file_name}
 2) run script command
 ```
 $node migration_action.js generate {file name}
+```
 - this command generate migration file to update DB based on your newly modified codebase
 - ref : 
 
