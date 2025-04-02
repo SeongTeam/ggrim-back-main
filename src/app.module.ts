@@ -15,6 +15,7 @@ import { QuizModule } from './quiz/quiz.module';
 import { StyleModule } from './style/style.module';
 import { TagModule } from './tag/tag.modue';
 import { TypeORMConfig } from './utils/typeorm.config';
+import { UserModule } from './user/user.module';
 
 const ENV = process.env[NODE_ENV];
 
@@ -41,6 +42,7 @@ const ENV = process.env[NODE_ENV];
     ArtistModule,
     QuizModule,
     S3Module,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],
