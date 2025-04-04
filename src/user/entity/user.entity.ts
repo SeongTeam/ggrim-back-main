@@ -1,10 +1,11 @@
-import { IsEmail, IsOptional, IsUUID } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
 import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { CustomBaseEntity } from '../../db/entity/custom.base.entity';
+import { IsInArray } from '../../utils/class-validator';
 
-type UserRole = 'admin' | 'user';
+export type UserRole = 'admin' | 'user';
 
-type UserState = 'active' | 'inactive' | 'banned';
+export type UserState = 'active' | 'inactive' | 'banned';
 
 @Entity()
 @Unique(['email', 'username'])
@@ -18,12 +19,17 @@ export class User extends CustomBaseEntity {
   email!: string;
 
   @Column()
+  @IsString()
+  @MinLength(8) // utf-8 형식에서 bcrypt는 문자열 크기 18까지만 가능. 2는 마진적용
+  @MaxLength(16)
   password!: string;
 
   @Column({ default: 'user' })
+  @IsInArray(['admin', 'user'])
   role!: UserRole;
 
   @Column()
+  @IsString()
   username!: string;
 
   @Column({ default: 'active' })
