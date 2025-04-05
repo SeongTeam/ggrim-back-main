@@ -5,7 +5,7 @@ import { QueryRunner, Repository } from 'typeorm';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.lib';
 import { CreateUserDTO } from './dto/create-user.dto';
-import { User } from './entity/user.entity';
+import { User, UserRole } from './entity/user.entity';
 
 @Injectable()
 export class UserService extends TypeOrmCrudService<User> {
@@ -47,6 +47,25 @@ export class UserService extends TypeOrmCrudService<User> {
         .update()
         .set({
           username: newUniqueUsername,
+        })
+        .where('id = :id', { id })
+        .execute();
+    } catch (error) {
+      throw new ServiceException(
+        'EXTERNAL_SERVICE_FAILED',
+        'INTERNAL_SERVER_ERROR',
+        `Can't update username`,
+        { cause: error },
+      );
+    }
+  }
+
+  async updateRole(queryRunner: QueryRunner, id: string, role: UserRole): Promise<void> {
+    try {
+      const result = await createTransactionQueryBuilder(queryRunner, User)
+        .update()
+        .set({
+          role,
         })
         .where('id = :id', { id })
         .execute();

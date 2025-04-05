@@ -22,6 +22,7 @@ import { DBQueryRunner } from '../db/query-runner/decorator/query-runner.decorat
 import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.interceptor';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { ReplacePassWordDTO } from './dto/replace-pw.dto';
+import { ReplaceRoleDTO } from './dto/replace-role.dto';
 import { ReplaceUsernameDTO } from './dto/replace-username.dto';
 import { User } from './entity/user.entity';
 import { UserService } from './user.service';
@@ -154,5 +155,23 @@ export class UserController implements CrudController<User> {
 
     await this.service.updateUsername(qr, targetId, dto.username);
     return;
+  }
+
+  @Put(':email/role')
+  @UseInterceptors(QueryRunnerInterceptor)
+  async replaceRole(
+    @DBQueryRunner() qr: QueryRunner,
+    @Param('email') email: string,
+    @Body() dto: ReplaceRoleDTO,
+  ) {
+    if (!isEmail(email)) {
+      throw new HttpException(`${email} is not valid`, HttpStatus.BAD_REQUEST);
+    }
+    const user = await this.service.findOne({ where: { email } });
+    if (!user) {
+      throw new HttpException(`${email} is not exist`, HttpStatus.BAD_REQUEST);
+    }
+
+    await this.service.updateRole(qr, user.id, dto.role);
   }
 }

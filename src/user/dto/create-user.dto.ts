@@ -7,5 +7,4 @@ export class CreateUserDTO extends PickType(User, [
   'username',
   'oauth_provider',
   'oauth_provider_id',
-  'role',
 ]) {}
