@@ -89,6 +89,7 @@ export class UserController implements CrudController<User> {
 
   // TODO: 사용자 정보 변경 로직 개선하기
   // - [ ] 사용자 본인만 개인 정보변경할 수 있도록 수정하기
+  // - [ ] User Entity 필드 1개 수정할 수 있는 서비스 로직 추가하여 재사용성 높이기
   // - [ ] 사용자 암호 초기화 로직 추가하기
   // - [ ] 메일 인증 로직 추가하기
   // - [ ] Role 필드 기반 API 접근 권한 로직 추가하기
