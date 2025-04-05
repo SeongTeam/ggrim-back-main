@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { ModuleRef, Reflector } from '@nestjs/core';
 import { ServiceException } from '../../_common/filter/exception/service/service-exception';
+import { ADMIN_ACCESS_KEY } from '../decorator/admin-access';
 import { CHECK_OWNER_KEY, CheckOwnerOption } from '../decorator/owner';
 import { TokenAuthGuard, TokenAuthGuardResult } from './token-auth.guard';
 
@@ -22,12 +23,18 @@ export class OwnerGuard implements CanActivate {
     await this.tokenAuthGuard.canActivate(context);
     const options = this.reflector.get<CheckOwnerOption>(CHECK_OWNER_KEY, context.getHandler());
 
+    const isAdminAccess: any = this.reflector.get<any>(ADMIN_ACCESS_KEY, context.getHandler());
+    const request = context.switchToHttp().getRequest();
+    const userInfo: TokenAuthGuardResult = request['TokenAuthGuardResult'];
+
+    if (isAdminAccess && userInfo.decodedToken.role === 'admin') {
+      return true;
+    }
+
     if (!options) return true;
 
     const { serviceClass, idParam, ownerField, serviceMethod } = options;
 
-    const request = context.switchToHttp().getRequest();
-    const userInfo: TokenAuthGuardResult = request['TokenAuthGuardResult'];
     const resourceId = request.params[idParam];
 
     const serviceInstance = this.moduleRef.get(serviceClass, { strict: false });
