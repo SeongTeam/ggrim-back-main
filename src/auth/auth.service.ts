@@ -42,10 +42,18 @@ export interface JWTPayload {
 
 export type AUTHORIZATION_TYPE = 'Bearer' | 'Basic';
 
+// TODO: JWT 로직 개선
+// - [ ] AccessToken 만료시간 줄이고 갱신 로직 추가하기
+// - [ ] refresh 토큰 사용하고 탈취 위험성 줄이기
+// - [ ] <추가 작업>
+// ! 주의: <경고할 사항>
+// ? 질문: Reflector의 getAllAndOverride() 와 get()의 차이는 무엇인가?
+// * 참고: <관련 정보나 링크>
+
 @Injectable()
 export class AuthService {
-  private ACCESS_TOKEN_TTL_SECOND = 600;
-  private REFRESH_TOKEN_TTL_SECOND = 3600;
+  private ACCESS_TOKEN_TTL_SECOND = 3600 * 2;
+  private REFRESH_TOKEN_TTL_SECOND = 3600 * 10;
 
   constructor(
     @Inject(JwtService) private readonly jwtService: JwtService,
