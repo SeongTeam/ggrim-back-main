@@ -19,9 +19,11 @@ import { ServiceException } from '../_common/filter/exception/service/service-ex
 import { AuthService } from '../auth/auth.service';
 import { CheckOwner } from '../auth/decorator/owner';
 import { OwnerGuard } from '../auth/guard/owner.guard';
+import { RolesGuard } from '../auth/guard/role.guard';
 import { TokenAuthGuard } from '../auth/guard/token-auth.guard';
 import { DBQueryRunner } from '../db/query-runner/decorator/query-runner.decorator';
 import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.interceptor';
+import { Roles } from './decorator/role';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { ReplacePassWordDTO } from './dto/replace-pw.dto';
 import { ReplaceRoleDTO } from './dto/replace-role.dto';
@@ -174,6 +176,8 @@ export class UserController implements CrudController<User> {
 
   @Put(':email/role')
   @UseInterceptors(QueryRunnerInterceptor)
+  @Roles('admin')
+  @UseGuards(TokenAuthGuard, RolesGuard)
   async replaceRole(
     @DBQueryRunner() qr: QueryRunner,
     @Param('email') email: string,
