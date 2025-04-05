@@ -86,6 +86,15 @@ export class UserController implements CrudController<User> {
     return await this.service.createUser(qr, encryptedDTO);
   }
 
+  // TODO: 사용자 정보 변경 로직 개선하기
+  // - [ ] 사용자 본인만 개인 정보변경할 수 있도록 수정하기
+  // - [ ] 사용자 암호 초기화 로직 추가하기
+  // - [ ] 메일 인증 로직 추가하기
+  // - [ ] Role 필드 기반 API 접근 권한 로직 추가하기
+  // ! 주의: <경고할 사항>
+  // ? 질문: <의문점 또는 개선 방향>
+  // * 참고: <관련 정보나 링크>
+
   @Put(':email/password')
   @UseInterceptors(QueryRunnerInterceptor)
   @UseGuards(TokenAuthGuard)
