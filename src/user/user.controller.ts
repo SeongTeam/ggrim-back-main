@@ -17,6 +17,8 @@ import { isEmail } from 'class-validator';
 import { QueryRunner } from 'typeorm';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { AuthService } from '../auth/auth.service';
+import { CheckOwner } from '../auth/decorator/owner';
+import { OwnerGuard } from '../auth/guard/owner.guard';
 import { TokenAuthGuard } from '../auth/guard/token-auth.guard';
 import { DBQueryRunner } from '../db/query-runner/decorator/query-runner.decorator';
 import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.interceptor';
@@ -99,7 +101,13 @@ export class UserController implements CrudController<User> {
 
   @Put(':email/password')
   @UseInterceptors(QueryRunnerInterceptor)
-  @UseGuards(TokenAuthGuard)
+  @CheckOwner({
+    serviceClass: UserService,
+    idParam: 'email',
+    serviceMethod: 'findUserByEmail',
+    ownerField: 'id',
+  })
+  @UseGuards(TokenAuthGuard, OwnerGuard)
   async replacePassword(
     @DBQueryRunner() qr: QueryRunner,
     @Param('email') email: string,
@@ -119,7 +127,13 @@ export class UserController implements CrudController<User> {
 
   @Put(':email/username')
   @UseInterceptors(QueryRunnerInterceptor)
-  @UseGuards(TokenAuthGuard)
+  @CheckOwner({
+    serviceClass: UserService,
+    idParam: 'email',
+    serviceMethod: 'findUserByEmail',
+    ownerField: 'id',
+  })
+  @UseGuards(TokenAuthGuard, OwnerGuard)
   async replaceUsername(
     @DBQueryRunner() qr: QueryRunner,
     @Param('email') email: string,
