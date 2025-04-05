@@ -8,7 +8,7 @@ import { TokenAuthGuard, TokenAuthGuardResult } from './token-auth.guard';
 // - [ ] User Role = admin 일때, 통과시키기
 // - [ ] <추가 작업>
 // ! 주의: <경고할 사항>
-// ? 질문: <의문점 또는 개선 방향>
+// ? 질문: Reflector의 getAllAndOverride() 와 get()의 차이는 무엇인가?
 // * 참고: <관련 정보나 링크>
 @Injectable()
 export class OwnerGuard implements CanActivate {
