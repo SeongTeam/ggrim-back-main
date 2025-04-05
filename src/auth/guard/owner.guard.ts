@@ -19,8 +19,6 @@ export class OwnerGuard implements CanActivate {
     private readonly tokenAuthGuard: TokenAuthGuard,
   ) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // default authenticate jwt
-    await this.tokenAuthGuard.canActivate(context);
     const options = this.reflector.get<CheckOwnerOption>(CHECK_OWNER_KEY, context.getHandler());
 
     const isAdminAccess: any = this.reflector.get<any>(ADMIN_ACCESS_KEY, context.getHandler());
