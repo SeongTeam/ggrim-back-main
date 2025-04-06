@@ -17,6 +17,7 @@ import { StyleModule } from './style/style.module';
 import { TagModule } from './tag/tag.modue';
 import { UserModule } from './user/user.module';
 import { TypeORMConfig } from './utils/typeorm.config';
+import { VerificationModule } from './verification/verification.module';
 
 const ENV = process.env[NODE_ENV];
 
@@ -46,6 +47,7 @@ const ENV = process.env[NODE_ENV];
     S3Module,
     UserModule,
     AuthModule,
+    VerificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
