@@ -38,7 +38,7 @@ export class User extends CustomBaseEntity {
   active!: UserState;
 
   @Column({ type: 'timestamp with time zone', precision: 6, default: () => 'CURRENT_TIMESTAMP(6)' })
-  last_login_at!: Date;
+  last_login_date!: Date;
 
   /*TODO
     - Auth 로직추가시 해당 컬럼 관련 로직 개선하기
