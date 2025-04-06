@@ -30,6 +30,8 @@ export class User extends CustomBaseEntity {
 
   @Column()
   @IsString()
+  @MinLength(4)
+  @MaxLength(12)
   username!: string;
 
   @Column({ default: 'active' })
