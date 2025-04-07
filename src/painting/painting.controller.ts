@@ -70,7 +70,7 @@ export class PaintingController {
       page,
       paginationCount,
     );
-    const data = foundPaintings.map((painting) => new ShortPaintingResponseDTO(painting));
+    const data = foundPaintings.map((painting) => ShortPaintingResponseDTO.fromPainting(painting));
 
     const ret: IPaginationResult<ShortPaintingResponseDTO> = {
       data,
