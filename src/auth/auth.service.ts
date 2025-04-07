@@ -9,13 +9,17 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
+import { InjectRepository } from '@nestjs/typeorm';
 import {
   ENV_HASH_ROUNDS_KEY,
   ENV_JWT_SECRET_KEY,
   NODE_ENV,
 } from 'src/_common/const/env-keys.const';
+import { DeepPartial, FindManyOptions, FindOneOptions, QueryRunner, Repository } from 'typeorm';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
+import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.lib';
 import { UserRole } from '../user/entity/user.entity';
+import { Verification } from './entity/verification.entity';
 
 export type TokenType = 'REFRESH' | 'ACCESS';
 
@@ -54,10 +58,12 @@ export type AUTHORIZATION_TYPE = 'Bearer' | 'Basic';
 export class AuthService {
   private ACCESS_TOKEN_TTL_SECOND = 3600 * 2;
   private REFRESH_TOKEN_TTL_SECOND = 3600 * 10;
+  private VERIFICATION_EXPIRED_TTL_SECOND = 60 * 5 + 30; // margin value 30
 
   constructor(
     @Inject(JwtService) private readonly jwtService: JwtService,
     @Inject(ConfigService) private readonly configService: ConfigService,
+    @InjectRepository(Verification) private readonly verificationRepo: Repository<Verification>,
   ) {
     const envKeys = [ENV_HASH_ROUNDS_KEY, ENV_JWT_SECRET_KEY];
     const envFile = this.configService.get(NODE_ENV)
@@ -135,5 +141,82 @@ export class AuthService {
     const hash = await bcrypt.hash(src, salt);
 
     return hash;
+  }
+
+  generatePinCode(): string {
+    /**  6자리 PinCode 생성*/
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  getVerificationExpiredTime(): Date {
+    const now = new Date();
+    const expiredDate = new Date(now.getTime() + this.VERIFICATION_EXPIRED_TTL_SECOND);
+    return expiredDate;
+  }
+
+  async createVerification(queryRunner: QueryRunner, email: string): Promise<Verification> {
+    const pinCode = this.generatePinCode();
+    const hashedPinCode = await this.hash(pinCode);
+    const expiredDate = this.getVerificationExpiredTime();
+    try {
+      const result = await createTransactionQueryBuilder(queryRunner, Verification)
+        .insert()
+        .into(Verification)
+        .values({
+          email,
+          pin_code: hashedPinCode,
+          pin_code_expired_date: expiredDate,
+        })
+        .execute();
+
+      const verification = result.generatedMaps[0] as Verification;
+      verification.pin_code = pinCode;
+
+      return verification;
+    } catch (error) {
+      throw new ServiceException(
+        'EXTERNAL_SERVICE_FAILED',
+        'INTERNAL_SERVER_ERROR',
+        `Can't create User`,
+        { cause: error },
+      );
+    }
+  }
+
+  async updateVerification(
+    queryRunner: QueryRunner,
+    id: string,
+    dto: DeepPartial<Verification>,
+  ): Promise<Verification> {
+    try {
+      const result = await createTransactionQueryBuilder(queryRunner, Verification)
+        .update()
+        .set({
+          ...dto,
+        })
+        .where('id = :id', { id })
+        .execute();
+
+      return result.generatedMaps[0] as Verification;
+    } catch (error) {
+      throw new ServiceException(
+        'EXTERNAL_SERVICE_FAILED',
+        'INTERNAL_SERVER_ERROR',
+        `Can't update username`,
+        { cause: error },
+      );
+    }
+  }
+
+  async findVerification(options: FindOneOptions<Verification>): Promise<Verification | null> {
+    const one = await this.verificationRepo.findOne(options);
+
+    return one;
+  }
+
+  async findVerificationList(options: FindManyOptions<Verification>): Promise<Verification[]> {
+    const results = await this.verificationRepo.find(options);
+
+    return results;
   }
 }
