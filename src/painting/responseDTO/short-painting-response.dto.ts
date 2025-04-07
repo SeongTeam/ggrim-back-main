@@ -1,21 +1,37 @@
 import { Painting } from '../entities/painting.entity';
 
-export class ShortPaintingResponseDTO {
+export interface IShortPaintingResponseDTO {
   id: string;
   title: string;
   imageUrl: string;
   width: number;
   height: number;
   artistName: string;
+}
 
-  constructor(painting: Painting) {
-    this.id = painting.id;
-    this.title = painting.title;
-    this.imageUrl = painting.image_url;
-    this.width = painting.width;
-    this.height = painting.height;
-    this.artistName = painting.artist.name;
+export class ShortPaintingResponseDTO implements IShortPaintingResponseDTO {
+  id!: string;
+  title!: string;
+  imageUrl!: string;
+  width!: number;
+  height!: number;
+  artistName!: string;
 
-    Object.seal(this);
+  public constructor(data: IShortPaintingResponseDTO) {
+    Object.assign(this, data); // 한 줄 필드 할당
+    Object.seal(this); //  객체 보호 (새 속성 추가 방지)
+  }
+
+  static fromPainting(painting: Painting): ShortPaintingResponseDTO {
+    const { id, title, width, height, image_url, artist } = painting;
+
+    return new ShortPaintingResponseDTO({
+      id,
+      title,
+      width: width ?? 0,
+      height: height ?? 0,
+      imageUrl: image_url ?? '',
+      artistName: artist?.name ?? '',
+    });
   }
 }
