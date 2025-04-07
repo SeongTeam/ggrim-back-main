@@ -66,6 +66,10 @@ export class PaintingService {
     return result.generatedMaps[0] as Painting;
   }
 
+  // TODO: 업데이트 로직 버그 수정
+  // - [ ] update() 메소드 실행 후, result.generatedMaps[0]은 Painting이 아님
+  //  -> generatedMaps 필드는 쿼리 실행으로 생성된 파일의 집합이므로, 업데이트 쿼리 실행시 Painting은 생성되지 않음.
+
   async replace(
     queryRunner: QueryRunner,
     painting: Painting,
