@@ -150,7 +150,7 @@ export class AuthService {
 
   getVerificationExpiredTime(): Date {
     const now = new Date();
-    const expiredDate = new Date(now.getTime() + this.VERIFICATION_EXPIRED_TTL_SECOND);
+    const expiredDate = new Date(now.getTime() + this.VERIFICATION_EXPIRED_TTL_SECOND * 1000);
     return expiredDate;
   }
 
