@@ -187,17 +187,17 @@ export class AuthService {
     queryRunner: QueryRunner,
     id: string,
     dto: DeepPartial<Verification>,
-  ): Promise<Verification> {
+  ): Promise<void> {
     try {
       const result = await createTransactionQueryBuilder(queryRunner, Verification)
-        .update()
+        .update(Verification)
         .set({
           ...dto,
         })
         .where('id = :id', { id })
         .execute();
 
-      return result.generatedMaps[0] as Verification;
+      return;
     } catch (error) {
       throw new ServiceException(
         'EXTERNAL_SERVICE_FAILED',
