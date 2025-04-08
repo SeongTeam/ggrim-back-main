@@ -58,7 +58,8 @@ export type AUTHORIZATION_TYPE = 'Bearer' | 'Basic';
 export class AuthService {
   private ACCESS_TOKEN_TTL_SECOND = 3600 * 2;
   private REFRESH_TOKEN_TTL_SECOND = 3600 * 10;
-  private VERIFICATION_EXPIRED_TTL_SECOND = 60 * 5 + 30; // margin value 30
+  private VERIFICATION_EXPIRED_TTL_SECOND = 60 * 5 + 5; // margin value 5
+  private MAX_RE_VERIFY_DELAY_MS = 4 * 60 * 1000;
 
   constructor(
     @Inject(JwtService) private readonly jwtService: JwtService,
