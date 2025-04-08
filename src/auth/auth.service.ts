@@ -209,6 +209,19 @@ export class AuthService {
     }
   }
 
+  // return delay second
+  getReVerifyDelay(verification: Verification): number {
+    const now = new Date();
+    const expired = verification.pin_code_expired_date;
+    const delay = expired.getTime() - now.getTime() - this.MAX_RE_VERIFY_DELAY_MS;
+    const MS_PER_SECOND = 1000;
+    if (delay <= 0) {
+      return 0;
+    }
+
+    return Math.round(delay / MS_PER_SECOND);
+  }
+
   async findVerification(options: FindOneOptions<Verification>): Promise<Verification | null> {
     const one = await this.verificationRepo.findOne(options);
 

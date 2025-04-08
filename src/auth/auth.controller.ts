@@ -95,6 +95,14 @@ export class AuthController {
     if (!verification) {
       verification = await this.service.createVerification(qr, email);
     } else {
+      const delay = this.service.getReVerifyDelay(verification);
+      if (delay > 0) {
+        throw new ServiceException(
+          'BASE',
+          'FORBIDDEN',
+          `retry later ${delay} second. Email is on verifying`,
+        );
+      }
       const pin_code = this.service.generatePinCode();
       const hashedPinCode = await this.service.hash(pin_code);
       const pin_code_expired_date = this.service.getVerificationExpiredTime();
