@@ -33,6 +33,7 @@ import { SearchPaintingDTO } from './dto/search-painting.dto';
 import { Painting } from './entities/painting.entity';
 import { PaintingService } from './painting.service';
 import { IPaginationResult, ShortPaintingResponseDTO } from './responseDTO';
+import { DetailPaintingResponseDTO } from './responseDTO/detail-painting-response.dto';
 
 @UsePipes(new ValidationPipe({ transform: true }))
 @Controller('painting')
@@ -42,21 +43,22 @@ export class PaintingController {
     @Inject(S3Service) private readonly s3Service: S3Service,
   ) {}
 
+  /**
+   * 사용법 {domain}/painting/by-ids?ids=id1&id2&id3
+   * ex) http://localhost:3000/painting/by-ids?ids=409ba4c6-0553-4b72-a53a-d9b9857c253d&ids=4f4d9398-b10a-45b8-912c-6ccd0c6700ab
+   */
+  @Get('/by-ids')
+  async getByIds(@Query('ids') ids: string[]) {
+    const foundPaintings: Painting[] = await this.service.getByIds(ids);
+    const data = foundPaintings.map((painting) => DetailPaintingResponseDTO.fromPainting(painting));
+
+    return data;
+  }
   @Get(':id')
   async getById(@Param('id', ParseUUIDPipe) id: string) {
     const paintings = await this.service.getByIds([id]);
 
     return paintings[0];
-  }
-
-  /**
-   * 사용법 {domain}/paintings?ids=id1&id2&id3
-   * ex) localhost:3000/paintings?ids=111&222&333 ,
-   */
-  @Get()
-  async getByIds(@Query('ids') ids: string[]) {
-    const paintings = await this.service.getByIds(ids);
-    return paintings;
   }
 
   @Get('/')
