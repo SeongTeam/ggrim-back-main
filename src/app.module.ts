@@ -11,6 +11,7 @@ import { AppService } from './app.service';
 import { ArtistModule } from './artist/artist.module';
 import { AuthModule } from './auth/auth.module';
 import { S3Module } from './aws/s3.module';
+import { MailModule } from './mail/mail.module';
 import { PaintingModule } from './painting/painting.module';
 import { QuizModule } from './quiz/quiz.module';
 import { StyleModule } from './style/style.module';
@@ -46,6 +47,7 @@ const ENV = process.env[NODE_ENV];
     S3Module,
     UserModule,
     AuthModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

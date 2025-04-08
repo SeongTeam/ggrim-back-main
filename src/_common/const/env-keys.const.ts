@@ -22,3 +22,14 @@ export const AWS_INIT_FILE_KEY_PREFIX = 'AWS_INIT_FILE_KEY_PREFIX';
 //related to authentication
 export const ENV_HASH_ROUNDS_KEY = 'ENV_HASH_ROUNDS_KEY';
 export const ENV_JWT_SECRET_KEY = 'ENV_JWT_SECRET_KEY';
+
+//related to Mailer Module
+export const ENV_MAIL_HOST = 'ENV_MAIL_HOST';
+export const ENV_MAIL_SERVICE = 'ENV_MAIL_SERVICE';
+export const ENV_SMTP_PORT = 'ENV_SMTP_PORT';
+export const ENV_SMTP_ID = 'ENV_SMTP_ID';
+export const ENV_SMTP_PW = 'ENV_SMTP_PW';
+export const ENV_SMTP_FROM_EMAIL = 'ENV_SMTP_FROM_EMAIL';
+export const ENV_SMTP_FROM_NAME = 'ENV_SMTP_FROM_NAME';
+export const ENV_ADMIN_EMAIL = 'ENV_ADMIN_EMAIL';
+export const ENV_EMAIL_TEST_ADDRESS = 'ENV_EMAIL_TEST_ADDRESS';

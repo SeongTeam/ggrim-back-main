@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional //EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+
+<head>
+      <!--[if gte mso 9]>
+<xml>
+  <o:OfficeDocumentSettings>
+    <o:AllowPNG/>
+    <o:PixelsPerInch>96</o:PixelsPerInch>
+  </o:OfficeDocumentSettings>
+</xml>
+<![endif]-->
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title></title>
+  <style>
+    /* 기본 스타일 */
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      width: 600px;
+      margin: 20px auto;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .report-info {
+      margin-bottom: 20px;
+    }
+
+    .report-info label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    .report-info span {
+      font-weight: normal;
+    }
+
+    .content {
+      margin-bottom: 20px;
+      word-break: break-word;
+    }
+
+    .content p {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>userId: {{userId}}</h1>
+    </div>
+
+    <div class="report-info">
+      <label for="reportType">userId:</label>
+      <span id="reportType">{{userId}} </span>
+    </div>
+
+    <div class="report-info">
+      <label for="reportType">reportEnum:</label>
+      <span id="reportType">{{reportEnum}} </span>
+    </div>
+
+    <div class="report-info">
+      <label for="content">content:</label>
+      <span id="content">{{content}}</span>
+    </div>
+
+    <div class="report-info">
+      <label for="target">target:</label>
+      <span id="target">{{target}}</span>
+    </div>
+
+    <div class="report-info">
+      <label for="id">TargetID:</label>
+      <span id="id">{{id}}</span>
+    </div>
+
+    <div class="content">
+      <p>본 이메일은 자동으로 생성되었으며, 답변하지 마시기 바랍니다.</p>
+    </div>
+  </div>
+</body>
+</html>
