@@ -89,25 +89,25 @@ export class AuthController {
         `${email} is already existed user`,
       );
     }
-    const verification = await this.service.findVerification({ where: { email } });
+    let verification = await this.service.findVerification({ where: { email } });
 
     //TODO
     if (!verification) {
-      const verification = await this.service.createVerification(qr, email);
-
-      return verification;
+      verification = await this.service.createVerification(qr, email);
+    } else {
+      const pin_code = this.service.generatePinCode();
+      const hashedPinCode = await this.service.hash(pin_code);
+      const pin_code_expired_date = this.service.getVerificationExpiredTime();
+      await this.service.updateVerification(qr, verification.id, {
+        pin_code: hashedPinCode,
+        pin_code_expired_date,
+        is_verified: false,
+      });
+      verification.pin_code = pin_code;
+      verification.pin_code_expired_date = pin_code_expired_date;
     }
 
-    const pin_code = this.service.generatePinCode();
-    const hashedPinCode = await this.service.hash(pin_code);
-    const pin_code_expired_date = this.service.getVerificationExpiredTime();
-    await this.service.updateVerification(qr, verification.id, {
-      pin_code: hashedPinCode,
-      pin_code_expired_date,
-      is_verified: false,
-    });
-    verification.pin_code = pin_code;
-    verification.pin_code_expired_date = pin_code_expired_date;
+    await this.mailService.sendCertificationPinCode(email, verification.pin_code);
 
     return verification;
   }
