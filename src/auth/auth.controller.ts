@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   forwardRef,
+  Get,
   Inject,
   Param,
   Post,
@@ -12,9 +13,11 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { QueryRunner } from 'typeorm';
+import { ENV_EMAIL_TEST_ADDRESS } from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { DBQueryRunner } from '../db/query-runner/decorator/query-runner.decorator';
 import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.interceptor';
+import { MailService } from '../mail/mail.service';
 import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
 import { RegisterDTO } from './dto/register.dto';
@@ -30,6 +33,7 @@ export class AuthController {
   constructor(
     @Inject(AuthService) private readonly service: AuthService,
     @Inject(forwardRef(() => UserService)) private readonly userService: UserService,
+    @Inject(MailService) private readonly mailService: MailService,
   ) {}
 
   @Post('sign-in')
@@ -146,5 +150,15 @@ export class AuthController {
     await this.service.updateVerification(qr, verification.id, { is_verified });
 
     return is_verified;
+  }
+
+  @Get('emailTest')
+  async sendEmail() {
+    const testCode = `12345`;
+    const email = process.env[ENV_EMAIL_TEST_ADDRESS]!;
+
+    await this.mailService.sendCertificationPinCode(email, testCode);
+
+    return true;
   }
 }
