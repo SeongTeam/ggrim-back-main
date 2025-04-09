@@ -1,5 +1,6 @@
 import { IsEmail, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
-import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { OneTimeToken } from '../../auth/entity/one-time-token.entity';
 import { CustomBaseEntity } from '../../db/entity/custom.base.entity';
 import { IsInArray } from '../../utils/class-validator';
 
@@ -50,4 +51,7 @@ export class User extends CustomBaseEntity {
   @IsOptional()
   @Column({ nullable: true })
   oauth_provider_id!: string;
+
+  @OneToMany(() => OneTimeToken, (oneTimeToken) => oneTimeToken.user)
+  oneTimeTokens!: OneTimeToken[];
 }

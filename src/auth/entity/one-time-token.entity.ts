@@ -1,7 +1,18 @@
-import { IsBoolean, IsDate, IsEmail, IsJWT, IsUUID } from 'class-validator';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { IsDate, IsEmail, IsJWT, IsUUID } from 'class-validator';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../db/entity/custom.base.entity';
+import { User } from '../../user/entity/user.entity';
+import { IsInArray } from '../../utils/class-validator';
 
+export const OneTimeTokenPurposeValues = {
+  RESET_PASSWORD: 'reset-password',
+  DELETE_ACCOUNT: 'delete-account',
+  MAGIC_LOGIN: 'magic-login',
+  // EMAIL_VERIFICATION: 'email-verification',
+} as const;
+
+export type OneTimeTokenPurpose =
+  (typeof OneTimeTokenPurposeValues)[keyof typeof OneTimeTokenPurposeValues];
 @Entity()
 export class OneTimeToken extends CustomBaseEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -16,11 +27,19 @@ export class OneTimeToken extends CustomBaseEntity {
   @IsJWT()
   token!: string;
 
-  @Column({ default: false })
-  @IsBoolean()
-  is_used!: boolean;
+  @Column({ nullable: true })
+  @IsDate()
+  used_date!: Date;
 
   @Column()
   @IsDate()
   expired_date!: Date;
+
+  @ManyToOne(() => User, (user) => user.oneTimeTokens, { cascade: ['soft-remove', 'remove'] })
+  @JoinColumn({ name: 'user_id' })
+  user!: User;
+
+  @Column()
+  @IsInArray(Object.values(OneTimeTokenPurposeValues))
+  purpose!: OneTimeTokenPurpose;
 }
