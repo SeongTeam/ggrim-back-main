@@ -1,8 +1,9 @@
 import { IsBoolean, IsDate, IsEmail, IsJWT, IsUUID } from 'class-validator';
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { CustomBaseEntity } from '../../db/entity/custom.base.entity';
 
 @Entity()
-export class PasswordResetToken extends BaseEntity {
+export class PasswordResetToken extends CustomBaseEntity {
   @PrimaryGeneratedColumn('uuid')
   @IsUUID()
   id!: string;
