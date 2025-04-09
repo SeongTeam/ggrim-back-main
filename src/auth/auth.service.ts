@@ -8,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 
 import { InjectRepository } from '@nestjs/typeorm';
 import {
@@ -131,15 +132,20 @@ export class AuthService {
   }
 
   async isHashMatched(target: string, hash: string) {
-    const passOk = await bcrypt.compare(target, hash);
+    const sha256 = crypto.createHash('sha256').update(target).digest('hex');
+    const passOk = await bcrypt.compare(sha256, hash);
 
     return passOk;
   }
 
   async hash(src: string): Promise<string> {
+    // fix src size to 32byte
+    const sha256 = crypto.createHash('sha256').update(src).digest('hex');
+
+    // encrypt during static performance
     const round = parseInt(this.configService.get<string>(ENV_HASH_ROUNDS_KEY, '10'));
     const salt = await bcrypt.genSalt(round);
-    const hash = await bcrypt.hash(src, salt);
+    const hash = await bcrypt.hash(sha256, salt);
 
     return hash;
   }

@@ -21,8 +21,8 @@ export class User extends CustomBaseEntity {
 
   @Column()
   @IsString()
-  @MinLength(8) // utf-8 형식에서 bcrypt는 문자열 크기 18까지만 가능. 2는 마진적용
-  @MaxLength(16)
+  @MinLength(8)
+  @MaxLength(30)
   password!: string;
 
   @Column({ default: 'user' })
