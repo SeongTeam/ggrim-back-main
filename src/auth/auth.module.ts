@@ -5,6 +5,7 @@ import { MailModule } from '../mail/mail.module';
 import { UserModule } from '../user/user.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { OneTimeToken } from './entity/one-time-token.entity';
 import { Verification } from './entity/verification.entity';
 import { BasicTokenGuard } from './guard/basic-auth.guard';
 import { OwnerGuard } from './guard/owner.guard';
@@ -13,7 +14,7 @@ import { TokenAuthGuard } from './guard/token-auth.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Verification]),
+    TypeOrmModule.forFeature([Verification, OneTimeToken]),
     JwtModule,
     forwardRef(() => UserModule),
     MailModule,

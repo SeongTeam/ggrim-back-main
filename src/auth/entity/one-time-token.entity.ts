@@ -3,7 +3,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../db/entity/custom.base.entity';
 
 @Entity()
-export class PasswordResetToken extends CustomBaseEntity {
+export class OneTimeToken extends CustomBaseEntity {
   @PrimaryGeneratedColumn('uuid')
   @IsUUID()
   id!: string;
