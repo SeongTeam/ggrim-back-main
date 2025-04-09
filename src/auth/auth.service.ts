@@ -19,10 +19,13 @@ import {
 import { DeepPartial, FindManyOptions, FindOneOptions, QueryRunner, Repository } from 'typeorm';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.lib';
-import { UserRole } from '../user/entity/user.entity';
+import { User, UserRole } from '../user/entity/user.entity';
+import { OneTimeToken, OneTimeTokenPurpose } from './entity/one-time-token.entity';
 import { Verification } from './entity/verification.entity';
 
-export type TokenType = 'REFRESH' | 'ACCESS';
+export type TokenType = 'REFRESH' | 'ACCESS' | 'ONE_TIME';
+export type StandardTokenPurpose = 'access' | 'refresh';
+export type JwtPurpose = OneTimeTokenPurpose | StandardTokenPurpose;
 
 export const ENUM_JWT_ERROR_NAME = {
   TOKEN_EXPIRED: 'TokenExpiredError',
@@ -32,8 +35,8 @@ export const ENUM_JWT_ERROR_NAME = {
 
 // ref : https://github.com/auth0/node-jsonwebtoken?tab=readme-ov-file#jwtsignpayload-secretorprivatekey-options-callback
 export interface JWTDecode extends JWTPayload {
-  iat: Date;
-  exp: Date;
+  iat: number; // second unit representing expired
+  exp: number; // second unit representing expired
   // nbf?: Date;
   // aud? : object;
   // iss? : object;
@@ -43,6 +46,7 @@ export interface JWTPayload {
   username: string;
   role: UserRole;
   type: TokenType;
+  purpose: JwtPurpose;
 }
 
 export type AUTHORIZATION_TYPE = 'Bearer' | 'Basic';
@@ -59,6 +63,7 @@ export type AUTHORIZATION_TYPE = 'Bearer' | 'Basic';
 export class AuthService {
   private ACCESS_TOKEN_TTL_SECOND = 3600 * 2;
   private REFRESH_TOKEN_TTL_SECOND = 3600 * 10;
+  private ONE_TIME_TOKEN_TTL_SECOND = 15 * 60;
   private VERIFICATION_EXPIRED_TTL_SECOND = 60 * 5 + 5; // margin value 5
   private MAX_RE_VERIFY_DELAY_MS = 4 * 60 * 1000;
 
@@ -66,6 +71,8 @@ export class AuthService {
     @Inject(JwtService) private readonly jwtService: JwtService,
     @Inject(ConfigService) private readonly configService: ConfigService,
     @InjectRepository(Verification) private readonly verificationRepo: Repository<Verification>,
+    @InjectRepository(OneTimeToken)
+    private readonly pwResetTokenRepo: Repository<OneTimeToken>,
   ) {
     const envKeys = [ENV_HASH_ROUNDS_KEY, ENV_JWT_SECRET_KEY];
     const envFile = this.configService.get(NODE_ENV)
@@ -121,11 +128,17 @@ export class AuthService {
   }
 
   signToken(payload: JWTPayload): string {
+    const expiresIn =
+      payload.type === 'ACCESS'
+        ? this.ACCESS_TOKEN_TTL_SECOND
+        : payload.type === 'REFRESH'
+          ? this.REFRESH_TOKEN_TTL_SECOND
+          : this.ONE_TIME_TOKEN_TTL_SECOND;
+
     const newToken: string = this.jwtService.sign(payload, {
       secret: this.configService.get<string>(ENV_JWT_SECRET_KEY),
       // seconds
-      expiresIn:
-        payload.type == 'REFRESH' ? this.REFRESH_TOKEN_TTL_SECOND : this.ACCESS_TOKEN_TTL_SECOND,
+      expiresIn,
     });
 
     return newToken;
@@ -239,6 +252,113 @@ export class AuthService {
 
   async findVerificationList(options: FindManyOptions<Verification>): Promise<Verification[]> {
     const results = await this.verificationRepo.find(options);
+
+    return results;
+  }
+
+  async signOneTimeJWT(
+    queryRunner: QueryRunner,
+    user: User,
+    purpose: OneTimeTokenPurpose,
+  ): Promise<String> {
+    const { email, role, id, username } = user;
+    const payload: JWTPayload = { purpose, type: 'ONE_TIME', email, role, username };
+
+    const token = this.signToken(payload);
+
+    await this.createOneTimeToken(queryRunner, user, token);
+
+    return token;
+  }
+
+  async createOneTimeToken(queryRunner: QueryRunner, user: User, token: string) {
+    const { email } = user;
+    const decoded = this.verifyToken(token);
+    const { purpose, exp: expired_date_ms } = decoded;
+    const MS_PER_SECOND = 1000;
+    const returnedColumn: (keyof OneTimeToken)[] = ['email', 'expired_date', 'token', 'user'];
+    if (purpose === 'access' || purpose === 'refresh') {
+      throw new ServiceException(
+        'SERVICE_RUN_ERROR',
+        'INTERNAL_SERVER_ERROR',
+        `purpose field(${purpose}) is invalid. `,
+      );
+    }
+
+    const hashed = await this.hash(token);
+
+    try {
+      const result = await createTransactionQueryBuilder(queryRunner, OneTimeToken)
+        .createQueryBuilder()
+        .insert()
+        .into(OneTimeToken)
+        .values({
+          email,
+          expired_date: new Date(expired_date_ms * MS_PER_SECOND),
+          token: hashed,
+          user,
+          purpose,
+        })
+        .returning(returnedColumn)
+        .execute();
+
+      return result.generatedMaps[0];
+    } catch (error) {
+      throw new ServiceException(
+        'EXTERNAL_SERVICE_FAILED',
+        'INTERNAL_SERVER_ERROR',
+        `Can't create OneTimeToken`,
+        { cause: error },
+      );
+    }
+  }
+
+  async updatePWResetToken(queryRunner: QueryRunner, id: string, dto: DeepPartial<OneTimeToken>) {
+    if (dto.token) {
+      throw new ServiceException(
+        'SERVICE_RUN_ERROR',
+        'INTERNAL_SERVER_ERROR',
+        `Can't update token field because of security `,
+      );
+    }
+    const returnedColumn: (keyof OneTimeToken)[] = [
+      'email',
+      'purpose',
+      'token',
+      'used_date',
+      'user',
+    ];
+
+    try {
+      const result = await createTransactionQueryBuilder(queryRunner, OneTimeToken)
+        .update(OneTimeToken)
+        .set({
+          ...dto,
+        })
+        .where('id = :id', { id })
+        .returning(returnedColumn)
+        .execute();
+
+      //TODO check returned row data
+      return;
+    } catch (error) {
+      throw new ServiceException(
+        'EXTERNAL_SERVICE_FAILED',
+        'INTERNAL_SERVER_ERROR',
+        `Can't update OneTimeToken`,
+        { cause: error },
+      );
+    }
+  }
+
+  async findOneTimeToken(options: FindOneOptions<OneTimeToken>): Promise<OneTimeToken | null> {
+    const one = await this.pwResetTokenRepo.findOne(options);
+
+    return one;
+  }
+
+  async findOneTimeTokenList(options: FindManyOptions<OneTimeToken>): Promise<OneTimeToken[]> {
+    const results = await this.pwResetTokenRepo.find(options);
 
     return results;
   }

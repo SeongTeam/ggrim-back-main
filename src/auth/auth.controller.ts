@@ -44,10 +44,12 @@ export class AuthController {
     const accessToken = this.service.signToken({
       ...authResult,
       type: 'ACCESS',
+      purpose: 'access',
     });
     const refreshToken = this.service.signToken({
       ...authResult,
       type: 'REFRESH',
+      purpose: 'refresh',
     });
 
     const response: SignInResponse = {
