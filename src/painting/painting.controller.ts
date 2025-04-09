@@ -27,6 +27,7 @@ import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.intercep
 import { getLatestMonday } from '../utils/date';
 import { loadObjectFromJSON } from '../utils/json';
 import { CreatePaintingDTO } from './dto/create-painting.dto';
+import { GetByIdsQueryDTO } from './dto/get-by-ids.query.dto';
 import { WeeklyArtWorkSet } from './dto/output/weekly-art.dto';
 import { ReplacePaintingDTO } from './dto/replace-painting.dto';
 import { SearchPaintingDTO } from './dto/search-painting.dto';
@@ -48,8 +49,8 @@ export class PaintingController {
    * ex) http://localhost:3000/painting/by-ids?ids=409ba4c6-0553-4b72-a53a-d9b9857c253d&ids=4f4d9398-b10a-45b8-912c-6ccd0c6700ab
    */
   @Get('/by-ids')
-  async getByIds(@Query('ids') ids: string[]) {
-    const foundPaintings: Painting[] = await this.service.getByIds(ids);
+  async getByIds(@Query(new ValidationPipe({ transform: true })) query: GetByIdsQueryDTO) {
+    const foundPaintings: Painting[] = await this.service.getByIds(query.ids);
     const data = foundPaintings.map((painting) => DetailPaintingResponseDTO.fromPainting(painting));
 
     return data;
