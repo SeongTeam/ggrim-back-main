@@ -5,58 +5,22 @@
       "id": "Boy in a Red Vest",
       "type": "NOTHING",
       "cldId": "0",
-      "operatorDescription": "Oil painting (Venturi 681) painted 1888-1890. It is an excellent example of Cézanne's skilled, detailed and innovative mature work from 1880 onwards.Cézanne painted four oil portraits of this Italian boy in a red vest (waistcoat in British English), all in different poses, which allowed him to study the relationship between the figure and space. The most famous of the four, and the work commonly referred to by this title, depicts a boy in a brooding seated pose with his elbows resting on a table and his head in his hands. This work is currently housed in Zurich, Switzerland. Three other portraits in different poses are held in museums in the United States.",
-      "painting": {
-        "version": 0,
-        "id": "",
-        "title": "Boy in a Red Vest",
-        "image_url": "https://uploads6.wikiart.org/images/paul-cezanne/boy-in-a-red-vest-1889.jpg!Large.jpg",
-        "description": "",
-        "completition_year": 0,
-        "width": 0,
-        "height": 0,
-        "tags": [],
-        "styles": [],
-        "artist": {
-          "version": 0,
-          "id": "",
-          "name": "Paul Cezanne",
-          "image_url": "",
-          "birth_date": "",
-          "death_date": "",
-          "info_url": ""
-        }
-      },
-      "aspectRatio": [
-        "",
-        0,
-        0
-      ]
-    },
-    {
-      "id": "Boy in a Red Vest",
-      "type": "NOTHING",
-      "cldId": "0",
       "operatorDescription": "",
       "painting": {
-        "version": 0,
-        "id": "1101123c-2633-4741-b3b3-7ba914c946ee",
-        "title": "Boy in a Red Vest",
-        "image_url": "",
-        "description": "",
-        "completition_year": 0,
-        "width": 0,
-        "height": 0,
+          "version": 2,
+          "id": "1101123c-2633-4741-b3b3-7ba914c946ee",
+          "title": "Boy in a Red Vest",
+          "searchTitle": "BOY IN A RED VEST",
+          "image_url": "https://uploads6.wikiart.org/images/paul-cezanne/boy-in-a-red-vest-1890.jpg!Large.jpg",
+          "description": "",
+          "completition_year": 1890,
+          "width": 470,
+          "height": 600,
         "tags": [],
         "styles": [],
         "artist": {
           "version": 0,
-          "id": "",
-          "name": "Paul Cezanne",
-          "image_url": "",
-          "birth_date": "",
-          "death_date": "",
-          "info_url": ""
+          "name": "Cezanne Paul"
         }
       },
       "aspectRatio": [

@@ -15,21 +15,27 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { existsSync } from 'fs';
 import { CONFIG_FILE_PATH } from '../_common/const/default.value';
 import { AWS_BUCKET, AWS_INIT_FILE_KEY_PREFIX } from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { IPaginationResult } from '../_common/interface';
+import { ArtistService } from '../artist/artist.service';
 import { S3Service } from '../aws/s3.service';
+import { PaintingService } from '../painting/painting.service';
+import { StyleService } from '../style/style.service';
+import { TagService } from '../tag/tag.service';
 import { getLatestMonday } from '../utils/date';
-import { loadObjectFromJSON } from '../utils/json';
 import { CATEGORY_VALUES } from './const';
 import { SearchQuizDTO } from './dto/SearchQuiz.dto';
 import { CreateQuizDTO } from './dto/create-quiz.dto';
 import { GenerateQuizQueryDTO } from './dto/generate-quiz.query.dto';
-import { WeeklyQuizSet } from './dto/output/weekly-quiz.dto';
+import { ResponseQuizDTO } from './dto/output/response-schedule-quiz.dto';
+import { QuizContextDTO } from './dto/quiz-context.dto';
+import { ScheduleQuizQueryDTO } from './dto/schedule-quiz.query.dto';
 import { UpdateQuizDTO } from './dto/update-quiz.dto';
 import { Quiz } from './entities/quiz.entity';
+import { QuizContext } from './interface/quiz-context';
+import { QuizScheduleService } from './quiz-schedule.service';
 import { QuizService } from './quiz.service';
 import { QuizCategory } from './type';
 
@@ -70,11 +76,17 @@ import { QuizCategory } from './type';
     },
   },
 })
+//TODO whitelist 옵션 추가하여 보안강화 고려하기
 @UsePipes(new ValidationPipe({ transform: true }))
 @Controller('quiz')
 export class QuizController implements CrudController<Quiz> {
   constructor(
     public service: QuizService,
+    @Inject(QuizScheduleService) private readonly scheduleService: QuizScheduleService,
+    @Inject(TagService) private readonly tagService: TagService,
+    @Inject(StyleService) private readonly styleService: StyleService,
+    @Inject(ArtistService) private readonly artistService: ArtistService,
+    @Inject(PaintingService) private readonly paintingService: PaintingService,
     @Inject(S3Service) private readonly s3Service: S3Service,
   ) {}
 
@@ -97,6 +109,59 @@ export class QuizController implements CrudController<Quiz> {
     return this.service.generateQuizByValue(dto.category, dto.keyword);
   }
 
+  @Get('quizContext')
+  async getQuizContext(
+    @Query()
+    dto: QuizContextDTO,
+  ) {
+    Logger.log('test api:' + JSON.stringify(dto));
+    // const classInstance = plainToInstance(QuizContextDTO, dto, { enableImplicitConversion: true });
+    // Logger.log('transformation :' + JSON.stringify(classInstance));
+    return dto;
+  }
+
+  @Get('schedule')
+  async getScheduledQuiz(@Query() dto: ScheduleQuizQueryDTO): Promise<ResponseQuizDTO> {
+    Logger.log(`context : `, dto.context);
+    const QUIZ_PAGINATION = 20;
+    const MAX_RETRY = 10;
+    let attempt = 0;
+    for (attempt = 0; attempt < MAX_RETRY; attempt++) {
+      const context: QuizContext = await this.extractContext(dto);
+
+      const searchDTO: SearchQuizDTO = await this.buildSearchDTO(context);
+
+      const quizList: Quiz[] = await this.service.searchQuiz(
+        searchDTO,
+        context.page,
+        QUIZ_PAGINATION,
+      );
+      if (quizList.length === 0) {
+        await this.scheduleService.requestDeleteContext(context);
+        dto.context = undefined;
+        continue;
+      }
+
+      const isContextChanged = dto.context !== context;
+      const currentIndex = isContextChanged ? undefined : dto.currentIndex;
+
+      return new ResponseQuizDTO(quizList, context, currentIndex);
+    }
+    throw new ServiceException(
+      `SERVICE_RUN_ERROR`,
+      `INTERNAL_SERVER_ERROR`,
+      `No available quizzes after multiple attempts`,
+    );
+  }
+  // TODO: 응답 객체 개선하기
+  // ? 질문: context 삽입 결과를 요청자에게 알려줄 필요가있는가? 성공할 수도 실패할 수 도 있는데.
+  @Post('schedule')
+  async addQuizContext(@Body() dto: QuizContextDTO) {
+    this.validateQuizContextDTO(dto);
+
+    return this.scheduleService.requestAddContext([dto]);
+  }
+
   /*TODO
     - DB transaction 로직 추가하기
   */
@@ -109,6 +174,13 @@ export class QuizController implements CrudController<Quiz> {
   async update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateQuizDTO) {
     return this.service.updateQuiz(id, dto);
   }
+
+  // TODO: 퀴즈 검색 로직 개선
+  // - [ ] 제목으로 검색할 수 있도록 로직 추가하기
+  // - [ ] <추가 작업>
+  // ! 주의: <경고할 사항>
+  // ? 질문: <의문점 또는 개선 방향>
+  // * 참고: <관련 정보나 링크>
 
   @Get('')
   async searchQuiz(
@@ -126,19 +198,6 @@ export class QuizController implements CrudController<Quiz> {
     };
 
     return ret;
-  }
-
-  @Get('quiz-of-week')
-  async getWeeklyArtData() {
-    const latestMonday: string = getLatestMonday();
-    const path = CONFIG_FILE_PATH;
-    let quizFileName: string = `quiz_of_week_${latestMonday}.json`;
-    if (!existsSync(path + quizFileName)) {
-      Logger.error(`there is no file : ${path + quizFileName}`);
-      quizFileName = `quiz_of_week_default.json`;
-    }
-
-    return loadObjectFromJSON<WeeklyQuizSet>(path + quizFileName);
   }
 
   @Get('init')
@@ -166,5 +225,58 @@ export class QuizController implements CrudController<Quiz> {
         },
       );
     }
+  }
+
+  async initialize() {
+    const weeklyPaintings = await this.paintingService.getWeeklyPaintings();
+
+    const fixedContexts: QuizContext[] = weeklyPaintings.map((p) => {
+      return {
+        artist: p.artist.name,
+        page: 0,
+      };
+    });
+    this.scheduleService.initialize(fixedContexts);
+  }
+
+  async validateQuizContextDTO(quizContext: QuizContextDTO): Promise<void> {
+    const { artist, tag, style } = quizContext;
+    const validations = [
+      { value: artist, service: this.artistService, entity: 'artist', column: 'name' },
+      { value: tag, service: this.tagService, entity: 'tag', column: 'name' },
+      { value: style, service: this.styleService, entity: 'style', column: 'name' },
+    ];
+    for (const validation of validations) {
+      const { value, service, entity } = validation;
+      if (value) {
+        const isFind = await service.findOneBy({ name: value });
+        if (!isFind) {
+          throw new ServiceException(
+            'ENTITY_NOT_FOUND',
+            'BAD_REQUEST',
+            `${value} is not validate to ${entity}`,
+          );
+        }
+      }
+    }
+  }
+
+  private async extractContext(dto: ScheduleQuizQueryDTO): Promise<QuizContext> {
+    const { context, currentIndex, endIndex } = dto;
+    if (context && currentIndex && endIndex) {
+      if (currentIndex !== endIndex) {
+        this.validateQuizContextDTO(context);
+        return context;
+      }
+    }
+    return await this.scheduleService.scheduleContext();
+  }
+
+  private buildSearchDTO(context: QuizContext): SearchQuizDTO {
+    return {
+      artist: JSON.stringify(context.artist ? [context.artist] : []),
+      tags: JSON.stringify(context.tag ? [context.tag] : []),
+      styles: JSON.stringify(context.style ? [context.style] : []),
+    };
   }
 }
