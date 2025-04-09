@@ -78,6 +78,9 @@ export class UserService extends TypeOrmCrudService<User> {
       );
     }
   }
+  //TODO typeorm 로직 개선
+  // [ ] : returning() 메소드를 사용하여 생성 후 반환되는 열들의 값 명시하기
+  //  -> insertResult.generateMaps[0]은 직접삽입한 값은 포함되지 않기 때문에 returning() 적용필요.
 
   async createUser(queryRunner: QueryRunner, dto: CreateUserDTO): Promise<User> {
     try {

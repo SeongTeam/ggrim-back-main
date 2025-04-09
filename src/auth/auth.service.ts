@@ -155,6 +155,9 @@ export class AuthService {
     return expiredDate;
   }
 
+  //TODO typeorm 로직 개선
+  // [ ] : returning() 메소드를 사용하여 생성 후 반환되는 열들의 값 명시하기
+  //  -> insertResult.generateMaps[0]은 직접삽입한 값은 포함되지 않기 때문에 returning() 적용필요.
   async createVerification(queryRunner: QueryRunner, email: string): Promise<Verification> {
     const pinCode = this.generatePinCode();
     const hashedPinCode = await this.hash(pinCode);
