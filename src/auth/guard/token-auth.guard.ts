@@ -16,7 +16,7 @@ export interface TokenAuthGuardResult {
 
 const ENUM_HEADER_FIELD = {
   AUTHORIZATION: 'authorization',
-  X_REFRESH_TOKEN: 'X-Refresh-Token',
+  X_REFRESH_TOKEN: 'x-refresh-token',
 };
 
 @Injectable()
