@@ -309,7 +309,14 @@ export class AuthService {
     const decoded = this.verifyToken(token);
     const { purpose, exp: expired_date_ms } = decoded;
     const MS_PER_SECOND = 1000;
-    const returnedColumn: (keyof OneTimeToken)[] = ['email', 'expired_date', 'token', 'user', 'id'];
+    const returnedColumn: (keyof OneTimeToken)[] = [
+      'email',
+      'expired_date',
+      'token',
+      'user',
+      'user_id',
+      'id',
+    ];
     if (purpose === 'access' || purpose === 'refresh') {
       throw new ServiceException(
         'SERVICE_RUN_ERROR',
