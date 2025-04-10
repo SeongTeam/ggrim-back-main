@@ -260,23 +260,29 @@ export class AuthService {
     queryRunner: QueryRunner,
     user: User,
     purpose: OneTimeTokenPurpose,
-  ): Promise<String> {
+  ): Promise<OneTimeToken> {
     const { email, role, id, username } = user;
     const payload: JWTPayload = { purpose, type: 'ONE_TIME', email, role, username };
 
     const token = this.signToken(payload);
 
-    await this.createOneTimeToken(queryRunner, user, token);
+    const oneTimeToken = await this.createOneTimeToken(queryRunner, user, token);
+    oneTimeToken.token = token;
 
-    return token;
+    return oneTimeToken;
   }
 
-  async createOneTimeToken(queryRunner: QueryRunner, user: User, token: string) {
+
+  async createOneTimeToken(
+    queryRunner: QueryRunner,
+    user: User,
+    token: string,
+  ): Promise<OneTimeToken> {
     const { email } = user;
     const decoded = this.verifyToken(token);
     const { purpose, exp: expired_date_ms } = decoded;
     const MS_PER_SECOND = 1000;
-    const returnedColumn: (keyof OneTimeToken)[] = ['email', 'expired_date', 'token', 'user'];
+    const returnedColumn: (keyof OneTimeToken)[] = ['email', 'expired_date', 'token', 'user', 'id'];
     if (purpose === 'access' || purpose === 'refresh') {
       throw new ServiceException(
         'SERVICE_RUN_ERROR',
@@ -302,7 +308,7 @@ export class AuthService {
         .returning(returnedColumn)
         .execute();
 
-      return result.generatedMaps[0];
+      return result.generatedMaps[0] as OneTimeToken;
     } catch (error) {
       throw new ServiceException(
         'EXTERNAL_SERVICE_FAILED',
