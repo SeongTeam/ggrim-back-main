@@ -5,10 +5,12 @@ import { User } from '../../user/entity/user.entity';
 import { IsInArray } from '../../utils/class-validator';
 
 export const OneTimeTokenPurposeValues = {
-  RESET_PASSWORD: 'reset-password',
+  UPDATE_PASSWORD: 'update-password',
   DELETE_ACCOUNT: 'delete-account',
   MAGIC_LOGIN: 'magic-login',
-  // EMAIL_VERIFICATION: 'email-verification',
+  EMAIL_VERIFICATION: 'email-verification',
+  // SET_USER_ACTIVE : 'set-user-active',
+  // RESET_PASSWORD: 'reset-password',
 } as const;
 
 export type OneTimeTokenPurpose =
