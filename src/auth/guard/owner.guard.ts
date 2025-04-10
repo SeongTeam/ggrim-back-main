@@ -29,7 +29,13 @@ export class OwnerGuard implements CanActivate {
       return true;
     }
 
-    if (!options) return true;
+    if (!options) {
+      throw new ServiceException(
+        'SERVICE_RUN_ERROR',
+        'INTERNAL_SERVER_ERROR',
+        `OwnerGuard needs CheckOwnerOption Metadata`,
+      );
+    }
 
     const { serviceClass, idParam, ownerField, serviceMethod } = options;
 
