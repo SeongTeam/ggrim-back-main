@@ -272,6 +272,10 @@ export class AuthService {
     return oneTimeToken;
   }
 
+  async markOneTimeJWT(queryRunner: QueryRunner, info: OneTimeTokenGuardResult) {
+    const { oneTimeTokenID, oneTimeToken } = info;
+    await this.updateOneTimeToken(queryRunner, oneTimeTokenID, { used_date: new Date() });
+  }
 
   async createOneTimeToken(
     queryRunner: QueryRunner,
