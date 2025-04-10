@@ -21,11 +21,11 @@ import { MailService } from '../mail/mail.service';
 import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
 import { RegisterDTO } from './dto/register.dto';
+import { SignInResponse } from './dto/response/sign-in.response.dto';
 import { VerifyDTO } from './dto/verify.dto';
 import { Verification } from './entity/verification.entity';
-import { BasicTokenGuard } from './guard/basic-auth.guard';
-import { SignInResponse } from './guard/dto/response/sign-in.response.dto';
-import { TokenAuthGuard } from './guard/token-auth.guard';
+import { BasicTokenGuard } from './guard/authentication/basic.guard';
+import { TokenAuthGuard } from './guard/authentication/bearer.guard';
 
 @Controller('auth')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))

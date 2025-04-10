@@ -6,13 +6,13 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { UserService } from '../../user/user.service';
-import { AuthService, JWTDecode } from '../auth.service';
-
-export interface TokenAuthGuardResult {
-  userId: string;
-  decodedToken: JWTDecode;
-}
+import { UserService } from '../../../user/user.service';
+import { AuthService, JWTDecode } from '../../auth.service';
+import {
+  AccessTokenPayload,
+  AuthUserPayload,
+  ENUM_AUTH_CONTEXT_KEY,
+} from '../type/request-payload';
 
 const ENUM_HEADER_FIELD = {
   AUTHORIZATION: 'authorization',
@@ -53,11 +53,19 @@ export class TokenAuthGuard implements CanActivate {
     // ? 질문: <의문점 또는 개선 방향>
     // * 참고: <관련 정보나 링크>
 
-    const result: TokenAuthGuardResult = {
+    const result: AccessTokenPayload = {
       userId: user.id,
       decodedToken: decoded,
     };
-    req['TokenAuthGuardResult'] = result;
+    req[ENUM_AUTH_CONTEXT_KEY.ACCESS_TOKEN] = result;
+
+    const userResult: AuthUserPayload = {
+      email: user.email,
+      username: user.username,
+      role: user.role,
+      id: user.id,
+    };
+    req[ENUM_AUTH_CONTEXT_KEY.USER] = userResult;
 
     return true;
   }

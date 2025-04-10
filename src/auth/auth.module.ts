@@ -7,10 +7,10 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { OneTimeToken } from './entity/one-time-token.entity';
 import { Verification } from './entity/verification.entity';
-import { BasicTokenGuard } from './guard/basic-auth.guard';
-import { OwnerGuard } from './guard/owner.guard';
-import { RolesGuard } from './guard/role.guard';
-import { TokenAuthGuard } from './guard/token-auth.guard';
+import { BasicTokenGuard } from './guard/authentication/basic.guard';
+import { TokenAuthGuard } from './guard/authentication/bearer.guard';
+import { OwnerGuard } from './guard/authorization/owner.guard';
+import { RolesGuard } from './guard/authorization/roles.guard';
 
 @Module({
   imports: [

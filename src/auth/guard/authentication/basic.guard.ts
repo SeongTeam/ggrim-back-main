@@ -7,16 +7,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
-import { UserRole } from '../../user/entity/user.entity';
-import { UserService } from '../../user/user.service';
-import { AuthService } from '../auth.service';
-import { BasicTokenGuardDTO } from './dto/basic-auth-guard.dto';
+import { UserService } from '../../../user/user.service';
+import { AuthService } from '../../auth.service';
+import { BasicTokenGuardDTO } from '../dto/basic-auth-guard.dto';
+import { AuthUserPayload, ENUM_AUTH_CONTEXT_KEY } from '../type/request-payload';
 
-export interface BasicTokenGuardResult {
-  email: string;
-  username: string;
-  role: UserRole;
-}
 @Injectable()
 export class BasicTokenGuard implements CanActivate {
   constructor(
@@ -57,12 +52,13 @@ export class BasicTokenGuard implements CanActivate {
 
     const isAuthenticated = await this.authService.isHashMatched(password, user.password);
     if (isAuthenticated) {
-      const result: BasicTokenGuardResult = {
+      const result: AuthUserPayload = {
         email: user.email,
         username: user.username,
         role: user.role,
+        id: user.id,
       };
-      req['BasicTokenGuardResult'] = result;
+      req[ENUM_AUTH_CONTEXT_KEY.USER] = result;
     }
 
     return isAuthenticated;
