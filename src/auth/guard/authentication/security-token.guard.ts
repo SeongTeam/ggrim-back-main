@@ -48,7 +48,7 @@ export class SecurityTokenGuard implements CanActivate {
     );
 
     if (isEmpty(oneTimeToken)) {
-      throw new UnauthorizedException('Missing or invalid Authorization Bearer header');
+      throw new UnauthorizedException(`Missing or invalid security token header`);
     }
 
     const decoded: JWTDecode = await this.authService.verifyToken(oneTimeToken);
