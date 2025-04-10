@@ -11,7 +11,6 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 
 import { InjectRepository } from '@nestjs/typeorm';
-import { isEmpty } from 'class-validator';
 import {
   ENV_HASH_ROUNDS_KEY,
   ENV_JWT_SECRET_KEY,
@@ -21,6 +20,7 @@ import { DeepPartial, FindManyOptions, FindOneOptions, QueryRunner, Repository }
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.lib';
 import { User, UserRole } from '../user/entity/user.entity';
+import { isArrayEmpty } from '../utils/validator';
 import { OneTimeToken, OneTimeTokenPurpose } from './entity/one-time-token.entity';
 import { Verification } from './entity/verification.entity';
 
@@ -265,7 +265,7 @@ export class AuthService {
       (a, b) => b.getTime() - a.getTime(),
     );
 
-    if (isEmpty(sortedCreateDate)) {
+    if (isArrayEmpty(sortedCreateDate)) {
       return 0;
     }
 
