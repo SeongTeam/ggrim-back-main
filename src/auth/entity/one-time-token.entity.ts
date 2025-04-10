@@ -37,7 +37,12 @@ export class OneTimeToken extends CustomBaseEntity {
   @IsDate()
   expired_date!: Date;
 
-  @ManyToOne(() => User, (user) => user.oneTimeTokens, { cascade: ['soft-remove', 'remove'] })
+  // 외래 키 컬럼 명시적으로 정의
+  @Column()
+  @IsUUID()
+  user_id!: string;
+
+  @ManyToOne(() => User, (user) => user.oneTimeTokens)
   @JoinColumn({ name: 'user_id' })
   user!: User;
 
