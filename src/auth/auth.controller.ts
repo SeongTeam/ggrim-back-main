@@ -215,7 +215,7 @@ export class AuthController {
   async testSecurityTokenGuard(@DBQueryRunner() qr: QueryRunner, @Request() request: any) {
     const SecurityTokenGuardResult: SecurityTokenPayload =
       request[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN];
-    await this.service.markOneTimeJWT(qr, SecurityTokenGuardResult);
+    await this.service.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
 
     //do next task.
 

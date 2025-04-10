@@ -23,7 +23,6 @@ import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.l
 import { User, UserRole } from '../user/entity/user.entity';
 import { OneTimeToken, OneTimeTokenPurpose } from './entity/one-time-token.entity';
 import { Verification } from './entity/verification.entity';
-import { SecurityTokenPayload } from './guard/type/request-payload';
 
 export type TokenType = 'REFRESH' | 'ACCESS' | 'ONE_TIME';
 export type StandardTokenPurpose = 'access' | 'refresh';
@@ -297,8 +296,7 @@ export class AuthService {
     return oneTimeToken;
   }
 
-  async markOneTimeJWT(queryRunner: QueryRunner, info: SecurityTokenPayload) {
-    const { oneTimeTokenID, oneTimeToken } = info;
+  async markOneTimeJWT(queryRunner: QueryRunner, oneTimeTokenID: string) {
     await this.updateOneTimeToken(queryRunner, oneTimeTokenID, { used_date: new Date() });
   }
 
