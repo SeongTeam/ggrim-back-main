@@ -25,9 +25,7 @@ export class BasicTokenGuard implements CanActivate {
     const header = req.headers['authorization'];
 
     if (!header) {
-      throw new UnauthorizedException(
-        `Not Exist authorization field. ${JSON.stringify(req.headers, null, 2)}`,
-      );
+      throw new UnauthorizedException(`Not Exist authorization field.`);
     }
     if (!header || !header.startsWith('Basic ')) {
       throw new UnauthorizedException('Missing or invalid Authorization header');
