@@ -19,6 +19,7 @@ import { ServiceException } from '../_common/filter/exception/service/service-ex
 import { AuthService } from '../auth/auth.service';
 import { CheckOwner } from '../auth/decorator/owner';
 import { TokenAuthGuard } from '../auth/guard/authentication/bearer.guard';
+import { SecurityTokenGuard } from '../auth/guard/authentication/security-token.guard';
 import { OwnerGuard } from '../auth/guard/authorization/owner.guard';
 import { RolesGuard } from '../auth/guard/authorization/roles.guard';
 import { DBQueryRunner } from '../db/query-runner/decorator/query-runner.decorator';
@@ -110,7 +111,7 @@ export class UserController implements CrudController<User> {
     serviceMethod: 'findUserByEmail',
     ownerField: 'id',
   })
-  @UseGuards(TokenAuthGuard, OwnerGuard)
+  @UseGuards(SecurityTokenGuard, OwnerGuard)
   async replacePassword(
     @DBQueryRunner() qr: QueryRunner,
     @Param('email') email: string,
