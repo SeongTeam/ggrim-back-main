@@ -20,6 +20,7 @@ import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.intercep
 import { MailService } from '../mail/mail.service';
 import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
+import { PurposeOneTimeToken } from './decorator/purpose-one-time-token';
 import { CreateOneTimeTokenDTO } from './dto/create-one-time-token.dto';
 import { RegisterDTO } from './dto/register.dto';
 import { SignInResponse } from './dto/response/sign-in.response.dto';
@@ -29,6 +30,8 @@ import { OneTimeToken, OneTimeTokenPurpose } from './entity/one-time-token.entit
 import { Verification } from './entity/verification.entity';
 import { BasicTokenGuard } from './guard/authentication/basic.guard';
 import { TokenAuthGuard } from './guard/authentication/bearer.guard';
+import { OneTimeTokenGuard } from './guard/one-time-token.guard';
+import { ENUM_AUTH_CONTEXT_KEY, OneTimeTokenPayload } from './guard/type/request-payload';
 
 @Controller('auth')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -204,6 +207,21 @@ export class AuthController {
 
     return true;
   }
+
+  @Post('test/one-time-token-guard')
+  @PurposeOneTimeToken('delete-account')
+  @UseGuards(OneTimeTokenGuard)
+  @UseInterceptors(QueryRunnerInterceptor)
+  async testOneTimeTokenGuard(@DBQueryRunner() qr: QueryRunner, @Request() request: any) {
+    const oneTimeTokenGuardResult: OneTimeTokenPayload =
+      request[ENUM_AUTH_CONTEXT_KEY.ONE_TIME_TOKEN];
+    await this.service.markOneTimeJWT(qr, oneTimeTokenGuardResult);
+
+    //do next task.
+
+    return true;
+  }
+
   private async createOneTimeToken(
     qr: QueryRunner,
     email: string,
