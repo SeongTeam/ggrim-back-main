@@ -1,10 +1,12 @@
 import {
   Body,
+  ClassSerializerInterceptor,
   Controller,
   forwardRef,
   Get,
   Inject,
   Param,
+  ParseUUIDPipe,
   Post,
   Request,
   UnauthorizedException,
@@ -21,6 +23,7 @@ import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.intercep
 import { MailService } from '../mail/mail.service';
 import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
+import { CheckOwner } from './decorator/owner';
 import { PurposeOneTimeToken } from './decorator/purpose-one-time-token';
 import { CreateOneTimeTokenDTO } from './dto/create-one-time-token.dto';
 import { RegisterDTO } from './dto/register.dto';
@@ -32,6 +35,7 @@ import { Verification } from './entity/verification.entity';
 import { BasicTokenGuard } from './guard/authentication/basic.guard';
 import { TokenAuthGuard } from './guard/authentication/bearer.guard';
 import { SecurityTokenGuard } from './guard/authentication/security-token.guard';
+import { OwnerGuard } from './guard/authorization/owner.guard';
 import {
   AuthUserPayload,
   ENUM_AUTH_CONTEXT_KEY,
@@ -232,6 +236,23 @@ export class AuthController {
     //do next task.
 
     return true;
+  }
+
+  @Get('one-time-token/:id')
+  @CheckOwner({
+    serviceClass: AuthService,
+    idParam: 'id',
+    ownerField: 'user_id',
+    serviceMethod: 'findOneTimeTokenByID',
+  })
+  @UseGuards(BasicTokenGuard, OwnerGuard)
+  @UseInterceptors(ClassSerializerInterceptor) // serialize entity with applying transformer decorator
+  async getOneTimeToken(@Param('id', ParseUUIDPipe) id: string): Promise<OneTimeToken | null> {
+    const findOne = await this.service.findOneTimeToken({
+      where: { id },
+    });
+
+    return findOne;
   }
 
   private async createOneTimeToken(

@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import { IsDate, IsEmail, IsJWT, IsUUID } from 'class-validator';
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../db/entity/custom.base.entity';
@@ -42,6 +43,7 @@ export class OneTimeToken extends CustomBaseEntity {
   @IsUUID()
   user_id!: string;
 
+  @Exclude()
   @ManyToOne(() => User, (user) => user.oneTimeTokens)
   @JoinColumn({ name: 'user_id' })
   user!: User;

@@ -384,6 +384,10 @@ export class AuthService {
     }
   }
 
+  async findOneTimeTokenByID(id: string): Promise<OneTimeToken | null> {
+    return await this.findOneTimeToken({ where: { id } });
+  }
+
   async findOneTimeToken(options: FindOneOptions<OneTimeToken>): Promise<OneTimeToken | null> {
     const one = await this.pwResetTokenRepo.findOne(options);
 
