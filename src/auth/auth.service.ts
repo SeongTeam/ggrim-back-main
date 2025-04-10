@@ -319,7 +319,7 @@ export class AuthService {
     }
   }
 
-  async updatePWResetToken(queryRunner: QueryRunner, id: string, dto: DeepPartial<OneTimeToken>) {
+  async updateOneTimeToken(queryRunner: QueryRunner, id: string, dto: DeepPartial<OneTimeToken>) {
     if (dto.token) {
       throw new ServiceException(
         'SERVICE_RUN_ERROR',
@@ -327,13 +327,14 @@ export class AuthService {
         `Can't update token field because of security `,
       );
     }
-    const returnedColumn: (keyof OneTimeToken)[] = [
-      'email',
-      'purpose',
-      'token',
-      'used_date',
-      'user',
-    ];
+    // not need to select updated row's columns
+    // const returnedColumn: (keyof OneTimeToken)[] = [
+    //   'email',
+    //   'purpose',
+    //   'token',
+    //   'used_date',
+    //   'user',
+    // ];
 
     try {
       const result = await createTransactionQueryBuilder(queryRunner, OneTimeToken)
@@ -342,10 +343,9 @@ export class AuthService {
           ...dto,
         })
         .where('id = :id', { id })
-        .returning(returnedColumn)
+        // .returning(returnedColumn)
         .execute();
 
-      //TODO check returned row data
       return;
     } catch (error) {
       throw new ServiceException(
