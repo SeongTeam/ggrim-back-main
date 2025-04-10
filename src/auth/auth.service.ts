@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 
 import { InjectRepository } from '@nestjs/typeorm';
+import { isEmpty } from 'class-validator';
 import {
   ENV_HASH_ROUNDS_KEY,
   ENV_JWT_SECRET_KEY,
@@ -22,6 +23,7 @@ import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.l
 import { User, UserRole } from '../user/entity/user.entity';
 import { OneTimeToken, OneTimeTokenPurpose } from './entity/one-time-token.entity';
 import { Verification } from './entity/verification.entity';
+import { OneTimeTokenGuardResult } from './guard/one-time-token.guard';
 
 export type TokenType = 'REFRESH' | 'ACCESS' | 'ONE_TIME';
 export type StandardTokenPurpose = 'access' | 'refresh';
@@ -66,6 +68,7 @@ export class AuthService {
   private ONE_TIME_TOKEN_TTL_SECOND = 15 * 60;
   private VERIFICATION_EXPIRED_TTL_SECOND = 60 * 5 + 5; // margin value 5
   private MAX_RE_VERIFY_DELAY_MS = 4 * 60 * 1000;
+  private ONE_TIME_TOKEN_INTERVAL_MS = 5 * 60 * 1000;
 
   constructor(
     @Inject(JwtService) private readonly jwtService: JwtService,
@@ -254,6 +257,28 @@ export class AuthService {
     const results = await this.verificationRepo.find(options);
 
     return results;
+  }
+
+  getSecondsUntilNextOneTimeJWT(OneTimeJWTEntities: OneTimeToken[]): number {
+    const now = new Date();
+    // 오름차순으로 정렬
+    const sortedCreateDate = OneTimeJWTEntities.map((entity) => entity.created_date).sort(
+      (a, b) => b.getTime() - a.getTime(),
+    );
+
+    if (isEmpty(sortedCreateDate)) {
+      return 0;
+    }
+
+    const latest = sortedCreateDate[0];
+    const MS_PER_SECOND = 1000;
+    const passedTime = now.getTime() - latest.getTime();
+
+    if (passedTime > this.ONE_TIME_TOKEN_INTERVAL_MS) {
+      return 0;
+    }
+
+    return Math.round((this.ONE_TIME_TOKEN_INTERVAL_MS - passedTime) / MS_PER_SECOND);
   }
 
   async signOneTimeJWT(
