@@ -20,9 +20,12 @@ import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.intercep
 import { MailService } from '../mail/mail.service';
 import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
+import { CreateOneTimeTokenDTO } from './dto/create-one-time-token.dto';
 import { RegisterDTO } from './dto/register.dto';
 import { SignInResponse } from './dto/response/sign-in.response.dto';
+import { SendOneTimeTokenDTO } from './dto/send-one-time-token.dto';
 import { VerifyDTO } from './dto/verify.dto';
+import { OneTimeToken, OneTimeTokenPurpose } from './entity/one-time-token.entity';
 import { Verification } from './entity/verification.entity';
 import { BasicTokenGuard } from './guard/authentication/basic.guard';
 import { TokenAuthGuard } from './guard/authentication/bearer.guard';
@@ -164,6 +167,34 @@ export class AuthController {
     return is_verified;
   }
 
+  @Post('security-token')
+  @UseGuards(BasicTokenGuard)
+  @UseInterceptors(QueryRunnerInterceptor)
+  async generateSecurityActionToken(
+    @DBQueryRunner() qr: QueryRunner,
+    @Body() dto: CreateOneTimeTokenDTO,
+  ): Promise<OneTimeToken> {
+    const { email, purpose } = dto;
+    const oneTimeToken = await this.createOneTimeToken(qr, email, purpose);
+
+    return oneTimeToken;
+  }
+
+  @Post('security-token/send')
+  @UseInterceptors(QueryRunnerInterceptor)
+  async sendSecurityActionToken(
+    @DBQueryRunner() qr: QueryRunner,
+    @Body() dto: SendOneTimeTokenDTO,
+  ): Promise<string> {
+    const { email, purpose } = dto;
+    const oneTimeToken = await this.createOneTimeToken(qr, email, purpose);
+
+    const url = `test.com?identifier=${oneTimeToken.id}&token=${oneTimeToken.token}`;
+    await this.mailService.sendCertificationPinCode(email, url);
+
+    return 'send email';
+  }
+
   @Get('emailTest')
   async sendEmail() {
     const testCode = `12345`;
@@ -172,5 +203,27 @@ export class AuthController {
     await this.mailService.sendCertificationPinCode(email, testCode);
 
     return true;
+  }
+  private async createOneTimeToken(
+    qr: QueryRunner,
+    email: string,
+    purpose: OneTimeTokenPurpose,
+  ): Promise<OneTimeToken> {
+    const user = await this.userService.findOne({
+      where: { email },
+      relations: { oneTimeTokens: true },
+    });
+    if (!user) {
+      throw new ServiceException('ENTITY_NOT_FOUND', 'FORBIDDEN', `${email} is not existed user`);
+    }
+
+    const delay = this.service.getSecondsUntilNextOneTimeJWT(user.oneTimeTokens);
+
+    if (delay > 0) {
+      throw new ServiceException('BASE', 'TOO_MANY_REQUESTS', `retry ${delay} seconds later`);
+    }
+    const oneTimeToken = await this.service.signOneTimeJWT(qr, user, purpose);
+
+    return oneTimeToken;
   }
 }
