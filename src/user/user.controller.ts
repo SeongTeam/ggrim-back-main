@@ -62,7 +62,7 @@ export class UserController implements CrudController<User> {
   ) {}
 
   // TODO: UserController 기능 추가
-  // - [x] 사용자 생성시, Authentication 로직 추가
+  // - [ ] 사용자 생성시, Authentication 로직 추가
   //  -> 이메일 인증 등을 사용하여 인증된 사용자 확인하기
   // - [x] 사용자 생성시, 비밀번호 암호화 기능 추가
   // - [x] 비밀번호 변경, 유저이름 변경 등에 사용자 권한 확인 로직 추가
