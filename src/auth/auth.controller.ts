@@ -30,8 +30,8 @@ import { OneTimeToken, OneTimeTokenPurpose } from './entity/one-time-token.entit
 import { Verification } from './entity/verification.entity';
 import { BasicTokenGuard } from './guard/authentication/basic.guard';
 import { TokenAuthGuard } from './guard/authentication/bearer.guard';
-import { OneTimeTokenGuard } from './guard/one-time-token.guard';
-import { ENUM_AUTH_CONTEXT_KEY, OneTimeTokenPayload } from './guard/type/request-payload';
+import { SecurityTokenGuard } from './guard/authentication/security-token.guard';
+import { ENUM_AUTH_CONTEXT_KEY, SecurityTokenPayload } from './guard/type/request-payload';
 
 @Controller('auth')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -210,12 +210,12 @@ export class AuthController {
 
   @Post('test/one-time-token-guard')
   @PurposeOneTimeToken('delete-account')
-  @UseGuards(OneTimeTokenGuard)
+  @UseGuards(SecurityTokenGuard)
   @UseInterceptors(QueryRunnerInterceptor)
-  async testOneTimeTokenGuard(@DBQueryRunner() qr: QueryRunner, @Request() request: any) {
-    const oneTimeTokenGuardResult: OneTimeTokenPayload =
-      request[ENUM_AUTH_CONTEXT_KEY.ONE_TIME_TOKEN];
-    await this.service.markOneTimeJWT(qr, oneTimeTokenGuardResult);
+  async testSecurityTokenGuard(@DBQueryRunner() qr: QueryRunner, @Request() request: any) {
+    const SecurityTokenGuardResult: SecurityTokenPayload =
+      request[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN];
+    await this.service.markOneTimeJWT(qr, SecurityTokenGuardResult);
 
     //do next task.
 

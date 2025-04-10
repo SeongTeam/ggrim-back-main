@@ -3,7 +3,7 @@ import { JWTDecode } from '../../auth.service';
 
 export const ENUM_AUTH_CONTEXT_KEY = {
   USER: 'AuthUserPayload',
-  ONE_TIME_TOKEN: 'OneTimeTokenPayload',
+  SECURITY_TOKEN: 'SecurityTokenPayload',
   ACCESS_TOKEN: 'AccessTokenPayload',
 };
 export interface AuthUserPayload {
@@ -13,7 +13,7 @@ export interface AuthUserPayload {
   id: string;
 }
 
-export interface OneTimeTokenPayload {
+export interface SecurityTokenPayload {
   oneTimeTokenID: string;
   oneTimeToken: string;
 }

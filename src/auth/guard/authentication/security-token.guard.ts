@@ -8,17 +8,17 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { isEmpty, isUUID } from 'class-validator';
-import { ServiceException } from '../../_common/filter/exception/service/service-exception';
-import { UserService } from '../../user/user.service';
-import { AuthService, JWTDecode } from '../auth.service';
-import { PURPOSE_ONE_TIME_TOKEN_KEY } from '../decorator/purpose-one-time-token';
-import { OneTimeTokenPurpose } from '../entity/one-time-token.entity';
+import { ServiceException } from '../../../_common/filter/exception/service/service-exception';
+import { UserService } from '../../../user/user.service';
+import { AuthService, JWTDecode } from '../../auth.service';
+import { PURPOSE_ONE_TIME_TOKEN_KEY } from '../../decorator/purpose-one-time-token';
+import { OneTimeTokenPurpose } from '../../entity/one-time-token.entity';
 import {
   AccessTokenPayload,
   AuthUserPayload,
   ENUM_AUTH_CONTEXT_KEY,
-  OneTimeTokenPayload,
-} from './type/request-payload';
+  SecurityTokenPayload,
+} from '../type/request-payload';
 
 const ENUM_ONE_TIME_TOKEN_HEADER = {
   X_ONE_TIME_TOKEN_ID: `x-one-time-token-identifier`,
@@ -29,7 +29,7 @@ const ENUM_ONE_TIME_TOKEN_HEADER = {
 //It just validate OneTimeToken data from client
 
 @Injectable()
-export class OneTimeTokenGuard implements CanActivate {
+export class SecurityTokenGuard implements CanActivate {
   constructor(
     @Inject(AuthService) private readonly authService: AuthService,
     @Inject(forwardRef(() => UserService)) private readonly userService: UserService,
@@ -98,11 +98,11 @@ export class OneTimeTokenGuard implements CanActivate {
       );
     }
 
-    const result: OneTimeTokenPayload = {
+    const result: SecurityTokenPayload = {
       oneTimeToken,
       oneTimeTokenID,
     };
-    req[ENUM_AUTH_CONTEXT_KEY.ONE_TIME_TOKEN] = result;
+    req[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN] = result;
 
     const tokenResult: AccessTokenPayload = {
       userId: user.id,
