@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   Request,
+  UnauthorizedException,
   UseGuards,
   UseInterceptors,
   UsePipes,
@@ -31,7 +32,11 @@ import { Verification } from './entity/verification.entity';
 import { BasicTokenGuard } from './guard/authentication/basic.guard';
 import { TokenAuthGuard } from './guard/authentication/bearer.guard';
 import { SecurityTokenGuard } from './guard/authentication/security-token.guard';
-import { ENUM_AUTH_CONTEXT_KEY, SecurityTokenPayload } from './guard/type/request-payload';
+import {
+  AuthUserPayload,
+  ENUM_AUTH_CONTEXT_KEY,
+  SecurityTokenPayload,
+} from './guard/type/request-payload';
 
 @Controller('auth')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -175,9 +180,16 @@ export class AuthController {
   @UseInterceptors(QueryRunnerInterceptor)
   async generateSecurityActionToken(
     @DBQueryRunner() qr: QueryRunner,
+    @Request() request: any,
     @Body() dto: CreateOneTimeTokenDTO,
   ): Promise<OneTimeToken> {
     const { email, purpose } = dto;
+    const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+
+    if (userPayload.email !== email) {
+      throw new UnauthorizedException(`Access denied by other's email `);
+    }
+
     const oneTimeToken = await this.createOneTimeToken(qr, email, purpose);
 
     return oneTimeToken;
