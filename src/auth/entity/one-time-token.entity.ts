@@ -39,14 +39,14 @@ export class OneTimeToken extends CustomBaseEntity {
   expired_date!: Date;
 
   // 외래 키 컬럼 명시적으로 정의
-  @Column()
+  @Column({ nullable: true })
   @IsUUID()
   user_id!: string;
 
   @Exclude()
-  @ManyToOne(() => User, (user) => user.oneTimeTokens)
+  @ManyToOne(() => User, (user) => user.oneTimeTokens, { nullable: true })
   @JoinColumn({ name: 'user_id' })
-  user!: User;
+  user?: User;
 
   @Column()
   @IsInArray(Object.values(OneTimeTokenPurposeValues))
