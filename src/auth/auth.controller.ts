@@ -132,7 +132,10 @@ export class AuthController {
   // [ ] : oneTimeToken을 발행하여 인증 여부 확인하기.
   @Post('verify')
   @UseInterceptors(QueryRunnerInterceptor)
-  async verify(@DBQueryRunner() qr: QueryRunner, @Body() dto: VerifyDTO): Promise<boolean> {
+  async verify(
+    @DBQueryRunner() qr: QueryRunner,
+    @Body() dto: VerifyDTO,
+  ): Promise<OneTimeToken | null> {
     const { email, pinCode } = dto;
 
     const existedUser = await this.userService.findOne({ where: { email } });
@@ -168,16 +171,20 @@ export class AuthController {
 
     const isVerified = await this.service.isHashMatched(pinCode, latestVerification.pin_code);
 
-    if (isVerified) {
-      await this.service.updateVerification(qr, latestVerification.id, {
-        last_verified_date: now,
-        verification_success_date: now,
-      });
-    } else {
+    if (!isVerified) {
       await this.service.updateVerification(qr, latestVerification.id, { last_verified_date: now });
+      return null;
     }
-
-    return isVerified;
+    await this.service.updateVerification(qr, latestVerification.id, {
+      last_verified_date: now,
+      verification_success_date: now,
+    });
+    const oneTimeToken: OneTimeToken = await this.createOneTimeToken(
+      qr,
+      email,
+      'email-verification',
+    );
+    return oneTimeToken;
   }
 
   @Post('security-token')
