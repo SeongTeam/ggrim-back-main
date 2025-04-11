@@ -11,12 +11,20 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 
 import { InjectRepository } from '@nestjs/typeorm';
+import { isEmpty } from 'class-validator';
 import {
   ENV_HASH_ROUNDS_KEY,
   ENV_JWT_SECRET_KEY,
   NODE_ENV,
 } from 'src/_common/const/env-keys.const';
-import { DeepPartial, FindManyOptions, FindOneOptions, QueryRunner, Repository } from 'typeorm';
+import {
+  DeepPartial,
+  FindManyOptions,
+  FindOneOptions,
+  MoreThan,
+  QueryRunner,
+  Repository,
+} from 'typeorm';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.lib';
 import { User, UserRole } from '../user/entity/user.entity';
@@ -66,7 +74,7 @@ export class AuthService {
   private REFRESH_TOKEN_TTL_SECOND = 3600 * 10;
   private ONE_TIME_TOKEN_TTL_SECOND = 15 * 60;
   private VERIFICATION_EXPIRED_TTL_SECOND = 60 * 5 + 5; // margin value 5
-  private MAX_RE_VERIFY_DELAY_MS = 4 * 60 * 1000;
+  private VERIFY_INTERVAL_MS = 30 * 1000;
   private ONE_TIME_TOKEN_INTERVAL_MS = 5 * 60 * 1000;
 
   constructor(
@@ -187,8 +195,11 @@ export class AuthService {
   //TODO typeorm 로직 개선
   // [ ] : returning() 메소드를 사용하여 생성 후 반환되는 열들의 값 명시하기
   //  -> insertResult.generateMaps[0]은 직접삽입한 값은 포함되지 않기 때문에 returning() 적용필요.
-  async createVerification(queryRunner: QueryRunner, email: string): Promise<Verification> {
-    const pinCode = this.generatePinCode();
+  async createVerification(
+    queryRunner: QueryRunner,
+    email: string,
+    pinCode: string,
+  ): Promise<Verification> {
     const hashedPinCode = await this.hash(pinCode);
     const expiredDate = this.getVerificationExpiredTime();
     try {
@@ -203,7 +214,6 @@ export class AuthService {
         .execute();
 
       const verification = result.generatedMaps[0] as Verification;
-      verification.pin_code = pinCode;
 
       return verification;
     } catch (error) {
@@ -242,16 +252,34 @@ export class AuthService {
   }
 
   // return delay second
-  getReVerifyDelay(verification: Verification): number {
+  getVerifyDelay(lastVerification: Verification): number {
     const now = new Date();
-    const expired = verification.pin_code_expired_date;
-    const delay = expired.getTime() - now.getTime() - this.MAX_RE_VERIFY_DELAY_MS;
-    const MS_PER_SECOND = 1000;
-    if (delay <= 0) {
+    const lastDate: null | Date = lastVerification.last_verified_date;
+
+    if (isEmpty(lastDate)) {
       return 0;
     }
 
-    return Math.round(delay / MS_PER_SECOND);
+    const delay = now.getTime() - lastDate.getTime();
+    const MS_PER_SECOND = 1000;
+    if (delay >= this.VERIFY_INTERVAL_MS) {
+      return 0;
+    }
+
+    return Math.round((this.VERIFY_INTERVAL_MS - delay) / MS_PER_SECOND);
+  }
+
+  async isVerifyEnable(email: string): Promise<boolean> {
+    const VALID_INTERVAL_MS = 10 * 60 * 1000;
+    const TEN_MINUTES_AGO = new Date(Date.now() - VALID_INTERVAL_MS);
+    const MAX_REQUEST_COUNT = 3;
+    const count = await this.verificationRepo.count({
+      where: {
+        email,
+        created_date: MoreThan(TEN_MINUTES_AGO),
+      },
+    });
+    return count < MAX_REQUEST_COUNT;
   }
 
   async findVerification(options: FindOneOptions<Verification>): Promise<Verification | null> {
