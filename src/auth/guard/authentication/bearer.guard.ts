@@ -45,9 +45,9 @@ export class TokenAuthGuard implements CanActivate {
       throw new UnauthorizedException(`${email} user is deleted or not active`);
     }
 
-    // TODO: Token Guard 로직 추가
-    // - [ ] Access Token 갱신 로직 추가
-    //  -> <할 일 > 설명 ( 생략가능 )
+    // TODO: Access Token 인증 로직 개선
+    // - [ ] Access Token 만료시 개선할 방법 모색 및 구현
+    //  -> 현재는 사용자가 없고, Access Token 만료 기간이 3H정도 이므로, 지금 당장은 불필요
     // - [ ] <추가 작업>
     // ! 주의: <경고할 사항>
     // ? 질문: <의문점 또는 개선 방향>
