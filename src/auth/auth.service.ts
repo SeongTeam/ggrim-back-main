@@ -318,20 +318,33 @@ export class AuthService {
     return count < MAX_REQUEST_COUNT;
   }
 
-  async signOneTimeJWT(
+  async signOneTimeJWTWithUser(
     queryRunner: QueryRunner,
     email: string,
     purpose: OneTimeTokenPurpose,
-    user?: User,
+    user: User,
   ): Promise<OneTimeToken> {
-    const basePayload: BaseJWTPayload = { email, purpose, type: 'ONE_TIME' };
-    const payload = user
-      ? { ...basePayload, role: user.role, username: user.username }
-      : basePayload;
+    const { role, username } = user;
+    const payload: JWTPayload = { role, username, email, purpose, type: 'ONE_TIME' };
 
     const token = this.signToken(payload);
 
     const oneTimeToken = await this.createOneTimeToken(queryRunner, token, email, user);
+    oneTimeToken.token = token;
+
+    return oneTimeToken;
+  }
+
+  async signOneTimeJWTWithoutUser(
+    queryRunner: QueryRunner,
+    email: string,
+    purpose: OneTimeTokenPurpose,
+  ): Promise<OneTimeToken> {
+    const basePayload: BaseJWTPayload = { email, purpose, type: 'ONE_TIME' };
+
+    const token = this.signToken(basePayload);
+
+    const oneTimeToken = await this.createOneTimeToken(queryRunner, token, email);
     oneTimeToken.token = token;
 
     return oneTimeToken;
