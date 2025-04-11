@@ -60,7 +60,7 @@ export class SecurityTokenGuard implements CanActivate {
     }
 
     if (type !== 'ONE_TIME') {
-      return true;
+      throw new UnauthorizedException(`Can't access Without one-time-token`);
     }
 
     if (isEmpty(handlerPurpose)) {
