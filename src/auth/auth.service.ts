@@ -28,7 +28,6 @@ import {
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.lib';
 import { User, UserRole } from '../user/entity/user.entity';
-import { isArrayEmpty } from '../utils/validator';
 import { OneTimeToken, OneTimeTokenPurpose } from './entity/one-time-token.entity';
 import { Verification } from './entity/verification.entity';
 
@@ -78,7 +77,6 @@ export class AuthService {
   private ONE_TIME_TOKEN_TTL_SECOND = 15 * 60;
   private VERIFICATION_EXPIRED_TTL_SECOND = 60 * 5 + 5; // margin value 5
   private VERIFY_INTERVAL_MS = 30 * 1000;
-  private ONE_TIME_TOKEN_INTERVAL_MS = 5 * 60 * 1000;
 
   constructor(
     @Inject(JwtService) private readonly jwtService: JwtService,
@@ -306,26 +304,18 @@ export class AuthService {
     return results;
   }
 
-  getSecondsUntilNextOneTimeJWT(OneTimeJWTEntities: OneTimeToken[]): number {
-    const now = new Date();
-    // 오름차순으로 정렬
-    const sortedCreateDate = OneTimeJWTEntities.map((entity) => entity.created_date).sort(
-      (a, b) => b.getTime() - a.getTime(),
-    );
+  async isEnableCreateOneTimeJWT(email: string): Promise<boolean> {
+    const VALID_INTERVAL_MS = 10 * 60 * 1000;
+    const TEN_MINUTES_AGO = new Date(Date.now() - VALID_INTERVAL_MS);
+    const MAX_REQUEST_COUNT = 5;
+    const count = await this.pwResetTokenRepo.count({
+      where: {
+        email,
+        created_date: MoreThan(TEN_MINUTES_AGO),
+      },
+    });
 
-    if (isArrayEmpty(sortedCreateDate)) {
-      return 0;
-    }
-
-    const latest = sortedCreateDate[0];
-    const MS_PER_SECOND = 1000;
-    const passedTime = now.getTime() - latest.getTime();
-
-    if (passedTime > this.ONE_TIME_TOKEN_INTERVAL_MS) {
-      return 0;
-    }
-
-    return Math.round((this.ONE_TIME_TOKEN_INTERVAL_MS - passedTime) / MS_PER_SECOND);
+    return count < MAX_REQUEST_COUNT;
   }
 
   async signOneTimeJWT(
