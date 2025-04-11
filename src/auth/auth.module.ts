@@ -9,6 +9,7 @@ import { OneTimeToken } from './entity/one-time-token.entity';
 import { Verification } from './entity/verification.entity';
 import { BasicTokenGuard } from './guard/authentication/basic.guard';
 import { TokenAuthGuard } from './guard/authentication/bearer.guard';
+import { SecurityTokenGuard } from './guard/authentication/security-token.guard';
 import { OwnerGuard } from './guard/authorization/owner.guard';
 import { RolesGuard } from './guard/authorization/roles.guard';
 
@@ -20,7 +21,21 @@ import { RolesGuard } from './guard/authorization/roles.guard';
     MailModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, BasicTokenGuard, TokenAuthGuard, OwnerGuard, RolesGuard],
-  exports: [AuthService, OwnerGuard, TokenAuthGuard, BasicTokenGuard, RolesGuard],
+  providers: [
+    AuthService,
+    BasicTokenGuard,
+    TokenAuthGuard,
+    OwnerGuard,
+    RolesGuard,
+    SecurityTokenGuard,
+  ],
+  exports: [
+    AuthService,
+    OwnerGuard,
+    TokenAuthGuard,
+    BasicTokenGuard,
+    RolesGuard,
+    SecurityTokenGuard,
+  ],
 })
 export class AuthModule {}
