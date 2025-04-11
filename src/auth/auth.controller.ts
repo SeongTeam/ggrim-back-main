@@ -15,9 +15,10 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { isNotEmpty } from 'class-validator';
 import { QueryRunner } from 'typeorm';
-import { ENV_EMAIL_TEST_ADDRESS } from '../_common/const/env-keys.const';
+import { ENV_EMAIL_TEST_ADDRESS, FRONT_VERIFICATION_ROUTE } from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { DBQueryRunner } from '../db/query-runner/decorator/query-runner.decorator';
 import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.interceptor';
@@ -51,6 +52,7 @@ export class AuthController {
     @Inject(AuthService) private readonly service: AuthService,
     @Inject(forwardRef(() => UserService)) private readonly userService: UserService,
     @Inject(MailService) private readonly mailService: MailService,
+    @Inject(ConfigService) private readonly configService: ConfigService,
   ) {}
 
   @Post('sign-in')
@@ -205,9 +207,9 @@ export class AuthController {
     @Body() dto: SendOneTimeTokenDTO,
   ): Promise<string> {
     const { email, purpose } = dto;
-    const oneTimeToken = await this.createOneTimeToken(qr, email, purpose);
+    const proxyUrl = this.configService.getOrThrow<string>(FRONT_VERIFICATION_ROUTE);
     const securityToken = await this.createOneTimeToken(qr, email, purpose);
-    const url = `test.com?identifier=${securityToken.id}&token=${securityToken.token}`;
+    const url = `${proxyUrl}?identifier=${securityToken.id}&token=${securityToken.token}`;
     await this.mailService.sendCertificationPinCode(email, url);
 
     return 'send email';
