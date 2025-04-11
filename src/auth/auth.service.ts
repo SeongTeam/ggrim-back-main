@@ -165,9 +165,17 @@ export class AuthService {
     return hash;
   }
 
-  generatePinCode(): string {
-    /**  6자리 PinCode 생성*/
-    return Math.floor(100000 + Math.random() * 900000).toString();
+  generatePinCode(length: number = 8): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    const array = new Uint8Array(length);
+    crypto.getRandomValues(array); // 브라우저/Node.js 모두 안전하게 랜덤값 생성 가능
+
+    for (let i = 0; i < length; i++) {
+      result += chars[array[i] % chars.length];
+    }
+
+    return result;
   }
 
   getVerificationExpiredTime(): Date {
