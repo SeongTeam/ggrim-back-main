@@ -8,6 +8,7 @@ import {
   Inject,
   Param,
   Put,
+  Request,
   UseGuards,
   UseInterceptors,
   UsePipes,
@@ -18,10 +19,13 @@ import { QueryRunner } from 'typeorm';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { AuthService } from '../auth/auth.service';
 import { CheckOwner } from '../auth/decorator/owner';
+import { PurposeOneTimeToken } from '../auth/decorator/purpose-one-time-token';
 import { TokenAuthGuard } from '../auth/guard/authentication/bearer.guard';
 import { SecurityTokenGuard } from '../auth/guard/authentication/security-token.guard';
+import { TempUserGuard } from '../auth/guard/authentication/temp-user.guard';
 import { OwnerGuard } from '../auth/guard/authorization/owner.guard';
 import { RolesGuard } from '../auth/guard/authorization/roles.guard';
+import { ENUM_AUTH_CONTEXT_KEY, TempUserPayload } from '../auth/guard/type/request-payload';
 import { DBQueryRunner } from '../db/query-runner/decorator/query-runner.decorator';
 import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.interceptor';
 import { Roles } from './decorator/role';
@@ -63,7 +67,7 @@ export class UserController implements CrudController<User> {
   ) {}
 
   // TODO: UserController 기능 추가
-  // - [ ] 사용자 생성시, Authentication 로직 추가
+  // - [x] 사용자 생성시, Authentication 로직 추가
   //  -> 이메일 인증 등을 사용하여 인증된 사용자 확인하기
   // - [x] 사용자 생성시, 비밀번호 암호화 기능 추가
   // - [x] 비밀번호 변경, 유저이름 변경 등에 사용자 권한 확인 로직 추가
@@ -74,9 +78,26 @@ export class UserController implements CrudController<User> {
 
   @Override(`createOneBase`)
   @UseInterceptors(QueryRunnerInterceptor)
-  async signUp(@DBQueryRunner() qr: QueryRunner, @Body() dto: CreateUserDTO) {
+  @PurposeOneTimeToken('email-verification')
+  @UseGuards(TempUserGuard)
+  async signUp(
+    @DBQueryRunner() qr: QueryRunner,
+    @Request() request: any,
+    @Body() dto: CreateUserDTO,
+  ) {
     const { email, username } = dto;
     const sameUsers = await this.service.find({ where: [{ email }, { username }] });
+    const tempUserPayload: TempUserPayload = request[ENUM_AUTH_CONTEXT_KEY.TEMP_USER];
+    const { oneTimeTokenID, email: TokenEmail } = tempUserPayload;
+
+    if (email !== TokenEmail) {
+      throw new ServiceException(
+        'BASE',
+        'FORBIDDEN',
+        `can't create user by using other's email.
+        TokenEmail is different to bodyEmail`,
+      );
+    }
 
     sameUsers.forEach((user) => {
       if (user.email == email) {
@@ -87,6 +108,8 @@ export class UserController implements CrudController<User> {
         throw new HttpException(`${username} are already exist`, HttpStatus.BAD_REQUEST);
       }
     });
+
+    this.authService.markOneTimeJWT(qr, oneTimeTokenID);
 
     const encryptedPW = await this.authService.hash(dto.password);
     const encryptedDTO: CreateUserDTO = { ...dto, password: encryptedPW };
