@@ -141,12 +141,21 @@ export class AuthService {
   }
 
   signToken(payload: BaseJWTPayload): string {
-    const expiresIn =
-      payload.type === 'ACCESS'
-        ? this.ACCESS_TOKEN_TTL_SECOND
-        : payload.type === 'REFRESH'
-          ? this.REFRESH_TOKEN_TTL_SECOND
-          : this.ONE_TIME_TOKEN_TTL_SECOND;
+    let expiresIn: number;
+
+    switch (payload.type) {
+      case 'ACCESS':
+        expiresIn = this.ACCESS_TOKEN_TTL_SECOND;
+        break;
+      case 'REFRESH':
+        expiresIn = this.REFRESH_TOKEN_TTL_SECOND;
+        break;
+      case 'ONE_TIME':
+        expiresIn = this.ONE_TIME_TOKEN_TTL_SECOND;
+        break;
+      default:
+        throw new Error(`Unknown token type: ${payload.type}`);
+    }
 
     const newToken: string = this.jwtService.sign(payload, {
       secret: this.configService.get<string>(ENV_JWT_SECRET_KEY),
