@@ -9,7 +9,6 @@ import {
   ParseUUIDPipe,
   Post,
   Request,
-  UnauthorizedException,
   UseGuards,
   UseInterceptors,
   UsePipes,
@@ -23,6 +22,7 @@ import { ServiceException } from '../_common/filter/exception/service/service-ex
 import { DBQueryRunner } from '../db/query-runner/decorator/query-runner.decorator';
 import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.interceptor';
 import { MailService } from '../mail/mail.service';
+import { User } from '../user/entity/user.entity';
 import { UserService } from '../user/user.service';
 import { isArrayEmpty } from '../utils/validator';
 import { AuthService } from './auth.service';
@@ -188,14 +188,15 @@ export class AuthController {
     @Request() request: any,
     @Body() dto: CreateOneTimeTokenDTO,
   ): Promise<OneTimeToken> {
-    const { email, purpose } = dto;
+    const { purpose } = dto;
     const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
-
-    if (userPayload.email !== email) {
-      throw new UnauthorizedException(`Access denied by other's email `);
-    }
-
-    const securityToken = await this.createOneTimeToken(qr, email, purpose);
+    const user: User | null = await this.userService.findOne({ where: { id: userPayload.id } });
+    const securityToken = await this.createOneTimeToken(
+      qr,
+      userPayload.email,
+      purpose,
+      user ? user : undefined,
+    );
 
     return securityToken;
   }
@@ -207,8 +208,14 @@ export class AuthController {
     @Body() dto: SendOneTimeTokenDTO,
   ): Promise<string> {
     const { email, purpose } = dto;
+    const user: User | null = await this.userService.findOne({ where: { email } });
+
+    if (!user) {
+      throw new ServiceException('ENTITY_NOT_FOUND', 'FORBIDDEN', `user is not existed. ${email}`);
+    }
+
     const proxyUrl = this.configService.getOrThrow<string>(FRONT_VERIFICATION_ROUTE);
-    const securityToken = await this.createOneTimeToken(qr, email, purpose);
+    const securityToken = await this.createOneTimeToken(qr, email, purpose, user);
     const url = `${proxyUrl}?identifier=${securityToken.id}&token=${securityToken.token}`;
     await this.mailService.sendCertificationPinCode(email, url);
 
@@ -260,21 +267,22 @@ export class AuthController {
     qr: QueryRunner,
     email: string,
     purpose: OneTimeTokenPurpose,
+    user?: User,
   ): Promise<OneTimeToken> {
-    const user = await this.userService.findOne({
-      where: { email },
-      relations: { oneTimeTokens: true },
-    });
-    if (!user) {
-      throw new ServiceException('ENTITY_NOT_FOUND', 'FORBIDDEN', `${email} is not existed user`);
+    const isEnable = await this.service.isEnableCreateOneTimeJWT(email);
+    if (!isEnable) {
+      throw new ServiceException(
+        'BASE',
+        'TOO_MANY_REQUESTS',
+        `request limitation. please retry later `,
+      );
     }
-
-    const delay = this.service.getSecondsUntilNextOneTimeJWT(user.oneTimeTokens);
-
-    if (delay > 0) {
-      throw new ServiceException('BASE', 'TOO_MANY_REQUESTS', `retry ${delay} seconds later`);
+    let oneTimeToken: OneTimeToken | null = null;
+    if (user) {
+      oneTimeToken = await this.service.signOneTimeJWTWithUser(qr, email, purpose, user);
+    } else {
+      oneTimeToken = await this.service.signOneTimeJWTWithoutUser(qr, email, purpose);
     }
-    const oneTimeToken = await this.service.signOneTimeJWT(qr, user, purpose);
 
     return oneTimeToken;
   }
