@@ -50,12 +50,15 @@ export interface JWTDecode extends JWTPayload {
   // aud? : object;
   // iss? : object;
 }
-export interface JWTPayload {
+
+export interface BaseJWTPayload {
   email: string;
-  username: string;
-  role: UserRole;
   type: TokenType;
   purpose: JwtPurpose;
+}
+export interface JWTPayload extends BaseJWTPayload {
+  username: string;
+  role: UserRole;
 }
 
 export type AUTHORIZATION_TYPE = 'Bearer' | 'Basic';
@@ -137,7 +140,7 @@ export class AuthService {
     return newToken;
   }
 
-  signToken(payload: JWTPayload): string {
+  signToken(payload: BaseJWTPayload): string {
     const expiresIn =
       payload.type === 'ACCESS'
         ? this.ACCESS_TOKEN_TTL_SECOND
@@ -318,15 +321,18 @@ export class AuthService {
 
   async signOneTimeJWT(
     queryRunner: QueryRunner,
-    user: User,
+    email: string,
     purpose: OneTimeTokenPurpose,
+    user?: User,
   ): Promise<OneTimeToken> {
-    const { email, role, id, username } = user;
-    const payload: JWTPayload = { purpose, type: 'ONE_TIME', email, role, username };
+    const basePayload: BaseJWTPayload = { email, purpose, type: 'ONE_TIME' };
+    const payload = user
+      ? { ...basePayload, role: user.role, username: user.username }
+      : basePayload;
 
     const token = this.signToken(payload);
 
-    const oneTimeToken = await this.createOneTimeToken(queryRunner, user, token);
+    const oneTimeToken = await this.createOneTimeToken(queryRunner, token, email, user);
     oneTimeToken.token = token;
 
     return oneTimeToken;
@@ -338,10 +344,10 @@ export class AuthService {
 
   async createOneTimeToken(
     queryRunner: QueryRunner,
-    user: User,
     token: string,
+    email: string,
+    user?: User,
   ): Promise<OneTimeToken> {
-    const { email } = user;
     const decoded = this.verifyToken(token);
     const { purpose, exp: expired_date_ms } = decoded;
     const MS_PER_SECOND = 1000;
