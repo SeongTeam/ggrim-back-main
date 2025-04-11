@@ -20,13 +20,13 @@ import {
   SecurityTokenPayload,
 } from '../type/request-payload';
 
-const ENUM_ONE_TIME_TOKEN_HEADER = {
-  X_ONE_TIME_TOKEN_ID: `x-one-time-token-identifier`,
-  X_ONE_TIME_TOKEN: 'x-one-time-token-value',
+const ENUM_SECURITY_TOKEN_HEADER = {
+  X_SECURITY_TOKEN_ID: `x-security-token-identifier`,
+  X_SECURITY_TOKEN: 'x-security-token-value',
 };
 
 //Guard does't Update OneTimeToken Table.
-//It just validate OneTimeToken data from client
+//It just validate OneTimeToken for Security data from client
 
 @Injectable()
 export class SecurityTokenGuard implements CanActivate {
@@ -40,18 +40,18 @@ export class SecurityTokenGuard implements CanActivate {
     const req = context.switchToHttp().getRequest();
     const header = req.headers;
 
-    const oneTimeToken = req.headers[ENUM_ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN];
-    const oneTimeTokenID = req.headers[ENUM_ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID];
+    const securityToken = req.headers[ENUM_SECURITY_TOKEN_HEADER.X_SECURITY_TOKEN];
+    const securityTokenID = req.headers[ENUM_SECURITY_TOKEN_HEADER.X_SECURITY_TOKEN_ID];
     const handlerPurpose = this.reflector.get<OneTimeTokenPurpose>(
       PURPOSE_ONE_TIME_TOKEN_KEY,
       context.getHandler(),
     );
 
-    if (isEmpty(oneTimeToken)) {
+    if (isEmpty(securityToken)) {
       throw new UnauthorizedException(`Missing or invalid security token header`);
     }
 
-    const decoded: JWTDecode = await this.authService.verifyToken(oneTimeToken);
+    const decoded: JWTDecode = await this.authService.verifyToken(securityToken);
     const { email, purpose, type } = decoded;
 
     const user = await this.userService.findOne({ where: { email } });
@@ -76,31 +76,31 @@ export class SecurityTokenGuard implements CanActivate {
     }
 
     // check whether token is forged or not .
-    if (!(oneTimeTokenID && isUUID(oneTimeTokenID))) {
+    if (!(securityTokenID && isUUID(securityTokenID))) {
       throw new UnauthorizedException(
-        `Missing or invalid ${ENUM_ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID} header field`,
+        `Missing or invalid ${ENUM_SECURITY_TOKEN_HEADER.X_SECURITY_TOKEN_ID} header field`,
       );
     }
 
-    const entity = await this.authService.findOneTimeToken({ where: { id: oneTimeTokenID } });
+    const entity = await this.authService.findOneTimeToken({ where: { id: securityTokenID } });
     if (!entity) {
-      throw new UnauthorizedException(`invalid token ID. ${oneTimeTokenID}`);
+      throw new UnauthorizedException(`invalid token ID. ${securityTokenID}`);
     }
 
-    const isHashMatched = await this.authService.isHashMatched(oneTimeToken, entity.token);
+    const isHashMatched = await this.authService.isHashMatched(securityToken, entity.token);
 
     if (!isHashMatched) {
-      throw new UnauthorizedException(`invalid oneTimeToken. it is not matched. ${oneTimeToken}`);
+      throw new UnauthorizedException(`invalid securityToken. it is not matched. ${securityToken}`);
     }
     if (entity.used_date) {
       throw new UnauthorizedException(
-        `invalid oneTimeToken. it is already used. ${entity.used_date}`,
+        `invalid securityToken. it is already used. ${entity.used_date}`,
       );
     }
 
     const result: SecurityTokenPayload = {
-      oneTimeToken,
-      oneTimeTokenID,
+      oneTimeToken: securityToken,
+      oneTimeTokenID: securityTokenID,
     };
     req[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN] = result;
 

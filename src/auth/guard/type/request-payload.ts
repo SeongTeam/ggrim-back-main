@@ -13,10 +13,12 @@ export interface AuthUserPayload {
   id: string;
 }
 
-export interface SecurityTokenPayload {
+export interface OneTimeTokenPayload {
   oneTimeTokenID: string;
   oneTimeToken: string;
 }
+
+export type SecurityTokenPayload = OneTimeTokenPayload;
 
 export interface AccessTokenPayload {
   userId: string;

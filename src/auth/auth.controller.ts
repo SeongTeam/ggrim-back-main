@@ -193,9 +193,9 @@ export class AuthController {
       throw new UnauthorizedException(`Access denied by other's email `);
     }
 
-    const oneTimeToken = await this.createOneTimeToken(qr, email, purpose);
+    const securityToken = await this.createOneTimeToken(qr, email, purpose);
 
-    return oneTimeToken;
+    return securityToken;
   }
 
   @Post('security-token/send')
@@ -206,8 +206,8 @@ export class AuthController {
   ): Promise<string> {
     const { email, purpose } = dto;
     const oneTimeToken = await this.createOneTimeToken(qr, email, purpose);
-
-    const url = `test.com?identifier=${oneTimeToken.id}&token=${oneTimeToken.token}`;
+    const securityToken = await this.createOneTimeToken(qr, email, purpose);
+    const url = `test.com?identifier=${securityToken.id}&token=${securityToken.token}`;
     await this.mailService.sendCertificationPinCode(email, url);
 
     return 'send email';
