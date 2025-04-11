@@ -15,6 +15,7 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import { isNotEmpty } from 'class-validator';
 import { QueryRunner } from 'typeorm';
 import { ENV_EMAIL_TEST_ADDRESS } from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
@@ -22,11 +23,12 @@ import { DBQueryRunner } from '../db/query-runner/decorator/query-runner.decorat
 import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.interceptor';
 import { MailService } from '../mail/mail.service';
 import { UserService } from '../user/user.service';
+import { isArrayEmpty } from '../utils/validator';
 import { AuthService } from './auth.service';
 import { CheckOwner } from './decorator/owner';
 import { PurposeOneTimeToken } from './decorator/purpose-one-time-token';
 import { CreateOneTimeTokenDTO } from './dto/create-one-time-token.dto';
-import { RegisterDTO } from './dto/register.dto';
+import { requestVerificationDTO } from './dto/request-verification.dto';
 import { SignInResponse } from './dto/response/sign-in.response.dto';
 import { SendOneTimeTokenDTO } from './dto/send-one-time-token.dto';
 import { VerifyDTO } from './dto/verify.dto';
@@ -90,11 +92,11 @@ export class AuthController {
   // ? 질문: registerMethod에서 이미 인증된 계정인 경우, 어떻게 해야하는가?
   // * 참고: <관련 정보나 링크>
 
-  @Post('register')
+  @Post('request-verification')
   @UseInterceptors(QueryRunnerInterceptor)
   async register(
     @DBQueryRunner() qr: QueryRunner,
-    @Body() registerDTO: RegisterDTO,
+    @Body() registerDTO: requestVerificationDTO,
   ): Promise<Verification> {
     const { email } = registerDTO;
 
@@ -106,47 +108,30 @@ export class AuthController {
         `${email} is already existed user`,
       );
     }
-    let verification = await this.service.findVerification({ where: { email } });
-
-    if (!verification) {
-      verification = await this.service.createVerification(qr, email);
-    } else {
-      const delay = this.service.getReVerifyDelay(verification);
-      if (delay > 0) {
-        throw new ServiceException(
-          'BASE',
-          'FORBIDDEN',
-          `retry later ${delay} second. Email is on verifying`,
-        );
-      }
-      const pin_code = this.service.generatePinCode();
-      const hashedPinCode = await this.service.hash(pin_code);
-      const pin_code_expired_date = this.service.getVerificationExpiredTime();
-      await this.service.updateVerification(qr, verification.id, {
-        pin_code: hashedPinCode,
-        pin_code_expired_date,
-        is_verified: false,
-      });
-      verification.pin_code = pin_code;
-      verification.pin_code_expired_date = pin_code_expired_date;
+    const isEnable = await this.service.isVerifyEnable(email);
+    if (!isEnable) {
+      throw new ServiceException(
+        `RATE_LIMIT_EXCEEDED`,
+        `TOO_MANY_REQUESTS`,
+        `Too many verification. please retry later`,
+      );
     }
 
-    await this.mailService.sendCertificationPinCode(email, verification.pin_code);
+    const pinCode = this.service.generatePinCode();
+    const verification = await this.service.createVerification(qr, email, pinCode);
+
+    await this.mailService.sendCertificationPinCode(email, pinCode);
+    verification.pin_code = pinCode;
 
     return verification;
   }
 
   // TODO 이메일 인증 로직 개선
   // [ ] : oneTimeToken을 발행하여 인증 여부 확인하기.
-  @Post(':email/verify')
+  @Post('verify')
   @UseInterceptors(QueryRunnerInterceptor)
-  async verify(
-    @DBQueryRunner() qr: QueryRunner,
-    @Param('email') email: string,
-    @Body() dto: VerifyDTO,
-  ): Promise<boolean> {
-    const { pinCode } = dto;
-    const now = new Date();
+  async verify(@DBQueryRunner() qr: QueryRunner, @Body() dto: VerifyDTO): Promise<boolean> {
+    const { email, pinCode } = dto;
 
     const existedUser = await this.userService.findOne({ where: { email } });
     if (existedUser) {
@@ -157,25 +142,40 @@ export class AuthController {
       );
     }
 
-    const verification = await this.service.findVerification({ where: { email } });
-
-    if (!verification) {
+    const verifications: Verification[] = await this.service.findVerificationList({
+      where: { email },
+      order: { created_date: 'DESC' },
+    });
+    if (isArrayEmpty(verifications)) {
       throw new ServiceException('ENTITY_NOT_FOUND', 'FORBIDDEN', `${email} is not registered`);
     }
 
-    if (now > verification.pin_code_expired_date) {
+    const now = new Date();
+    const latestVerification: Verification = verifications[0];
+    if (now > latestVerification.pin_code_expired_date) {
       throw new ServiceException('BASE', 'FORBIDDEN', `expired verification`);
     }
-
-    const is_verified = await this.service.isHashMatched(pinCode, verification.pin_code);
-
-    if (!is_verified) {
-      throw new ServiceException('BASE', 'FORBIDDEN', `pin code is invalid`);
+    const delay = this.service.getVerifyDelay(latestVerification);
+    if (delay > 0) {
+      throw new ServiceException('BASE', 'TOO_MANY_REQUESTS', `please retry ${delay}s`);
     }
 
-    await this.service.updateVerification(qr, verification.id, { is_verified });
+    if (isNotEmpty(latestVerification.verification_success_date)) {
+      throw new ServiceException('BASE', 'FORBIDDEN', `already verified pin-code`);
+    }
 
-    return is_verified;
+    const isVerified = await this.service.isHashMatched(pinCode, latestVerification.pin_code);
+
+    if (isVerified) {
+      await this.service.updateVerification(qr, latestVerification.id, {
+        last_verified_date: now,
+        verification_success_date: now,
+      });
+    } else {
+      await this.service.updateVerification(qr, latestVerification.id, { last_verified_date: now });
+    }
+
+    return isVerified;
   }
 
   @Post('security-token')
