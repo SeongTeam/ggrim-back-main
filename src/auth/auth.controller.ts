@@ -85,7 +85,7 @@ export class AuthController {
 
   // TODO: 인증 로직 개선
   // - [x] 로직 직접 테스트하기
-  // - [ ]  emailModule 사용하여 이메일 인증 로직 추가하기
+  // - [x]  emailModule 사용하여 이메일 인증 로직 추가하기
   // ! 주의: <경고할 사항>
   // ? 질문: registerMethod에서 이미 인증된 계정인 경우, 어떻게 해야하는가?
   // * 참고: <관련 정보나 링크>
@@ -108,7 +108,6 @@ export class AuthController {
     }
     let verification = await this.service.findVerification({ where: { email } });
 
-    //TODO
     if (!verification) {
       verification = await this.service.createVerification(qr, email);
     } else {
