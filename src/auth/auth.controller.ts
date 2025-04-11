@@ -58,15 +58,15 @@ export class AuthController {
   @Post('sign-in')
   @UseGuards(BasicTokenGuard)
   async signin(@Request() request: any) {
-    const authResult = request['BasicTokenGuardResult'];
+    const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
 
     const accessToken = this.service.signToken({
-      ...authResult,
+      ...userPayload,
       type: 'ACCESS',
       purpose: 'access',
     });
     const refreshToken = this.service.signToken({
-      ...authResult,
+      ...userPayload,
       type: 'REFRESH',
       purpose: 'refresh',
     });
@@ -74,7 +74,7 @@ export class AuthController {
     const response: SignInResponse = {
       accessToken,
       refreshToken,
-      email: authResult.email,
+      email: userPayload.email,
     };
 
     return response;
@@ -83,7 +83,7 @@ export class AuthController {
   @Post('test')
   @UseGuards(TokenAuthGuard)
   async testTokenAuthGuard(@Request() request: any) {
-    const result = request['TokenAuthGuardResult'];
+    const result = request[ENUM_AUTH_CONTEXT_KEY.ACCESS_TOKEN];
     return 'authResult';
   }
 
