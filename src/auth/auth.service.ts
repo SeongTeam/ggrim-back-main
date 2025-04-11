@@ -83,7 +83,7 @@ export class AuthService {
     @Inject(ConfigService) private readonly configService: ConfigService,
     @InjectRepository(Verification) private readonly verificationRepo: Repository<Verification>,
     @InjectRepository(OneTimeToken)
-    private readonly pwResetTokenRepo: Repository<OneTimeToken>,
+    private readonly oneTimeTokenRepo: Repository<OneTimeToken>,
   ) {
     const envKeys = [ENV_HASH_ROUNDS_KEY, ENV_JWT_SECRET_KEY];
     const envFile = this.configService.get(NODE_ENV)
@@ -308,7 +308,7 @@ export class AuthService {
     const VALID_INTERVAL_MS = 10 * 60 * 1000;
     const TEN_MINUTES_AGO = new Date(Date.now() - VALID_INTERVAL_MS);
     const MAX_REQUEST_COUNT = 5;
-    const count = await this.pwResetTokenRepo.count({
+    const count = await this.oneTimeTokenRepo.count({
       where: {
         email,
         created_date: MoreThan(TEN_MINUTES_AGO),
@@ -437,13 +437,13 @@ export class AuthService {
   }
 
   async findOneTimeToken(options: FindOneOptions<OneTimeToken>): Promise<OneTimeToken | null> {
-    const one = await this.pwResetTokenRepo.findOne(options);
+    const one = await this.oneTimeTokenRepo.findOne(options);
 
     return one;
   }
 
   async findOneTimeTokenList(options: FindManyOptions<OneTimeToken>): Promise<OneTimeToken[]> {
-    const results = await this.pwResetTokenRepo.find(options);
+    const results = await this.oneTimeTokenRepo.find(options);
 
     return results;
   }
