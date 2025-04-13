@@ -6,7 +6,7 @@ import { CHECK_OWNER_KEY, CheckOwnerOption } from '../../decorator/owner';
 import { AuthUserPayload, ENUM_AUTH_CONTEXT_KEY } from '../type/request-payload';
 
 // TODO: OwnerGuard 기능 개선
-// - [ ] User Role = admin 일때, 통과시키기
+// - [x] User Role = admin 일때, 통과시키기
 // - [ ] <추가 작업>
 // ! 주의: <경고할 사항>
 // ? 질문: Reflector의 getAllAndOverride() 와 get()의 차이는 무엇인가?
