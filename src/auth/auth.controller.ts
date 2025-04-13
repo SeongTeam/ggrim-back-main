@@ -132,7 +132,7 @@ export class AuthController {
   }
 
   // TODO 이메일 인증 로직 개선
-  // [ ] : oneTimeToken을 발행하여 인증 여부 확인하기.
+  // [x] : oneTimeToken을 발행하여 인증 여부 확인하기.
   @Post('verify')
   @UseInterceptors(QueryRunnerInterceptor)
   async verify(
