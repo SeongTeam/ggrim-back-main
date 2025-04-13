@@ -17,7 +17,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { isNotEmpty } from 'class-validator';
 import { QueryRunner } from 'typeorm';
-import { ENV_EMAIL_TEST_ADDRESS, FRONT_VERIFICATION_ROUTE } from '../_common/const/env-keys.const';
+import {
+  ENV_EMAIL_TEST_ADDRESS,
+  FRONT_ROUTE_UPDATE_PASSWORD,
+} from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { DBQueryRunner } from '../db/query-runner/decorator/query-runner.decorator';
 import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.interceptor';
@@ -221,10 +224,20 @@ export class AuthController {
       throw new ServiceException('ENTITY_NOT_FOUND', 'FORBIDDEN', `user is not existed. ${email}`);
     }
 
-    const proxyUrl = this.configService.getOrThrow<string>(FRONT_VERIFICATION_ROUTE);
-    const securityToken = await this.createOneTimeToken(qr, email, purpose, user);
-    const url = `${proxyUrl}?identifier=${securityToken.id}&token=${securityToken.token}`;
-    await this.mailService.sendCertificationPinCode(email, url);
+    switch (purpose) {
+      case 'update-password':
+        const proxyUrl = this.configService.getOrThrow<string>(FRONT_ROUTE_UPDATE_PASSWORD);
+        const securityToken = await this.createOneTimeToken(qr, email, purpose, user);
+        const url = `${proxyUrl}?identifier=${securityToken.id}&token=${securityToken.token}`;
+        await this.mailService.sendForgetPassword(email, url);
+        break;
+      default:
+        throw new ServiceException(
+          'NOT_IMPLEMENTED',
+          'NOT_IMPLEMENTED',
+          'logic is partially implemented',
+        );
+    }
 
     return 'send email';
   }
