@@ -203,7 +203,7 @@ export class AuthService {
   }
 
   //TODO typeorm 로직 개선
-  // [ ] : returning() 메소드를 사용하여 생성 후 반환되는 열들의 값 명시하기
+  // [x] : returning() 메소드를 사용하여 생성 후 반환되는 열들의 값 명시하기
   //  -> insertResult.generateMaps[0]은 직접삽입한 값은 포함되지 않기 때문에 returning() 적용필요.
   async createVerification(
     queryRunner: QueryRunner,
@@ -212,6 +212,7 @@ export class AuthService {
   ): Promise<Verification> {
     const hashedPinCode = await this.hash(pinCode);
     const expiredDate = this.getVerificationExpiredTime();
+    const returnedColumns: (keyof Verification)[] = ['email', 'pin_code_expired_date', 'pin_code'];
     try {
       const result = await createTransactionQueryBuilder(queryRunner, Verification)
         .insert()
@@ -221,6 +222,7 @@ export class AuthService {
           pin_code: hashedPinCode,
           pin_code_expired_date: expiredDate,
         })
+        .returning(returnedColumns)
         .execute();
 
       const verification = result.generatedMaps[0] as Verification;
