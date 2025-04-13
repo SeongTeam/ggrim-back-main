@@ -122,7 +122,7 @@ export class AuthController {
     const pinCode = this.service.generatePinCode();
     const verification = await this.service.createVerification(qr, email, pinCode);
 
-    await this.mailService.sendCertificationPinCode(email, pinCode);
+    await this.mailService.sendVerificationPinCode(email, pinCode);
     verification.pin_code = pinCode;
 
     return verification;
@@ -234,7 +234,7 @@ export class AuthController {
     const testCode = `12345`;
     const email = process.env[ENV_EMAIL_TEST_ADDRESS]!;
 
-    await this.mailService.sendCertificationPinCode(email, testCode);
+    await this.mailService.sendVerificationPinCode(email, testCode);
 
     return true;
   }

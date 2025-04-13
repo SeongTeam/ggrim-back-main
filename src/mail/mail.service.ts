@@ -9,7 +9,7 @@ export class MailService {
     REPORT: 'report',
   };
   constructor(@Inject(MailerService) private readonly mailer: MailerService) {}
-  async sendCertificationPinCode(to: string, pinCode: string) {
+  async sendVerificationPinCode(to: string, pinCode: string) {
     try {
       const result = await this.mailer
         .sendMail({
