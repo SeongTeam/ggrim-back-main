@@ -10,6 +10,7 @@ export const OneTimeTokenPurposeValues = {
   DELETE_ACCOUNT: 'delete-account',
   MAGIC_LOGIN: 'magic-login',
   EMAIL_VERIFICATION: 'email-verification',
+  RECOVER_ACCOUNT: 'recover-account',
   // SET_USER_ACTIVE : 'set-user-active',
   // RESET_PASSWORD: 'reset-password',
 } as const;

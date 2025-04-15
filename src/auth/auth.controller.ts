@@ -19,6 +19,7 @@ import { isNotEmpty } from 'class-validator';
 import { QueryRunner } from 'typeorm';
 import {
   ENV_EMAIL_TEST_ADDRESS,
+  FRONT_ROUTE_RECOVER_ACCOUNT,
   FRONT_ROUTE_UPDATE_PASSWORD,
 } from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
@@ -218,18 +219,29 @@ export class AuthController {
     @Body() dto: SendOneTimeTokenDTO,
   ): Promise<string> {
     const { email, purpose } = dto;
-    const user: User | null = await this.userService.findOne({ where: { email } });
+    const withDeleted = purpose === 'recover-account';
+    const user: User | null = await this.userService.findOne({ where: { email }, withDeleted });
 
     if (!user) {
       throw new ServiceException('ENTITY_NOT_FOUND', 'FORBIDDEN', `user is not existed. ${email}`);
     }
+    let proxyUrl: string = '';
+    let securityToken: OneTimeToken | null = null;
+    let url: string = '';
+    //TODO 이메일 전송 제한 로직 추가하기
 
     switch (purpose) {
       case 'update-password':
-        const proxyUrl = this.configService.getOrThrow<string>(FRONT_ROUTE_UPDATE_PASSWORD);
-        const securityToken = await this.createOneTimeToken(qr, email, purpose, user);
-        const url = `${proxyUrl}?identifier=${securityToken.id}&token=${securityToken.token}`;
-        await this.mailService.sendForgetPassword(email, url);
+        proxyUrl = this.configService.getOrThrow<string>(FRONT_ROUTE_UPDATE_PASSWORD);
+        securityToken = await this.createOneTimeToken(qr, email, purpose, user);
+        url = `${proxyUrl}?identifier=${securityToken.id}&token=${securityToken.token}`;
+        await this.mailService.sendSecurityTokenLink(email, 'Update Forgotten password', url);
+        break;
+      case 'recover-account':
+        proxyUrl = this.configService.getOrThrow<string>(FRONT_ROUTE_RECOVER_ACCOUNT);
+        securityToken = await this.createOneTimeToken(qr, email, purpose, user);
+        url = `${proxyUrl}?identifier=${securityToken.id}&token=${securityToken.token}`;
+        await this.mailService.sendSecurityTokenLink(email, 'Recover Account', url);
         break;
       default:
         throw new ServiceException(
