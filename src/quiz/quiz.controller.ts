@@ -161,10 +161,10 @@ export class QuizController implements CrudController<Quiz> {
 
     return this.scheduleService.requestAddContext([dto]);
   }
+  // TODO: Quiz 변경 로직 개선하기
+  // - [ ] Quiz 소유자만 변경할 수 있도록 수정하기
+  // - [ ] DB transaction 로직 추가하기
 
-  /*TODO
-    - DB transaction 로직 추가하기
-  */
   @Post()
   async create(@Body() dto: CreateQuizDTO) {
     return this.service.createQuiz(dto);

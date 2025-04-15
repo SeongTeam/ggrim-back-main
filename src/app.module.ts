@@ -9,11 +9,14 @@ import { NODE_ENV } from './_common/const/env-keys.const';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ArtistModule } from './artist/artist.module';
+import { AuthModule } from './auth/auth.module';
 import { S3Module } from './aws/s3.module';
+import { MailModule } from './mail/mail.module';
 import { PaintingModule } from './painting/painting.module';
 import { QuizModule } from './quiz/quiz.module';
 import { StyleModule } from './style/style.module';
 import { TagModule } from './tag/tag.modue';
+import { UserModule } from './user/user.module';
 import { TypeORMConfig } from './utils/typeorm.config';
 
 const ENV = process.env[NODE_ENV];
@@ -22,6 +25,7 @@ const ENV = process.env[NODE_ENV];
   imports: [
     ConfigModule.forRoot({
       envFilePath: !ENV ? '.env' : `.env.${ENV}`,
+      isGlobal: true,
     }),
     TypeOrmModule.forRootAsync({
       useClass: TypeORMConfig,
@@ -41,6 +45,9 @@ const ENV = process.env[NODE_ENV];
     ArtistModule,
     QuizModule,
     S3Module,
+    UserModule,
+    AuthModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

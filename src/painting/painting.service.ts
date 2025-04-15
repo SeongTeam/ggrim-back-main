@@ -29,6 +29,9 @@ export class PaintingService {
     @Inject(ArtistService) private readonly artistService: ArtistService,
   ) {}
 
+  //TODO typeorm 로직 개선
+  // [ ] : returning() 메소드를 사용하여 생성 후 반환되는 열들의 값 명시하기
+  //  -> insertResult.generateMaps[0]은 직접삽입한 값은 포함되지 않기 때문에 returning() 적용필요.
   async create(queryRunner: QueryRunner, dto: CreatePaintingDTO): Promise<Painting> {
     let artist: Artist | undefined = undefined;
 
@@ -65,6 +68,10 @@ export class PaintingService {
 
     return result.generatedMaps[0] as Painting;
   }
+
+  // TODO: 업데이트 로직 버그 수정
+  // - [ ] update() 메소드 실행 후, result.generatedMaps[0]은 Painting이 아님
+  //  -> generatedMaps 필드는 쿼리 실행으로 생성된 파일의 집합이므로, 업데이트 쿼리 실행시 Painting은 생성되지 않음.
 
   async replace(
     queryRunner: QueryRunner,
