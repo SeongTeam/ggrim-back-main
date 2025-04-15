@@ -154,10 +154,9 @@ export class UserController implements CrudController<User> {
     if (!isEmail(email)) {
       throw new HttpException(`${email} is not valid`, HttpStatus.BAD_REQUEST);
     }
-    const user = await this.service.findUserByEmail(email);
-    if (!user) {
-      throw new HttpException(`${user} is not exist`, HttpStatus.BAD_REQUEST);
-    }
+    const authUserPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+    const { user } = authUserPayload;
+
     const encryptedPW = await this.authService.hash(dto.password);
     await this.service.updateUser(qr, user.id, { password: encryptedPW });
 
@@ -205,16 +204,15 @@ export class UserController implements CrudController<User> {
   @UseGuards(TokenAuthGuard, RolesGuard)
   async replaceRole(
     @DBQueryRunner() qr: QueryRunner,
+    @Request() request: any,
     @Param('email') email: string,
     @Body() dto: ReplaceRoleDTO,
   ) {
     if (!isEmail(email)) {
       throw new HttpException(`${email} is not valid`, HttpStatus.BAD_REQUEST);
     }
-    const user = await this.service.findOne({ where: { email } });
-    if (!user) {
-      throw new HttpException(`${email} is not exist`, HttpStatus.BAD_REQUEST);
-    }
+    const authUserPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+    const { user } = authUserPayload;
 
     await this.service.updateUser(qr, user.id, dto);
   }
@@ -237,10 +235,8 @@ export class UserController implements CrudController<User> {
     if (!isEmail(email)) {
       throw new HttpException(`${email} is not valid`, HttpStatus.BAD_REQUEST);
     }
-    const user = await this.service.findOne({ where: { email } });
-    if (!user) {
-      throw new HttpException(`${email} is not exist`, HttpStatus.BAD_REQUEST);
-    }
+    const authUserPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+    const { user } = authUserPayload;
 
     await this.service.softDeleteUser(qr, user.id);
 
@@ -265,10 +261,8 @@ export class UserController implements CrudController<User> {
     @Request() request: any,
     @Param('email') email: string,
   ) {
-    const deletedUser = await this.service.findOne({ where: { email }, withDeleted: true });
-    if (!deletedUser) {
-      throw new HttpException(`${email} is not exist`, HttpStatus.BAD_REQUEST);
-    }
+    const authUserPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+    const { user: deletedUser } = authUserPayload;
     if (isEmpty(deletedUser.deleted_date)) {
       throw new ServiceException(
         'ENTITY_RESTORE_FAILED',
