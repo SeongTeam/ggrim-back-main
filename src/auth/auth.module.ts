@@ -7,7 +7,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { OneTimeToken } from './entity/one-time-token.entity';
 import { Verification } from './entity/verification.entity';
-import { BasicTokenGuard } from './guard/authentication/basic.guard';
+import { BasicGuard } from './guard/authentication/basic.guard';
 import { SecurityTokenGuard } from './guard/authentication/security-token.guard';
 import { TempUserGuard } from './guard/authentication/temp-user.guard';
 import { TokenAuthGuard } from './guard/authentication/token-auth.guard';
@@ -24,7 +24,7 @@ import { RolesGuard } from './guard/authorization/roles.guard';
   controllers: [AuthController],
   providers: [
     AuthService,
-    BasicTokenGuard,
+    BasicGuard,
     TokenAuthGuard,
     OwnerGuard,
     RolesGuard,
@@ -35,7 +35,7 @@ import { RolesGuard } from './guard/authorization/roles.guard';
     AuthService,
     OwnerGuard,
     TokenAuthGuard,
-    BasicTokenGuard,
+    BasicGuard,
     RolesGuard,
     SecurityTokenGuard,
     TempUserGuard,

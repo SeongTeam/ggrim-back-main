@@ -13,7 +13,7 @@ import { BasicTokenGuardDTO } from '../dto/basic-auth-guard.dto';
 import { AuthUserPayload, ENUM_AUTH_CONTEXT_KEY } from '../type/request-payload';
 
 @Injectable()
-export class BasicTokenGuard implements CanActivate {
+export class BasicGuard implements CanActivate {
   constructor(
     @Inject(forwardRef(() => UserService)) private readonly userService: UserService,
     @Inject(AuthService) private readonly authService: AuthService,

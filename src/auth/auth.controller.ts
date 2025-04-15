@@ -39,7 +39,7 @@ import { SendOneTimeTokenDTO } from './dto/send-one-time-token.dto';
 import { VerifyDTO } from './dto/verify.dto';
 import { OneTimeToken, OneTimeTokenPurpose } from './entity/one-time-token.entity';
 import { Verification } from './entity/verification.entity';
-import { BasicTokenGuard } from './guard/authentication/basic.guard';
+import { BasicGuard } from './guard/authentication/basic.guard';
 import { SecurityTokenGuard } from './guard/authentication/security-token.guard';
 import { TokenAuthGuard } from './guard/authentication/token-auth.guard';
 import { OwnerGuard } from './guard/authorization/owner.guard';
@@ -60,7 +60,7 @@ export class AuthController {
   ) {}
 
   @Post('sign-in')
-  @UseGuards(BasicTokenGuard)
+  @UseGuards(BasicGuard)
   async signin(@Request() request: any) {
     const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
     const { user } = userPayload;
@@ -198,7 +198,7 @@ export class AuthController {
   }
 
   @Post('security-token')
-  @UseGuards(BasicTokenGuard)
+  @UseGuards(BasicGuard)
   @UseInterceptors(QueryRunnerInterceptor)
   async generateSecurityActionToken(
     @DBQueryRunner() qr: QueryRunner,
@@ -286,7 +286,7 @@ export class AuthController {
     ownerField: 'user_id',
     serviceMethod: 'findOneTimeTokenByID',
   })
-  @UseGuards(BasicTokenGuard, OwnerGuard)
+  @UseGuards(BasicGuard, OwnerGuard)
   @UseInterceptors(ClassSerializerInterceptor) // serialize entity with applying transformer decorator
   async getOneTimeToken(@Param('id', ParseUUIDPipe) id: string): Promise<OneTimeToken | null> {
     const findOne = await this.service.findOneTimeToken({
