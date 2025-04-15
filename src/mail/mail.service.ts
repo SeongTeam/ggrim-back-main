@@ -2,6 +2,14 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { Inject, Injectable } from '@nestjs/common';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 
+export const ENUM_MAIL_SUBJECT = {
+  EMAIL_VERIFICATION: 'Email verification',
+  UPDATE_FORGOTTEN_PW: 'Update Forgotten password',
+  RECOVER_ACCOUNT: 'Recover Account',
+} as const;
+
+export type MailSubjectType = (typeof ENUM_MAIL_SUBJECT)[keyof typeof ENUM_MAIL_SUBJECT];
+
 @Injectable()
 export class MailService {
   private ENUM_TEMPLATE = {
@@ -15,7 +23,7 @@ export class MailService {
       const result = await this.mailer
         .sendMail({
           to,
-          subject: 'Email verification ',
+          subject: ENUM_MAIL_SUBJECT.EMAIL_VERIFICATION,
           context: {
             pinCode,
           },
@@ -41,14 +49,15 @@ export class MailService {
   }
 
   //
-  async sendForgetPassword(to: string, link: string) {
+  async sendSecurityTokenLink(to: string, subject: MailSubjectType, link: string) {
     try {
       const result = await this.mailer
         .sendMail({
           to,
-          subject: 'Update forgotten password',
+          subject,
           context: {
             link,
+            subject,
           },
           template: this.ENUM_TEMPLATE.FORGET_PASSWORD,
         })
