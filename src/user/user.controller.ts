@@ -16,7 +16,7 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { isEmail, isEmpty } from 'class-validator';
+import { isEmail, isEmpty, isNotEmpty } from 'class-validator';
 import { QueryRunner } from 'typeorm';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { AuthService } from '../auth/auth.service';
@@ -29,6 +29,7 @@ import { TokenAuthGuard } from '../auth/guard/authentication/token-auth.guard';
 import { OwnerGuard } from '../auth/guard/authorization/owner.guard';
 import { RolesGuard } from '../auth/guard/authorization/roles.guard';
 import {
+  AuthUserPayload,
   ENUM_AUTH_CONTEXT_KEY,
   SecurityTokenPayload,
   TempUserPayload,
@@ -178,6 +179,7 @@ export class UserController implements CrudController<User> {
   @UseGuards(TokenAuthGuard, OwnerGuard)
   async replaceUsername(
     @DBQueryRunner() qr: QueryRunner,
+    @Request() request: any,
     @Param('email') email: string,
     @Body() dto: ReplaceUsernameDTO,
   ) {
@@ -185,32 +187,15 @@ export class UserController implements CrudController<User> {
       throw new HttpException(`${email} is not valid`, HttpStatus.BAD_REQUEST);
     }
     const { username } = dto;
-    const users = await this.service.find({ where: [{ email }, { username }] });
-    let targetId: string | undefined;
+    const authUserPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+    const { user } = authUserPayload;
+    const sameUserName = await this.service.findOne({ where: { username } });
 
-    users.forEach((user) => {
-      if (user.username === username) {
-        throw new HttpException(`${username} is already exist`, HttpStatus.BAD_REQUEST);
-      }
-
-      if (user.email === email) {
-        if (!targetId) {
-          targetId = user.id;
-        } else if (targetId !== user.id) {
-          throw new ServiceException(
-            'SERVICE_RUN_ERROR',
-            'INTERNAL_SERVER_ERROR',
-            `User Email mush be unique. ${user.email}`,
-          );
-        }
-      }
-    });
-
-    if (!targetId) {
-      throw new HttpException(`${email} is not exist`, HttpStatus.BAD_REQUEST);
+    if (isNotEmpty(sameUserName)) {
+      throw new ServiceException('BASE', 'FORBIDDEN', `${username} already exist`);
     }
 
-    await this.service.updateUser(qr, targetId, dto);
+    await this.service.updateUser(qr, user.id, dto);
     return;
   }
 
