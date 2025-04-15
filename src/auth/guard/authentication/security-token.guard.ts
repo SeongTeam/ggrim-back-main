@@ -12,6 +12,10 @@ import { ServiceException } from '../../../_common/filter/exception/service/serv
 import { UserService } from '../../../user/user.service';
 import { AuthService, JWTDecode } from '../../auth.service';
 import { PURPOSE_ONE_TIME_TOKEN_KEY } from '../../decorator/purpose-one-time-token';
+import {
+  SECURITY_TOKEN_GUARD_OPTIONS,
+  SecurityTokenGuardOptions,
+} from '../../decorator/security-token.guard.options';
 import { OneTimeTokenPurpose } from '../../entity/one-time-token.entity';
 import {
   AccessTokenPayload,
@@ -46,6 +50,13 @@ export class SecurityTokenGuard implements CanActivate {
       PURPOSE_ONE_TIME_TOKEN_KEY,
       context.getHandler(),
     );
+    const rawOptions: SecurityTokenGuardOptions | undefined =
+      this.reflector.get<SecurityTokenGuardOptions>(
+        SECURITY_TOKEN_GUARD_OPTIONS,
+        context.getHandler(),
+      );
+    const options = this.normalizeOptions(rawOptions);
+    const { withDeleted } = options;
 
     if (isEmpty(securityToken)) {
       throw new UnauthorizedException(`Missing or invalid security token header`);
@@ -54,7 +65,7 @@ export class SecurityTokenGuard implements CanActivate {
     const decoded: JWTDecode = await this.authService.verifyToken(securityToken);
     const { email, purpose, type } = decoded;
 
-    const user = await this.userService.findOne({ where: { email } });
+    const user = await this.userService.findOne({ where: { email }, withDeleted });
     if (!user) {
       throw new UnauthorizedException(`${email} user is not existed`);
     }
@@ -119,5 +130,22 @@ export class SecurityTokenGuard implements CanActivate {
     req[ENUM_AUTH_CONTEXT_KEY.USER] = userResult;
 
     return true;
+  }
+
+  normalizeOptions(options?: SecurityTokenGuardOptions): SecurityTokenGuardOptions {
+    const defaultOptions: SecurityTokenGuardOptions = { withDeleted: false };
+    if (options === undefined || options === null) {
+      return defaultOptions;
+    }
+
+    const keys = Object.keys(defaultOptions) as (keyof SecurityTokenGuardOptions)[];
+
+    keys.forEach((key) => {
+      if (isEmpty(options[key])) {
+        options[key] = defaultOptions[key];
+      }
+    });
+
+    return options;
   }
 }
