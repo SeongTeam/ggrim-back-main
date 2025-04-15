@@ -24,7 +24,11 @@ export class RolesGuard implements CanActivate {
 
     const requiredRoles = this.reflector.get<UserRole[]>(ROLES_KEY, context.getHandler());
     if (!requiredRoles) {
-      return true;
+      throw new ServiceException(
+        'SERVICE_RUN_ERROR',
+        'INTERNAL_SERVER_ERROR',
+        `RoleGuard should need requiredRoles`,
+      );
     }
 
     const userRole = user.role;
