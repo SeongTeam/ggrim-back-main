@@ -135,16 +135,18 @@ export class UserController implements CrudController<User> {
   // * 참고: <관련 정보나 링크>
 
   @Put(':email/password')
-  @UseInterceptors(QueryRunnerInterceptor)
   @CheckOwner({
     serviceClass: UserService,
     idParam: 'email',
     serviceMethod: 'findUserByEmail',
     ownerField: 'id',
   })
+  @PurposeOneTimeToken('update-password')
   @UseGuards(SecurityTokenGuard, OwnerGuard)
+  @UseInterceptors(QueryRunnerInterceptor)
   async replacePassword(
     @DBQueryRunner() qr: QueryRunner,
+    @Request() request: any,
     @Param('email') email: string,
     @Body() dto: ReplacePassWordDTO,
   ) {
@@ -157,6 +159,11 @@ export class UserController implements CrudController<User> {
     }
     const encryptedPW = await this.authService.hash(dto.password);
     await this.service.updatePassword(qr, user.id, encryptedPW);
+
+    const SecurityTokenGuardResult: SecurityTokenPayload =
+      request[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN];
+    await this.authService.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
+
     return;
   }
 
