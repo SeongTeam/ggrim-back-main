@@ -1,4 +1,4 @@
-import { UserRole } from '../../../user/entity/user.entity';
+import { User } from '../../../user/entity/user.entity';
 import { JWTDecode } from '../../auth.service';
 
 export const ENUM_AUTH_CONTEXT_KEY = {
@@ -7,11 +7,9 @@ export const ENUM_AUTH_CONTEXT_KEY = {
   ACCESS_TOKEN: 'AccessTokenPayload',
   TEMP_USER: 'TempUser',
 };
+
 export interface AuthUserPayload {
-  email: string;
-  username: string;
-  role: UserRole;
-  id: string;
+  user: User;
 }
 
 export interface OneTimeTokenPayload {

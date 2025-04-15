@@ -63,22 +63,28 @@ export class AuthController {
   @UseGuards(BasicTokenGuard)
   async signin(@Request() request: any) {
     const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+    const { user } = userPayload;
+    const { email, role, username } = user;
 
     const accessToken = this.service.signToken({
-      ...userPayload,
       type: 'ACCESS',
       purpose: 'access',
+      email,
+      role,
+      username,
     });
     const refreshToken = this.service.signToken({
-      ...userPayload,
       type: 'REFRESH',
       purpose: 'refresh',
+      email,
+      role,
+      username,
     });
 
     const response: SignInResponse = {
       accessToken,
       refreshToken,
-      email: userPayload.email,
+      email,
     };
 
     return response;
@@ -201,13 +207,9 @@ export class AuthController {
   ): Promise<OneTimeToken> {
     const { purpose } = dto;
     const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
-    const user: User | null = await this.userService.findOne({ where: { id: userPayload.id } });
-    const securityToken = await this.createOneTimeToken(
-      qr,
-      userPayload.email,
-      purpose,
-      user ? user : undefined,
-    );
+    const user = userPayload.user;
+    const { email } = user;
+    const securityToken = await this.createOneTimeToken(qr, email, purpose, user!);
 
     return securityToken;
   }

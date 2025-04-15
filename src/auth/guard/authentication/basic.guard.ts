@@ -51,10 +51,7 @@ export class BasicTokenGuard implements CanActivate {
     const isAuthenticated = await this.authService.isHashMatched(password, user.password);
     if (isAuthenticated) {
       const result: AuthUserPayload = {
-        email: user.email,
-        username: user.username,
-        role: user.role,
-        id: user.id,
+        user,
       };
       req[ENUM_AUTH_CONTEXT_KEY.USER] = result;
     }

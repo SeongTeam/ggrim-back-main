@@ -138,7 +138,7 @@ export class AuthService {
     return newToken;
   }
 
-  signToken(payload: BaseJWTPayload): string {
+  signToken(payload: BaseJWTPayload | JWTPayload): string {
     let expiresIn: number;
 
     switch (payload.type) {

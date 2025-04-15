@@ -23,6 +23,7 @@ export class OwnerGuard implements CanActivate {
     const isAdminAccess: any = this.reflector.get<any>(ADMIN_ACCESS_KEY, context.getHandler());
     const request = context.switchToHttp().getRequest();
     const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+    const { user } = userPayload;
 
     if (!userPayload) {
       throw new ServiceException(
@@ -32,7 +33,7 @@ export class OwnerGuard implements CanActivate {
       );
     }
 
-    if (isAdminAccess && userPayload.role === 'admin') {
+    if (isAdminAccess && user.role === 'admin') {
       return true;
     }
 
@@ -67,7 +68,7 @@ export class OwnerGuard implements CanActivate {
       );
     }
 
-    if (resource[ownerField] !== userPayload.id) {
+    if (resource[ownerField] !== user.id) {
       throw new ServiceException(
         `ENTITY_NOT_FOUND`,
         `FORBIDDEN`,

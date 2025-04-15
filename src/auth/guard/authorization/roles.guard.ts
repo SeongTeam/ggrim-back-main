@@ -12,6 +12,7 @@ export class RolesGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const req = context.switchToHttp().getRequest();
     const userInfo: AuthUserPayload = req[ENUM_AUTH_CONTEXT_KEY.USER];
+    const { user } = userInfo;
 
     if (!userInfo) {
       throw new ServiceException(
@@ -26,7 +27,7 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const userRole = userInfo.role;
+    const userRole = user.role;
     return requiredRoles.some((role) => userRole === role);
   }
 }

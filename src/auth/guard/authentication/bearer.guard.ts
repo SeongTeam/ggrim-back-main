@@ -60,10 +60,7 @@ export class TokenAuthGuard implements CanActivate {
     req[ENUM_AUTH_CONTEXT_KEY.ACCESS_TOKEN] = result;
 
     const userResult: AuthUserPayload = {
-      email: user.email,
-      username: user.username,
-      role: user.role,
-      id: user.id,
+      user,
     };
     req[ENUM_AUTH_CONTEXT_KEY.USER] = userResult;
 
