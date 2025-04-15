@@ -60,6 +60,7 @@ import { UserService } from './user.service';
   },
   query: {
     allow: ['email', 'username', 'oauth_provider_id'],
+    exclude: ['password'],
     softDelete: true,
   },
   dto: {
