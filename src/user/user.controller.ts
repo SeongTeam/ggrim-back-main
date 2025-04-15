@@ -49,7 +49,7 @@ import { UserService } from './user.service';
     type: User,
   },
   routes: {
-    only: ['getOneBase', 'createOneBase'],
+    only: ['getOneBase', 'getManyBase', 'createOneBase'],
   },
   params: {
     id: {
