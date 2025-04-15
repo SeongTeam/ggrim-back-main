@@ -42,7 +42,7 @@ export class User extends CustomBaseEntity {
   last_login_date!: Date;
 
   /*TODO
-    - Auth 로직추가시 해당 컬럼 관련 로직 개선하기
+    - Oauth 로직추가시 해당 컬럼 관련 로직 개선하기
   */
   @IsOptional()
   @Column({ nullable: true })
