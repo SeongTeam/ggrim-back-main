@@ -2,11 +2,13 @@ import { Crud, CrudController, Override } from '@dataui/crud';
 import {
   Body,
   Controller,
+  Delete,
   forwardRef,
   HttpException,
   HttpStatus,
   Inject,
   Param,
+  Patch,
   Put,
   Request,
   UseGuards,
@@ -14,18 +16,23 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { isEmail } from 'class-validator';
+import { isEmail, isEmpty } from 'class-validator';
 import { QueryRunner } from 'typeorm';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { AuthService } from '../auth/auth.service';
 import { CheckOwner } from '../auth/decorator/owner';
 import { PurposeOneTimeToken } from '../auth/decorator/purpose-one-time-token';
+import { SecurityTokenGuardOptions } from '../auth/decorator/security-token.guard.options';
 import { TokenAuthGuard } from '../auth/guard/authentication/bearer.guard';
 import { SecurityTokenGuard } from '../auth/guard/authentication/security-token.guard';
 import { TempUserGuard } from '../auth/guard/authentication/temp-user.guard';
 import { OwnerGuard } from '../auth/guard/authorization/owner.guard';
 import { RolesGuard } from '../auth/guard/authorization/roles.guard';
-import { ENUM_AUTH_CONTEXT_KEY, TempUserPayload } from '../auth/guard/type/request-payload';
+import {
+  ENUM_AUTH_CONTEXT_KEY,
+  SecurityTokenPayload,
+  TempUserPayload,
+} from '../auth/guard/type/request-payload';
 import { DBQueryRunner } from '../db/query-runner/decorator/query-runner.decorator';
 import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.interceptor';
 import { Roles } from './decorator/role';
@@ -41,7 +48,7 @@ import { UserService } from './user.service';
     type: User,
   },
   routes: {
-    only: ['getOneBase', 'createOneBase', 'deleteOneBase', 'recoverOneBase'],
+    only: ['getOneBase', 'createOneBase'],
   },
   params: {
     id: {
@@ -71,7 +78,7 @@ export class UserController implements CrudController<User> {
   //  -> 이메일 인증 등을 사용하여 인증된 사용자 확인하기
   // - [x] 사용자 생성시, 비밀번호 암호화 기능 추가
   // - [x] 비밀번호 변경, 유저이름 변경 등에 사용자 권한 확인 로직 추가
-  // - [ ] 사용자 삭제시, 본인 인증 및 권한 확인 로직 추가
+  // - [x] 사용자 삭제시, 본인 인증 및 권한 확인 로직 추가
   // ! 주의: <경고할 사항>
   // ? 질문: <의문점 또는 개선 방향>
   // * 참고: <관련 정보나 링크>
@@ -217,5 +224,69 @@ export class UserController implements CrudController<User> {
     }
 
     await this.service.updateRole(qr, user.id, dto.role);
+  }
+
+  @Delete(':email')
+  @CheckOwner({
+    serviceClass: UserService,
+    idParam: 'email',
+    serviceMethod: 'findUserByEmail',
+    ownerField: 'id',
+  })
+  @PurposeOneTimeToken('delete-account')
+  @UseGuards(SecurityTokenGuard, OwnerGuard)
+  @UseInterceptors(QueryRunnerInterceptor)
+  async deleteUser(
+    @DBQueryRunner() qr: QueryRunner,
+    @Request() request: any,
+    @Param('email') email: string,
+  ) {
+    if (!isEmail(email)) {
+      throw new HttpException(`${email} is not valid`, HttpStatus.BAD_REQUEST);
+    }
+    const user = await this.service.findOne({ where: { email } });
+    if (!user) {
+      throw new HttpException(`${email} is not exist`, HttpStatus.BAD_REQUEST);
+    }
+
+    await this.service.softDeleteUser(qr, user.id);
+
+    const SecurityTokenGuardResult: SecurityTokenPayload =
+      request[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN];
+    await this.authService.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
+  }
+
+  @Patch('recover/:email')
+  @CheckOwner({
+    serviceClass: UserService,
+    idParam: 'email',
+    serviceMethod: 'findDeletedUserByEmail',
+    ownerField: 'id',
+  })
+  @PurposeOneTimeToken('recover-account')
+  @SecurityTokenGuardOptions({ withDeleted: true })
+  @UseGuards(SecurityTokenGuard, OwnerGuard)
+  @UseInterceptors(QueryRunnerInterceptor)
+  async recoverUser(
+    @DBQueryRunner() qr: QueryRunner,
+    @Request() request: any,
+    @Param('email') email: string,
+  ) {
+    const deletedUser = await this.service.findOne({ where: { email }, withDeleted: true });
+    if (!deletedUser) {
+      throw new HttpException(`${email} is not exist`, HttpStatus.BAD_REQUEST);
+    }
+    if (isEmpty(deletedUser.deleted_date)) {
+      throw new ServiceException(
+        'ENTITY_RESTORE_FAILED',
+        'FORBIDDEN',
+        `can't recover non-deleted user`,
+      );
+    }
+
+    await this.service.recoverUser(qr, deletedUser.id);
+
+    const securityToken: SecurityTokenPayload = request[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN];
+    await this.authService.markOneTimeJWT(qr, securityToken.oneTimeTokenID);
   }
 }

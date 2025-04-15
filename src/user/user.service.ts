@@ -103,4 +103,53 @@ export class UserService extends TypeOrmCrudService<User> {
       );
     }
   }
+
+  async softDeleteUser(queryRunner: QueryRunner, id: string): Promise<void> {
+    try {
+      const result = await createTransactionQueryBuilder(queryRunner, User)
+        .softDelete()
+        .where('id = :id', { id })
+        .execute();
+      return;
+    } catch (error) {
+      throw new ServiceException(
+        'EXTERNAL_SERVICE_FAILED',
+        'INTERNAL_SERVER_ERROR',
+        `Can't delete User`,
+        { cause: error },
+      );
+    }
+  }
+
+  async recoverUser(queryRunner: QueryRunner, id: string): Promise<void> {
+    try {
+      const result = await createTransactionQueryBuilder(queryRunner, User)
+        .restore()
+        .where('id = :id', { id })
+        .execute();
+
+      return;
+    } catch (error) {
+      throw new ServiceException(
+        'EXTERNAL_SERVICE_FAILED',
+        'INTERNAL_SERVER_ERROR',
+        `Can't restore User`,
+        { cause: error },
+      );
+    }
+  }
+
+  async findDeletedUserByEmail(email: string): Promise<User | null> {
+    try {
+      const deletedUser = await this.repo.findOne({ where: { email }, withDeleted: true });
+      return deletedUser;
+    } catch (error) {
+      throw new ServiceException(
+        'EXTERNAL_SERVICE_FAILED',
+        'INTERNAL_SERVER_ERROR',
+        `Can't restore User`,
+        { cause: error },
+      );
+    }
+  }
 }
