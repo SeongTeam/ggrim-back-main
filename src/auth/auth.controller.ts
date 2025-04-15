@@ -228,7 +228,6 @@ export class AuthController {
     let proxyUrl: string = '';
     let securityToken: OneTimeToken | null = null;
     let url: string = '';
-    //TODO 이메일 전송 제한 로직 추가하기
 
     switch (purpose) {
       case 'update-password':
