@@ -23,9 +23,9 @@ import { AuthService } from '../auth/auth.service';
 import { CheckOwner } from '../auth/decorator/owner';
 import { PurposeOneTimeToken } from '../auth/decorator/purpose-one-time-token';
 import { SecurityTokenGuardOptions } from '../auth/decorator/security-token.guard.options';
-import { TokenAuthGuard } from '../auth/guard/authentication/bearer.guard';
 import { SecurityTokenGuard } from '../auth/guard/authentication/security-token.guard';
 import { TempUserGuard } from '../auth/guard/authentication/temp-user.guard';
+import { TokenAuthGuard } from '../auth/guard/authentication/token-auth.guard';
 import { OwnerGuard } from '../auth/guard/authorization/owner.guard';
 import { RolesGuard } from '../auth/guard/authorization/roles.guard';
 import {
