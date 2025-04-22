@@ -100,11 +100,11 @@ export class Quiz extends CustomBaseEntity {
   @JoinTable()
   styles!: Style[];
 
-  @Column({ nullable: true })
+  @Column()
   @IsUUID()
   owner_id!: string;
 
-  @ManyToOne(() => User, (user) => user.quizzes, { nullable: true })
+  @ManyToOne(() => User, (user) => user.quizzes)
   @JoinColumn({ name: 'owner_id' })
   owner!: User;
 }
