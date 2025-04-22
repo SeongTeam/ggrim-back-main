@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { QueryRunner, Repository } from 'typeorm';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { Artist } from '../artist/entities/artist.entity';
+import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.lib';
 import { Painting } from '../painting/entities/painting.entity';
 import { PaintingService } from '../painting/painting.service';
 import { Style } from '../style/entities/style.entity';
@@ -324,6 +325,22 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     return quiz;
   }
 
+  async softDeleteQuiz(queryRunner: QueryRunner, id: string): Promise<void> {
+    try {
+      const result = await createTransactionQueryBuilder(queryRunner, Quiz)
+        .softDelete()
+        .where('id = :id', { id })
+        .execute();
+      return;
+    } catch (error) {
+      throw new ServiceException(
+        'EXTERNAL_SERVICE_FAILED',
+        'INTERNAL_SERVER_ERROR',
+        `Can't delete Quiz`,
+        { cause: error },
+      );
+    }
+  }
   private async getAnswerPaintings(
     category: QuizCategory,
     answerCategoryValues: any[],

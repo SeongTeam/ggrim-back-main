@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   DefaultValuePipe,
+  Delete,
   Get,
   Inject,
   Logger,
@@ -175,7 +176,7 @@ export class QuizController implements CrudController<Quiz> {
   // TODO: Quiz 변경 로직 개선하기
   // - [x] Quiz 소유자만 변경할 수 있도록 수정하기
   // - [x] DB transaction 로직 추가하기
-  // - [ ] 삭제 로직 추가
+  // - [x] 삭제 로직 추가
 
   @Post()
   @UseGuards(TokenAuthGuard)
@@ -208,6 +209,19 @@ export class QuizController implements CrudController<Quiz> {
   ) {
     const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
     return this.service.updateQuiz(qr, id, dto, userPayload.user);
+  }
+
+  @Delete(':id')
+  @CheckOwner({
+    serviceClass: QuizService,
+    idParam: 'id',
+    ownerField: 'owner_id',
+    serviceMethod: 'getQuizById',
+  })
+  @UseGuards(TokenAuthGuard, OwnerGuard)
+  @UseInterceptors(QueryRunnerInterceptor)
+  async delete(@DBQueryRunner() qr: QueryRunner, @Param('id', ParseUUIDPipe) id: string) {
+    return this.service.softDeleteQuiz(qr, id);
   }
 
   // TODO: 퀴즈 검색 로직 개선
