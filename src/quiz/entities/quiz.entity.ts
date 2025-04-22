@@ -1,10 +1,19 @@
-import { IsNumber, IsString } from 'class-validator';
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { IsNumber, IsString, IsUUID } from 'class-validator';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Artist } from '../../artist/entities/artist.entity';
 import { CustomBaseEntity } from '../../db/entity/custom.base.entity';
 import { Painting } from '../../painting/entities/painting.entity';
 import { Style } from '../../style/entities/style.entity';
 import { Tag } from '../../tag/entities/tag.entity';
+import { User } from '../../user/entity/user.entity';
 import { QUIZ_TIME_LIMIT } from '../const';
 import { QUIZ_TYPE } from '../type';
 
@@ -90,4 +99,12 @@ export class Quiz extends CustomBaseEntity {
   })
   @JoinTable()
   styles!: Style[];
+
+  @Column({ nullable: true })
+  @IsUUID()
+  owner_id!: string;
+
+  @ManyToOne(() => User, (user) => user.quizzes, { nullable: true })
+  @JoinColumn({ name: 'owner_id' })
+  owner!: User;
 }

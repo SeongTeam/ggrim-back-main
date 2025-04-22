@@ -2,6 +2,7 @@ import { IsEmail, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'cla
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { OneTimeToken } from '../../auth/entity/one-time-token.entity';
 import { CustomBaseEntity } from '../../db/entity/custom.base.entity';
+import { Quiz } from '../../quiz/entities/quiz.entity';
 import { IsInArray } from '../../utils/class-validator';
 
 export type UserRole = 'admin' | 'user';
@@ -54,4 +55,7 @@ export class User extends CustomBaseEntity {
 
   @OneToMany(() => OneTimeToken, (oneTimeToken) => oneTimeToken.user)
   oneTimeTokens!: OneTimeToken[];
+
+  @OneToMany(() => Quiz, (quiz) => quiz.owner)
+  quizzes!: Quiz[];
 }
