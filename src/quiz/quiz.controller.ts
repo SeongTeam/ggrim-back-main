@@ -262,6 +262,12 @@ export class QuizController implements CrudController<Quiz> {
     }
   }
 
+  // TODO : 퀴즈 사용자 상호작용 기능 추가
+  // - [ ] : 제출 퀴즈
+  // - [ ] : 사용자의 퀴즈 풀이 기록
+  // - [ ] : 임시 사용자의 퀴즈 풀이 기록
+  // - [ ] : 사용자의 퀴즈 싫어요/ 좋아요 기록
+
   async initialize() {
     const weeklyPaintings = await this.paintingService.getWeeklyPaintings();
 
