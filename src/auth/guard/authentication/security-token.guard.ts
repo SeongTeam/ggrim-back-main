@@ -32,6 +32,10 @@ const ENUM_SECURITY_TOKEN_HEADER = {
 //Guard does't Update OneTimeToken Table.
 //It just validate OneTimeToken for Security data from client
 
+//TODO : SecurityTokenGuard 개선
+// [ ] : 1회성 토큰 마킹 로직 추가
+// -> QueryRunner 생성을 Middleware로 옮기기면, Guard에서도 QR 획득가능
+
 @Injectable()
 export class SecurityTokenGuard implements CanActivate {
   constructor(

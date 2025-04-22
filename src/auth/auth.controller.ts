@@ -59,6 +59,7 @@ export class AuthController {
     @Inject(ConfigService) private readonly configService: ConfigService,
   ) {}
 
+  //TODO 사용자 로그인 기록하기
   @Post('sign-in')
   @UseGuards(BasicGuard)
   async signin(@Request() request: any) {
