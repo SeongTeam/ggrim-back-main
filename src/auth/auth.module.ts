@@ -14,6 +14,9 @@ import { TokenAuthGuard } from './guard/authentication/token-auth.guard';
 import { OwnerGuard } from './guard/authorization/owner.guard';
 import { RolesGuard } from './guard/authorization/roles.guard';
 
+//TODO : AuthModule 기능 개선
+// - [ ] : Guard payload를 추출하는 데코레이터 추가하기
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([Verification, OneTimeToken]),
