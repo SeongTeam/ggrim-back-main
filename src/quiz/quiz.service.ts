@@ -1,13 +1,15 @@
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryRunner, Repository } from 'typeorm';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { Artist } from '../artist/entities/artist.entity';
+import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.lib';
 import { Painting } from '../painting/entities/painting.entity';
 import { PaintingService } from '../painting/painting.service';
 import { Style } from '../style/entities/style.entity';
 import { Tag } from '../tag/entities/tag.entity';
+import { User } from '../user/entity/user.entity';
 import { extractValuesFromArray, updateProperty } from '../utils/object';
 import { getRandomElement, getRandomNumber } from '../utils/random';
 import { isNotFalsy } from '../utils/validator';
@@ -153,7 +155,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     }
   }
 
-  async createQuiz(dto: CreateQuizDTO) {
+  async createQuiz(queryRunner: QueryRunner, dto: CreateQuizDTO, owner: User) {
     const { answerPaintings, distractorPaintings, examplePainting } =
       await this.getRelatedPaintings({ ...dto });
 
@@ -165,11 +167,13 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     newQuiz.title = dto.title;
     newQuiz.example_painting = examplePainting;
     newQuiz.description = dto.description;
+    newQuiz.owner_id = owner.id;
+    newQuiz.owner = owner;
 
-    return this.insertQuiz(newQuiz);
+    return this.insertQuiz(queryRunner, newQuiz);
   }
 
-  async updateQuiz(id: string, dto: UpdateQuizDTO) {
+  async updateQuiz(queryRunner: QueryRunner, id: string, dto: UpdateQuizDTO, owner: User) {
     const quiz = await this.repo.findOneByOrFail({ id });
     if (!isNotFalsy(quiz)) {
       throw new ServiceException(
@@ -189,7 +193,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     quiz.distractor_paintings = distractorPaintings;
     quiz.example_painting = examplePainting;
 
-    return this.insertQuiz(quiz);
+    return this.insertQuiz(queryRunner, quiz);
   }
 
   private async selectDistractorPaintings(
@@ -315,6 +319,28 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     return result;
   }
 
+  async getQuizById(id: string): Promise<Quiz | null> {
+    const quiz = await this.findOne({ where: { id } });
+
+    return quiz;
+  }
+
+  async softDeleteQuiz(queryRunner: QueryRunner, id: string): Promise<void> {
+    try {
+      const result = await createTransactionQueryBuilder(queryRunner, Quiz)
+        .softDelete()
+        .where('id = :id', { id })
+        .execute();
+      return;
+    } catch (error) {
+      throw new ServiceException(
+        'EXTERNAL_SERVICE_FAILED',
+        'INTERNAL_SERVER_ERROR',
+        `Can't delete Quiz`,
+        { cause: error },
+      );
+    }
+  }
   private async getAnswerPaintings(
     category: QuizCategory,
     answerCategoryValues: any[],
@@ -341,7 +367,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     return answerPaintings;
   }
 
-  private async insertQuiz(quiz: Quiz) {
+  private async insertQuiz(queryRunner: QueryRunner, quiz: Quiz): Promise<Quiz> {
     /*TODO 
       - Quiz.type 에 알맞은 그림 개수 검증필요
     */
@@ -376,7 +402,8 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     quiz.styles = [...styleMap.values()];
     quiz.artists = [...artistMap.values()];
 
-    return await this.repo.save(quiz);
+    // return await this.repo.save(quiz);
+    return await queryRunner.manager.save(quiz);
   }
 
   private async createPaintingMap(paintingIds: string[]): Promise<Map<string, Painting>> {

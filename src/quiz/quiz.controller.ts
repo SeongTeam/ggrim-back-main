@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   DefaultValuePipe,
+  Delete,
   Get,
   Inject,
   Logger,
@@ -12,15 +13,25 @@ import {
   Post,
   Put,
   Query,
+  Request,
+  UseGuards,
+  UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import { QueryRunner } from 'typeorm';
 import { CONFIG_FILE_PATH } from '../_common/const/default.value';
 import { AWS_BUCKET, AWS_INIT_FILE_KEY_PREFIX } from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { IPaginationResult } from '../_common/interface';
 import { ArtistService } from '../artist/artist.service';
+import { CheckOwner } from '../auth/decorator/owner';
+import { TokenAuthGuard } from '../auth/guard/authentication/token-auth.guard';
+import { OwnerGuard } from '../auth/guard/authorization/owner.guard';
+import { AuthUserPayload, ENUM_AUTH_CONTEXT_KEY } from '../auth/guard/type/request-payload';
 import { S3Service } from '../aws/s3.service';
+import { DBQueryRunner } from '../db/query-runner/decorator/query-runner.decorator';
+import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.interceptor';
 import { PaintingService } from '../painting/painting.service';
 import { StyleService } from '../style/style.service';
 import { TagService } from '../tag/tag.service';
@@ -161,18 +172,56 @@ export class QuizController implements CrudController<Quiz> {
 
     return this.scheduleService.requestAddContext([dto]);
   }
+
   // TODO: Quiz 변경 로직 개선하기
-  // - [ ] Quiz 소유자만 변경할 수 있도록 수정하기
-  // - [ ] DB transaction 로직 추가하기
+  // - [x] Quiz 소유자만 변경할 수 있도록 수정하기
+  // - [x] DB transaction 로직 추가하기
+  // - [x] 삭제 로직 추가
 
   @Post()
-  async create(@Body() dto: CreateQuizDTO) {
-    return this.service.createQuiz(dto);
+  @UseGuards(TokenAuthGuard)
+  @UseInterceptors(QueryRunnerInterceptor)
+  async create(
+    @DBQueryRunner() qr: QueryRunner,
+    @Request() request: any,
+
+    @Body() dto: CreateQuizDTO,
+  ) {
+    const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+
+    return this.service.createQuiz(qr, dto, userPayload.user);
   }
 
   @Put(':id')
-  async update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateQuizDTO) {
-    return this.service.updateQuiz(id, dto);
+  @CheckOwner({
+    serviceClass: QuizService,
+    idParam: 'id',
+    ownerField: 'owner_id',
+    serviceMethod: 'getQuizById',
+  })
+  @UseGuards(TokenAuthGuard, OwnerGuard)
+  @UseInterceptors(QueryRunnerInterceptor)
+  async update(
+    @DBQueryRunner() qr: QueryRunner,
+    @Request() request: any,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateQuizDTO,
+  ) {
+    const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+    return this.service.updateQuiz(qr, id, dto, userPayload.user);
+  }
+
+  @Delete(':id')
+  @CheckOwner({
+    serviceClass: QuizService,
+    idParam: 'id',
+    ownerField: 'owner_id',
+    serviceMethod: 'getQuizById',
+  })
+  @UseGuards(TokenAuthGuard, OwnerGuard)
+  @UseInterceptors(QueryRunnerInterceptor)
+  async delete(@DBQueryRunner() qr: QueryRunner, @Param('id', ParseUUIDPipe) id: string) {
+    return this.service.softDeleteQuiz(qr, id);
   }
 
   // TODO: 퀴즈 검색 로직 개선
@@ -226,6 +275,12 @@ export class QuizController implements CrudController<Quiz> {
       );
     }
   }
+
+  // TODO : 퀴즈 사용자 상호작용 기능 추가
+  // - [ ] : 제출 퀴즈
+  // - [ ] : 사용자의 퀴즈 풀이 기록
+  // - [ ] : 임시 사용자의 퀴즈 풀이 기록
+  // - [ ] : 사용자의 퀴즈 싫어요/ 좋아요 기록
 
   async initialize() {
     const weeklyPaintings = await this.paintingService.getWeeklyPaintings();
