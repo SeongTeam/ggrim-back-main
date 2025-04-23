@@ -343,6 +343,9 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     }
   }
 
+  // TODO : statistic Map 기능 개선
+  // [ ] : Nodejs 최대 정수값(2^53-1) overflow 고려하기
+  // [ ] : Update Query에 대해 트랜잭션 고려하기.
   async requestIncreaseView(id: string) {
     const MAX_SIZE = 1000;
     this.increaseView(id);
