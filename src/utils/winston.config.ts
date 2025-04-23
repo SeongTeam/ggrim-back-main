@@ -47,7 +47,7 @@ export const winstonLogger = WinstonModule.createLogger({
     new winston.transports.Console({
       level: isProduction ? 'info' : 'debug',
       format: winston.format.combine(
-        winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+        winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
         winston.format.ms(),
         winston.format.json(),
         nestWinstonModuleUtilities.format.nestLike(appName, {
