@@ -27,5 +27,6 @@ import { QuizService } from './quiz.service';
   ],
   controllers: [QuizController],
   providers: [QuizService, QuizScheduleService],
+  exports: [QuizService],
 })
 export class QuizModule {}

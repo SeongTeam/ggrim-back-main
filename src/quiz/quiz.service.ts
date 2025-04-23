@@ -24,6 +24,7 @@ import { QuizCategory } from './type';
 
 @Injectable()
 export class QuizService extends TypeOrmCrudService<Quiz> {
+  private viewMap = new Map<string, number>();
   constructor(
     @InjectRepository(Quiz) repo: Repository<Quiz>,
     @Inject(PaintingService) private readonly paintingService: PaintingService,
@@ -341,6 +342,28 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
       );
     }
   }
+
+  async requestIncreaseView(id: string) {
+    const MAX_SIZE = 1000;
+    this.increaseView(id);
+    if (this.viewMap.size > MAX_SIZE) {
+      Logger.log('call flushViewMap(). Map is full', QuizService.name);
+      await this.flushViewMap();
+    }
+  }
+
+  async flushViewMap() {
+    const key: keyof Quiz = 'view_count';
+    for (const [id, count] of this.viewMap.entries()) {
+      await this.repo.increment({ id }, key, count);
+    }
+    this.viewMap.clear();
+  }
+  private increaseView(id: string) {
+    const current = this.viewMap.get(id) || 0;
+    this.viewMap.set(id, current + 1);
+  }
+
   private async getAnswerPaintings(
     category: QuizCategory,
     answerCategoryValues: any[],

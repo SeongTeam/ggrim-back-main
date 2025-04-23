@@ -1,4 +1,4 @@
-import { Crud, CrudController } from '@dataui/crud';
+import { Crud, CrudController, CrudRequest, Override, ParsedRequest } from '@dataui/crud';
 import {
   Body,
   Controller,
@@ -10,6 +10,7 @@ import {
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
+  Patch,
   Post,
   Put,
   Query,
@@ -100,6 +101,21 @@ export class QuizController implements CrudController<Quiz> {
     @Inject(PaintingService) private readonly paintingService: PaintingService,
     @Inject(S3Service) private readonly s3Service: S3Service,
   ) {}
+
+  @Override('getOneBase')
+  async getQuizAndIncreasingView(
+    @Param('id') id: string,
+    @ParsedRequest() req: CrudRequest,
+  ): Promise<Quiz> {
+    const quiz = await this.service.getOne(req);
+    await this.service.requestIncreaseView(id);
+    return quiz;
+  }
+
+  @Patch('/viewMap/flush')
+  async flushQuizViewMap() {
+    await this.service.flushViewMap();
+  }
 
   @Get('category/:key')
   async getQuizTags(@Param('key') key: string) {
