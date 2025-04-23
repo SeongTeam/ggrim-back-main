@@ -21,6 +21,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { QueryRunner } from 'typeorm';
+import { LoggerService } from '../Logger/logger.service';
 import { CONFIG_FILE_PATH } from '../_common/const/default.value';
 import { AWS_BUCKET, AWS_INIT_FILE_KEY_PREFIX } from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
@@ -44,6 +45,7 @@ import { GenerateQuizQueryDTO } from './dto/generate-quiz.query.dto';
 import { ResponseQuizDTO } from './dto/output/response-schedule-quiz.dto';
 import { QuizContextDTO } from './dto/quiz-context.dto';
 import { ScheduleQuizQueryDTO } from './dto/schedule-quiz.query.dto';
+import { QuizSubmitDTO } from './dto/submit';
 import { UpdateQuizDTO } from './dto/update-quiz.dto';
 import { Quiz } from './entities/quiz.entity';
 import { QuizContext } from './interface/quiz-context';
@@ -100,6 +102,7 @@ export class QuizController implements CrudController<Quiz> {
     @Inject(ArtistService) private readonly artistService: ArtistService,
     @Inject(PaintingService) private readonly paintingService: PaintingService,
     @Inject(S3Service) private readonly s3Service: S3Service,
+    @Inject(LoggerService) private readonly logger: LoggerService,
   ) {}
 
   @Override('getOneBase')
@@ -115,6 +118,26 @@ export class QuizController implements CrudController<Quiz> {
   @Patch('/viewMap/flush')
   async flushQuizViewMap() {
     await this.service.flushViewMap();
+  }
+
+  @Post('submit/:id')
+  async submitQuiz(@Param('id', ParseUUIDPipe) id: string, @Body() dto: QuizSubmitDTO) {
+    this.service.insertSubmission(id, dto.isCorrect);
+
+    if (this.service.isSubmissionMapFull()) {
+      Logger.log('call flushSubmissionMap(). Map is full', QuizController.name);
+      //비동기 처리
+      this.service.flushSubmissionMap().catch((err) => {
+        this.logger.logUnknownError('flushSubmissionMap fail', err, {
+          className: QuizController.name,
+        });
+      });
+    }
+  }
+
+  @Patch('/viewMap/flush')
+  async flushQuizSubmissionMap() {
+    await this.service.flushSubmissionMap();
   }
 
   @Get('category/:key')

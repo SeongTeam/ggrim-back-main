@@ -1,7 +1,7 @@
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryRunner, Repository } from 'typeorm';
+import { In, QueryRunner, Repository } from 'typeorm';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { Artist } from '../artist/entities/artist.entity';
 import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.lib';
@@ -19,12 +19,14 @@ import { CreateQuizDTO } from './dto/create-quiz.dto';
 import { QuizDTO } from './dto/quiz.dto';
 import { UpdateQuizDTO } from './dto/update-quiz.dto';
 import { Quiz } from './entities/quiz.entity';
+import { QuizSubmission } from './interface/quiz-Submission';
 import { RelatedPaintingIds, RelatedPaintings } from './interface/related-paintings.interface';
 import { QuizCategory } from './type';
 
 @Injectable()
 export class QuizService extends TypeOrmCrudService<Quiz> {
   private viewMap = new Map<string, number>();
+  private submissionMap = new Map<string, QuizSubmission>();
   constructor(
     @InjectRepository(Quiz) repo: Repository<Quiz>,
     @Inject(PaintingService) private readonly paintingService: PaintingService,
@@ -362,6 +364,40 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     }
     this.viewMap.clear();
   }
+
+  async flushSubmissionMap() {
+    const ids = Array.from(this.submissionMap.keys());
+    const existingQuizzes = await this.repo.findBy({ id: In(ids) });
+
+    const quizMap = new Map(existingQuizzes.map((q) => [q.id, q]));
+
+    for (const [id, { correct_count, incorrect_count }] of this.submissionMap.entries()) {
+      const target = quizMap.get(id);
+      if (target) {
+        target.correct_count += correct_count;
+        target.incorrect_count += incorrect_count;
+      } else {
+        Logger.error(`Quiz ${id} is not exist. not update submission`);
+      }
+    }
+    await this.repo.save([...quizMap.values()]);
+    this.submissionMap.clear();
+  }
+  insertSubmission(id: string, isCorrect: boolean) {
+    const current: QuizSubmission = this.submissionMap.get(id) ?? new QuizSubmission();
+    const key: keyof QuizSubmission = isCorrect ? 'correct_count' : 'incorrect_count';
+
+    current[key] += 1;
+
+    this.submissionMap.set(id, current);
+  }
+
+  isSubmissionMapFull(): boolean {
+    const MAX_SiZE = 1000;
+
+    return this.submissionMap.size > MAX_SiZE;
+  }
+
   private increaseView(id: string) {
     const current = this.viewMap.get(id) || 0;
     this.viewMap.set(id, current + 1);
