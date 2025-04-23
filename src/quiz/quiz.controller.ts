@@ -44,6 +44,7 @@ import { CreateQuizDTO } from './dto/create-quiz.dto';
 import { GenerateQuizQueryDTO } from './dto/generate-quiz.query.dto';
 import { ResponseQuizDTO } from './dto/output/response-schedule-quiz.dto';
 import { QuizContextDTO } from './dto/quiz-context.dto';
+import { ReactToQuizDTO } from './dto/react-to-quiz.dto';
 import { ScheduleQuizQueryDTO } from './dto/schedule-quiz.query.dto';
 import { QuizSubmitDTO } from './dto/submit';
 import { UpdateQuizDTO } from './dto/update-quiz.dto';
@@ -152,6 +153,54 @@ export class QuizController implements CrudController<Quiz> {
   @Patch('/viewMap/flush')
   async flushQuizSubmissionMap() {
     await this.service.flushSubmissionMap();
+  }
+
+  @Post(':id/react')
+  @UseGuards(TokenAuthGuard)
+  @UseInterceptors(QueryRunnerInterceptor)
+  async reactToQuiz(
+    @DBQueryRunner() qr: QueryRunner,
+    @Request() request: any,
+    @Param('id') id: string,
+    @Body() dto: ReactToQuizDTO,
+  ) {
+    const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+    const { user } = userPayload;
+    const quiz = await qr.manager.findOne(Quiz, { where: { id } });
+    if (!quiz) {
+      throw new ServiceException(`ENTITY_NOT_FOUND`, 'BAD_REQUEST', `quiz ${id} is not exist`);
+    }
+
+    const { type } = dto;
+    if (type === 'like') {
+      return await this.service.likeQuiz(qr, user, quiz);
+    } else if (type === 'dislike') {
+      return await this.service.dislikeQuiz(qr, user, quiz);
+    }
+
+    throw new ServiceException(
+      'NOT_IMPLEMENTED',
+      'NOT_IMPLEMENTED',
+      'access not implemented logic',
+    );
+  }
+
+  @Delete(':id/react')
+  @UseGuards(TokenAuthGuard)
+  @UseInterceptors(QueryRunnerInterceptor)
+  async deleteQuizReaction(
+    @DBQueryRunner() qr: QueryRunner,
+    @Request() request: any,
+    @Param('id') id: string,
+  ) {
+    const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+    const { user } = userPayload;
+    const quiz = await qr.manager.findOne(Quiz, { where: { id } });
+    if (!quiz) {
+      throw new ServiceException(`ENTITY_NOT_FOUND`, 'BAD_REQUEST', `quiz ${id} is not exist`);
+    }
+
+    return await this.service.removeReaction(qr, user, quiz);
   }
 
   @Get('category/:key')
