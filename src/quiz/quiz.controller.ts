@@ -111,7 +111,18 @@ export class QuizController implements CrudController<Quiz> {
     @ParsedRequest() req: CrudRequest,
   ): Promise<Quiz> {
     const quiz = await this.service.getOne(req);
-    await this.service.requestIncreaseView(id);
+    this.service.increaseView(id);
+
+    if (this.service.isViewMapFull()) {
+      Logger.log('call flushViewMap(). Map is full', QuizController.name);
+      //비동기 처리
+      this.service.flushViewMap().catch((err) => {
+        this.logger.logUnknownError('flushViewMap fail', err, {
+          className: QuizController.name,
+        });
+      });
+    }
+
     return quiz;
   }
 

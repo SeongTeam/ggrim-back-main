@@ -348,14 +348,6 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
   // TODO : statistic Map 기능 개선
   // [ ] : Nodejs 최대 정수값(2^53-1) overflow 고려하기
   // [ ] : Update Query에 대해 트랜잭션 고려하기.
-  async requestIncreaseView(id: string) {
-    const MAX_SIZE = 1000;
-    this.increaseView(id);
-    if (this.viewMap.size > MAX_SIZE) {
-      Logger.log('call flushViewMap(). Map is full', QuizService.name);
-      await this.flushViewMap();
-    }
-  }
 
   async flushViewMap() {
     const key: keyof Quiz = 'view_count';
@@ -392,13 +384,18 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     this.submissionMap.set(id, current);
   }
 
+  isViewMapFull(): boolean {
+    const MAX_SiZE = 1000;
+    return this.viewMap.size > MAX_SiZE;
+  }
+
   isSubmissionMapFull(): boolean {
     const MAX_SiZE = 1000;
 
     return this.submissionMap.size > MAX_SiZE;
   }
 
-  private increaseView(id: string) {
+  increaseView(id: string) {
     const current = this.viewMap.get(id) || 0;
     this.viewMap.set(id, current + 1);
   }
