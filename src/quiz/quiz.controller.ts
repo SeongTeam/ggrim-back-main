@@ -126,11 +126,6 @@ export class QuizController implements CrudController<Quiz> {
     return quiz;
   }
 
-  @Patch('/viewMap/flush')
-  async flushQuizViewMap() {
-    await this.service.flushViewMap();
-  }
-
   @Post('submit/:id')
   async submitQuiz(@Param('id', ParseUUIDPipe) id: string, @Body() dto: QuizSubmitDTO) {
     this.service.insertSubmission(id, dto.isCorrect);
@@ -144,6 +139,11 @@ export class QuizController implements CrudController<Quiz> {
         });
       });
     }
+  }
+
+  @Patch('/viewMap/flush')
+  async flushQuizViewMap() {
+    await this.service.flushViewMap();
   }
 
   @Patch('/viewMap/flush')
