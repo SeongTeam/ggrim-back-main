@@ -5,7 +5,7 @@ import { User } from '../../user/entity/user.entity';
 import { Quiz } from './quiz.entity';
 
 @Entity()
-@Unique(['user', 'quiz'])
+@Unique(['user_id', 'quiz_id'])
 export class QuizLike extends CustomBaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
