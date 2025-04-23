@@ -18,6 +18,8 @@ import { SearchQuizDTO } from './dto/SearchQuiz.dto';
 import { CreateQuizDTO } from './dto/create-quiz.dto';
 import { QuizDTO } from './dto/quiz.dto';
 import { UpdateQuizDTO } from './dto/update-quiz.dto';
+import { QuizDislike } from './entities/quiz-dislike.entity';
+import { QuizLike } from './entities/quiz-like.entity';
 import { Quiz } from './entities/quiz.entity';
 import { QuizSubmission } from './interface/quiz-Submission';
 import { RelatedPaintingIds, RelatedPaintings } from './interface/related-paintings.interface';
@@ -30,6 +32,8 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
   constructor(
     @InjectRepository(Quiz) repo: Repository<Quiz>,
     @Inject(PaintingService) private readonly paintingService: PaintingService,
+    @InjectRepository(QuizDislike) private readonly dislikeRepo: Repository<QuizDislike>,
+    @InjectRepository(QuizLike) private readonly likeRepo: Repository<QuizLike>,
   ) {
     super(repo);
   }
@@ -398,6 +402,53 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
   increaseView(id: string) {
     const current = this.viewMap.get(id) || 0;
     this.viewMap.set(id, current + 1);
+  }
+
+  async likeQuiz(queryRunner: QueryRunner, user: User, quiz: Quiz): Promise<QuizLike> {
+    const manager = queryRunner.manager;
+
+    await manager.delete(QuizDislike, { user, quiz });
+
+    const existing = await manager.findOne(QuizLike, {
+      where: { user_id: user.id, quiz_id: quiz.id },
+    });
+    if (!existing) {
+      const like = manager.create(QuizLike, { user, quiz });
+      await manager.save(like);
+      return like;
+    }
+
+    return existing;
+  }
+
+  async dislikeQuiz(queryRunner: QueryRunner, user: User, quiz: Quiz): Promise<QuizDislike> {
+    const manager = queryRunner.manager;
+
+    await manager.delete(QuizLike, { user, quiz });
+
+    const existing = await manager.findOne(QuizDislike, {
+      where: { user_id: user.id, quiz_id: quiz.id },
+    });
+    if (!existing) {
+      const dislike = manager.create(QuizDislike, { user, quiz });
+      await manager.save(dislike);
+      return dislike;
+    }
+
+    return existing;
+  }
+
+  async removeReaction(queryRunner: QueryRunner, user: User, quiz: Quiz) {
+    const manager = queryRunner.manager;
+    await manager.delete(QuizDislike, { user, quiz });
+    await manager.delete(QuizLike, { user, quiz });
+  }
+
+  async getQuizLikeDislikeCounts(id: string) {
+    const likeCount = await this.likeRepo.count({ where: { quiz_id: id } });
+    const dislikeCount = await this.dislikeRepo.count({ where: { quiz_id: id } });
+
+    return { likeCount, dislikeCount };
   }
 
   private async getAnswerPaintings(
