@@ -43,6 +43,31 @@ export class LoggerService {
     return this.logger.warn(message, this.getFullContext(context));
   }
 
+  logUnknownError(message: string, error: unknown, context: ILogContext) {
+    if (error instanceof Error) {
+      this.logger.error(
+        `${message}, error : ${error.message}`,
+        error.stack,
+        this.getFullContext(context),
+      );
+    } else {
+      try {
+        const serialized = JSON.stringify(error, null, 2);
+        this.logger.error(
+          `${message}, unknown error : ${serialized}`,
+          undefined,
+          this.getFullContext(context),
+        );
+      } catch (josnErr) {
+        this.logger.error(
+          `${message}, unserializable error.`,
+          undefined,
+          this.getFullContext(context),
+        );
+      }
+    }
+  }
+
   assertOrLog(condition: boolean, message?: string): void {
     if (!isProduction) {
       assert(condition, message);
