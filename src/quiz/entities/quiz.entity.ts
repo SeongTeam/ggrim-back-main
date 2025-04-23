@@ -58,6 +58,9 @@ export class Quiz extends CustomBaseEntity {
   @JoinTable()
   example_painting!: Painting | undefined;
 
+  @Column({ default: 0 })
+  view_count!: number;
+
   @Column({
     default: 0,
   })
