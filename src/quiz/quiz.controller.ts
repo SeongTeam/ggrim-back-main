@@ -141,6 +141,9 @@ export class QuizController implements CrudController<Quiz> {
     }
   }
 
+  // TODO : flush 로직 개선
+  // [ ] : App 종료 이벤트시, flush 로직 실행되도록 하기
+  //   - > enableShutdownHooks 또는 onModuleDestroy 라이프사이클 훅 사용 고려
   @Patch('/viewMap/flush')
   async flushQuizViewMap() {
     await this.service.flushViewMap();
