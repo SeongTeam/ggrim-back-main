@@ -233,7 +233,7 @@ export class QuizController implements CrudController<Quiz> {
     @DBQueryRunner() qr: QueryRunner,
     @Request() request: any,
     @Param('id') id: string,
-  ) {
+  ): Promise<void> {
     const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
     const { user } = userPayload;
     const quiz = await qr.manager.findOne(Quiz, { where: { id } });
@@ -241,7 +241,7 @@ export class QuizController implements CrudController<Quiz> {
       throw new ServiceException(`ENTITY_NOT_FOUND`, 'BAD_REQUEST', `quiz ${id} is not exist`);
     }
 
-    return await this.service.removeReaction(qr, user, quiz);
+    await this.service.removeReaction(qr, user, quiz);
   }
 
   @Get('category/:key')
