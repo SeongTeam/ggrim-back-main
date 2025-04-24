@@ -42,6 +42,7 @@ import { CATEGORY_VALUES } from './const';
 import { SearchQuizDTO } from './dto/SearchQuiz.dto';
 import { CreateQuizDTO } from './dto/create-quiz.dto';
 import { GenerateQuizQueryDTO } from './dto/generate-quiz.query.dto';
+import { QuizResponseDTO } from './dto/output/response-quiz.dto';
 import { ResponseQuizDTO } from './dto/output/response-schedule-quiz.dto';
 import { QuizContextDTO } from './dto/quiz-context.dto';
 import { QuizReactionDTO, QuizReactionType } from './dto/quiz-reaction.dto';
@@ -114,7 +115,7 @@ export class QuizController implements CrudController<Quiz> {
     @Param('id') id: string,
     @ParsedRequest() req: CrudRequest,
     @Query('user_id') user_id: string | undefined,
-  ) {
+  ): Promise<QuizResponseDTO> {
     const quiz = await this.service.getOne(req);
     this.service.increaseView(id);
 
@@ -127,14 +128,14 @@ export class QuizController implements CrudController<Quiz> {
         });
       });
     }
-    const reactionCounts = await this.service.getQuizLikeDislikeCounts(id);
+    const reactionCount = await this.service.getQuizReactionCounts(id);
 
-    const reaction: QuizReactionType | undefined = user_id
+    const userReaction: QuizReactionType | undefined = user_id
       ? await this.service.getUserReaction(id, user_id)
       : undefined;
 
     // responseDTO 정의하기
-    return { quiz, reaction, reactionCounts };
+    return { quiz, userReaction, reactionCount };
   }
 
   @Post('submit/:id')
