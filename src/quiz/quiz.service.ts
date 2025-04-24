@@ -413,7 +413,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
   }
 
   async findQuizLikes(options: FindManyOptions<QuizLike>): Promise<QuizLike[]> {
-    const likes: QuizLike[] = await this.dislikeRepo.find(options);
+    const likes: QuizLike[] = await this.likeRepo.find(options);
 
     return likes;
   }
