@@ -7,8 +7,9 @@ import { Quiz } from './quiz.entity';
 @Entity()
 @Unique(['user_id', 'quiz_id'])
 export class QuizLike extends CustomBaseEntity {
-  @PrimaryGeneratedColumn()
-  id!: number;
+  @PrimaryGeneratedColumn('uuid')
+  @IsUUID()
+  id!: string;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })
