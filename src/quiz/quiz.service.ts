@@ -428,11 +428,12 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
   async likeQuiz(queryRunner: QueryRunner, user: User, quiz: Quiz): Promise<QuizLike> {
     const manager = queryRunner.manager;
 
-    await manager.delete(QuizDislike, { user, quiz });
-
-    const existing = await manager.findOne(QuizLike, {
-      where: { user_id: user.id, quiz_id: quiz.id },
-    });
+    const [_, existing] = await Promise.all([
+      manager.delete(QuizDislike, { user, quiz }),
+      manager.findOne(QuizLike, {
+        where: { user_id: user.id, quiz_id: quiz.id },
+      }),
+    ]);
     if (!existing) {
       const like = manager.create(QuizLike, { user, quiz });
       await manager.save(like);
@@ -445,11 +446,12 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
   async dislikeQuiz(queryRunner: QueryRunner, user: User, quiz: Quiz): Promise<QuizDislike> {
     const manager = queryRunner.manager;
 
-    await manager.delete(QuizLike, { user, quiz });
-
-    const existing = await manager.findOne(QuizDislike, {
-      where: { user_id: user.id, quiz_id: quiz.id },
-    });
+    const [_, existing] = await Promise.all([
+      manager.delete(QuizLike, { user, quiz }),
+      manager.findOne(QuizDislike, {
+        where: { user_id: user.id, quiz_id: quiz.id },
+      }),
+    ]);
     if (!existing) {
       const dislike = manager.create(QuizDislike, { user, quiz });
       await manager.save(dislike);
@@ -461,13 +463,17 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 
   async removeReaction(queryRunner: QueryRunner, user: User, quiz: Quiz) {
     const manager = queryRunner.manager;
-    await manager.delete(QuizDislike, { user, quiz });
-    await manager.delete(QuizLike, { user, quiz });
+    const promiseDislike = manager.delete(QuizDislike, { user, quiz });
+    const promiseLike = manager.delete(QuizLike, { user, quiz });
+    const [dislike, like] = await Promise.all([promiseDislike, promiseLike]);
+    return;
   }
 
   async getQuizLikeDislikeCounts(id: string) {
-    const likeCount = await this.likeRepo.count({ where: { quiz_id: id } });
-    const dislikeCount = await this.dislikeRepo.count({ where: { quiz_id: id } });
+    const promiseLike = this.likeRepo.count({ where: { quiz_id: id } });
+    const promiseDislike = this.dislikeRepo.count({ where: { quiz_id: id } });
+
+    const [likeCount, dislikeCount] = await Promise.all([promiseLike, promiseDislike]);
 
     return { likeCount, dislikeCount };
   }
