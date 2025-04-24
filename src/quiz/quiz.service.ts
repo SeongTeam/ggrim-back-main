@@ -16,6 +16,7 @@ import { isNotFalsy } from '../utils/validator';
 import { QUIZ_TYPE_CONFIG } from './const';
 import { SearchQuizDTO } from './dto/SearchQuiz.dto';
 import { CreateQuizDTO } from './dto/create-quiz.dto';
+import { QuizReactionType } from './dto/quiz-reaction.dto';
 import { QuizDTO } from './dto/quiz.dto';
 import { UpdateQuizDTO } from './dto/update-quiz.dto';
 import { QuizDislike } from './entities/quiz-dislike.entity';
@@ -414,6 +415,14 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     const likes: QuizLike[] = await this.dislikeRepo.find(options);
 
     return likes;
+  }
+
+  async getUserReaction(quiz_id: string, user_id: string): Promise<QuizReactionType | undefined> {
+    const promiseLike = this.findQuizLikes({ where: { quiz_id, user_id } });
+    const promiseDislike = this.findQuizDislikes({ where: { quiz_id, user_id } });
+    const [dislikes, likes] = await Promise.all([promiseDislike, promiseLike]);
+    const reaction = dislikes.length > 0 ? 'dislike' : likes.length > 0 ? 'like' : undefined;
+    return reaction;
   }
 
   async likeQuiz(queryRunner: QueryRunner, user: User, quiz: Quiz): Promise<QuizLike> {
