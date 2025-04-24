@@ -107,7 +107,7 @@ export class QuizController implements CrudController<Quiz> {
   ) {}
 
   @Override('getOneBase')
-  async getQuizAndIncreasingView(
+  async getQuizAndIncreaseView(
     @Param('id') id: string,
     @ParsedRequest() req: CrudRequest,
   ): Promise<Quiz> {
