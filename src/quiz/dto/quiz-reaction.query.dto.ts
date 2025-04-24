@@ -9,7 +9,7 @@ export class QuizReactionQueryDTO extends PickType(QuizReactionDTO, ['type']) {
   user_id?: string;
 
   @IsOptional()
+  @Transform(({ value }) => Number(value))
   @IsNumber()
-  @Transform(({ value }) => (value !== undefined ? Number(value) : 0))
-  page?: number;
+  page?: number = 0;
 }
