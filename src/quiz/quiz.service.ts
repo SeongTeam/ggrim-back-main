@@ -23,6 +23,7 @@ import { QuizDislike } from './entities/quiz-dislike.entity';
 import { QuizLike } from './entities/quiz-like.entity';
 import { Quiz } from './entities/quiz.entity';
 import { QuizSubmission } from './interface/quiz-Submission';
+import { QuizReactionCount } from './interface/reaction-count';
 import { RelatedPaintingIds, RelatedPaintings } from './interface/related-paintings.interface';
 import { QuizCategory } from './type';
 
@@ -469,7 +470,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     return;
   }
 
-  async getQuizLikeDislikeCounts(id: string) {
+  async getQuizReactionCounts(id: string): Promise<QuizReactionCount> {
     const promiseLike = this.likeRepo.count({ where: { quiz_id: id } });
     const promiseDislike = this.dislikeRepo.count({ where: { quiz_id: id } });
 
