@@ -1,4 +1,5 @@
-import { NestFactory } from '@nestjs/core';
+import { ClassSerializerInterceptor, INestApplication } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { QuizController } from './quiz/quiz.controller';
@@ -9,6 +10,10 @@ async function bootstrap() {
     bufferLogs: true,
     logger: winstonLogger,
   });
+
+  // config app
+  setNestApp(app);
+
   //initialize Providers
   const quizController = app.get(QuizController);
   quizController.initialize();
@@ -16,3 +21,7 @@ async function bootstrap() {
   await app.listen(3000);
 }
 bootstrap();
+
+export function setNestApp<T extends INestApplication>(app: T): void {
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+}
