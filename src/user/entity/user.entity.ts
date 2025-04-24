@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import { IsEmail, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { OneTimeToken } from '../../auth/entity/one-time-token.entity';
@@ -24,6 +25,7 @@ export class User extends CustomBaseEntity {
   @IsString()
   @MinLength(8)
   @MaxLength(30)
+  @Exclude()
   password!: string;
 
   @Column({ default: 'user' })
