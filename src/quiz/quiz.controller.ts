@@ -20,7 +20,7 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { QueryRunner } from 'typeorm';
+import { FindManyOptions, QueryRunner } from 'typeorm';
 import { LoggerService } from '../Logger/logger.service';
 import { CONFIG_FILE_PATH } from '../_common/const/default.value';
 import { AWS_BUCKET, AWS_INIT_FILE_KEY_PREFIX } from '../_common/const/env-keys.const';
@@ -45,9 +45,12 @@ import { GenerateQuizQueryDTO } from './dto/generate-quiz.query.dto';
 import { ResponseQuizDTO } from './dto/output/response-schedule-quiz.dto';
 import { QuizContextDTO } from './dto/quiz-context.dto';
 import { QuizReactionDTO } from './dto/quiz-reaction.dto';
+import { QuizReactionQueryDTO } from './dto/quiz-reaction.query.dto';
 import { ScheduleQuizQueryDTO } from './dto/schedule-quiz.query.dto';
 import { QuizSubmitDTO } from './dto/submit';
 import { UpdateQuizDTO } from './dto/update-quiz.dto';
+import { QuizDislike } from './entities/quiz-dislike.entity';
+import { QuizLike } from './entities/quiz-like.entity';
 import { Quiz } from './entities/quiz.entity';
 import { QuizContext } from './interface/quiz-context';
 import { QuizScheduleService } from './quiz-schedule.service';
@@ -153,6 +156,35 @@ export class QuizController implements CrudController<Quiz> {
   @Patch('/viewMap/flush')
   async flushQuizSubmissionMap() {
     await this.service.flushSubmissionMap();
+  }
+
+  @Get(':id/reactions')
+  async getQuizReactions(
+    @Param('id') id: string,
+    @Query() dto: QuizReactionQueryDTO,
+  ): Promise<QuizDislike[] | QuizLike[]> {
+    const pageCount = 30;
+
+    const { page, type, user_id } = dto;
+
+    const baseOptions = {
+      take: pageCount,
+      skip: page,
+      where: { quiz_id: id, user_id },
+    };
+
+    switch (type) {
+      case 'dislike':
+        return this.service.findQuizDislikes(baseOptions as FindManyOptions<QuizDislike>);
+      case 'like':
+        return this.service.findQuizLikes(baseOptions as FindManyOptions<QuizLike>);
+      default:
+        throw new ServiceException(
+          'NOT_IMPLEMENTED',
+          'NOT_IMPLEMENTED',
+          'access not implemented logic',
+        );
+    }
   }
 
   @Post(':id/reaction')
