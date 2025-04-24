@@ -20,7 +20,7 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { FindManyOptions, QueryRunner } from 'typeorm';
+import { QueryRunner } from 'typeorm';
 import { LoggerService } from '../Logger/logger.service';
 import { CONFIG_FILE_PATH } from '../_common/const/default.value';
 import { AWS_BUCKET, AWS_INIT_FILE_KEY_PREFIX } from '../_common/const/env-keys.const';
@@ -179,13 +179,14 @@ export class QuizController implements CrudController<Quiz> {
       take: pageCount,
       skip: page,
       where: { quiz_id: id, user_id },
+      relations: ['user'],
     };
 
     switch (type) {
       case 'dislike':
-        return this.service.findQuizDislikes(baseOptions as FindManyOptions<QuizDislike>);
+        return this.service.findQuizDislikes(baseOptions);
       case 'like':
-        return this.service.findQuizLikes(baseOptions as FindManyOptions<QuizLike>);
+        return this.service.findQuizLikes(baseOptions);
       default:
         throw new ServiceException(
           'NOT_IMPLEMENTED',
