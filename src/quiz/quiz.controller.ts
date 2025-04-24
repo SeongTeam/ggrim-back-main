@@ -44,7 +44,7 @@ import { CreateQuizDTO } from './dto/create-quiz.dto';
 import { GenerateQuizQueryDTO } from './dto/generate-quiz.query.dto';
 import { ResponseQuizDTO } from './dto/output/response-schedule-quiz.dto';
 import { QuizContextDTO } from './dto/quiz-context.dto';
-import { ReactToQuizDTO } from './dto/react-to-quiz.dto';
+import { QuizReactionDTO } from './dto/quiz-reaction.dto';
 import { ScheduleQuizQueryDTO } from './dto/schedule-quiz.query.dto';
 import { QuizSubmitDTO } from './dto/submit';
 import { UpdateQuizDTO } from './dto/update-quiz.dto';
@@ -155,14 +155,14 @@ export class QuizController implements CrudController<Quiz> {
     await this.service.flushSubmissionMap();
   }
 
-  @Post(':id/react')
+  @Post(':id/reaction')
   @UseGuards(TokenAuthGuard)
   @UseInterceptors(QueryRunnerInterceptor)
-  async reactToQuiz(
+  async createQuizReaction(
     @DBQueryRunner() qr: QueryRunner,
     @Request() request: any,
     @Param('id') id: string,
-    @Body() dto: ReactToQuizDTO,
+    @Body() dto: QuizReactionDTO,
   ) {
     const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
     const { user } = userPayload;
@@ -185,7 +185,7 @@ export class QuizController implements CrudController<Quiz> {
     );
   }
 
-  @Delete(':id/react')
+  @Delete(':id/reaction')
   @UseGuards(TokenAuthGuard)
   @UseInterceptors(QueryRunnerInterceptor)
   async deleteQuizReaction(

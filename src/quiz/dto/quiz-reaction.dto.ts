@@ -7,7 +7,7 @@ export const QuizReactionTypeValues = {
 } as const;
 
 export type QuizReactionType = (typeof QuizReactionTypeValues)[keyof typeof QuizReactionTypeValues];
-export class ReactToQuizDTO {
+export class QuizReactionDTO {
   @IsString()
   @IsInArray(Object.values(QuizReactionTypeValues))
   type!: QuizReactionType;
