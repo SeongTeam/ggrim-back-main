@@ -203,7 +203,7 @@ export class QuizController implements CrudController<Quiz> {
     @Request() request: any,
     @Param('id') id: string,
     @Body() dto: QuizReactionDTO,
-  ) {
+  ): Promise<void> {
     const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
     const { user } = userPayload;
     const quiz = await qr.manager.findOne(Quiz, { where: { id } });
@@ -213,16 +213,16 @@ export class QuizController implements CrudController<Quiz> {
 
     const { type } = dto;
     if (type === 'like') {
-      return await this.service.likeQuiz(qr, user, quiz);
+      await this.service.likeQuiz(qr, user, quiz);
     } else if (type === 'dislike') {
-      return await this.service.dislikeQuiz(qr, user, quiz);
+      await this.service.dislikeQuiz(qr, user, quiz);
+    } else {
+      throw new ServiceException(
+        'NOT_IMPLEMENTED',
+        'NOT_IMPLEMENTED',
+        'access not implemented logic',
+      );
     }
-
-    throw new ServiceException(
-      'NOT_IMPLEMENTED',
-      'NOT_IMPLEMENTED',
-      'access not implemented logic',
-    );
   }
 
   @Delete(':id/reaction')
