@@ -1,7 +1,7 @@
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, QueryRunner, Repository } from 'typeorm';
+import { FindManyOptions, In, QueryRunner, Repository } from 'typeorm';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { Artist } from '../artist/entities/artist.entity';
 import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.lib';
@@ -402,6 +402,18 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
   increaseView(id: string) {
     const current = this.viewMap.get(id) || 0;
     this.viewMap.set(id, current + 1);
+  }
+
+  async findQuizDislikes(options: FindManyOptions<QuizDislike>): Promise<QuizDislike[]> {
+    const dislikes: QuizDislike[] = await this.dislikeRepo.find(options);
+
+    return dislikes;
+  }
+
+  async findQuizLikes(options: FindManyOptions<QuizLike>): Promise<QuizLike[]> {
+    const likes: QuizLike[] = await this.dislikeRepo.find(options);
+
+    return likes;
   }
 
   async likeQuiz(queryRunner: QueryRunner, user: User, quiz: Quiz): Promise<QuizLike> {
