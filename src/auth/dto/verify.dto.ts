@@ -1,8 +1,8 @@
 import { PickType } from '@nestjs/mapped-types';
 import { IsString } from 'class-validator';
-import { Verification } from '../entity/verification.entity';
+import { requestVerificationDTO } from './request-verification.dto';
 
-export class VerifyDTO extends PickType(Verification, ['email']) {
+export class VerifyDTO extends PickType(requestVerificationDTO, ['email']) {
   @IsString()
   pinCode!: string;
 }
