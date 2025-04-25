@@ -1,6 +1,5 @@
 import {
   Body,
-  ClassSerializerInterceptor,
   Controller,
   forwardRef,
   Get,
@@ -287,7 +286,6 @@ export class AuthController {
     serviceMethod: 'findOneTimeTokenByID',
   })
   @UseGuards(BasicGuard, OwnerGuard)
-  @UseInterceptors(ClassSerializerInterceptor) // serialize entity with applying transformer decorator
   async getOneTimeToken(@Param('id', ParseUUIDPipe) id: string): Promise<OneTimeToken | null> {
     const findOne = await this.service.findOneTimeToken({
       where: { id },
