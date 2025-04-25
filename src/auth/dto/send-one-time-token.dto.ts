@@ -1,12 +1,11 @@
-import { PickType } from '@nestjs/mapped-types';
+import { IsEmail } from 'class-validator';
 import { IsInArray } from '../../utils/class-validator';
-import {
-  OneTimeToken,
-  OneTimeTokenPurpose,
-  OneTimeTokenPurposeValues,
-} from '../entity/one-time-token.entity';
+import { OneTimeTokenPurpose, OneTimeTokenPurposeValues } from '../entity/one-time-token.entity';
 
-export class SendOneTimeTokenDTO extends PickType(OneTimeToken, ['email']) {
+export class SendOneTimeTokenDTO {
+  @IsEmail()
+  email!: string;
+
   @IsInArray([OneTimeTokenPurposeValues.UPDATE_PASSWORD, OneTimeTokenPurposeValues.RECOVER_ACCOUNT])
   purpose!: OneTimeTokenPurpose;
 }
