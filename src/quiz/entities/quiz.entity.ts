@@ -1,4 +1,3 @@
-import { IsNumber, IsString, IsUUID } from 'class-validator';
 import {
   Column,
   Entity,
@@ -26,11 +25,9 @@ import { QUIZ_TYPE } from '../type';
 @Entity()
 export class Quiz extends CustomBaseEntity {
   @PrimaryGeneratedColumn('uuid')
-  @IsString()
   id!: string;
 
   @Column()
-  @IsString()
   title!: string;
 
   @ManyToMany(() => Painting, {
@@ -64,13 +61,11 @@ export class Quiz extends CustomBaseEntity {
   @Column({
     default: 0,
   })
-  @IsNumber()
   correct_count!: number;
 
   @Column({
     default: 0,
   })
-  @IsNumber()
   incorrect_count!: number;
 
   @Column({
@@ -79,7 +74,6 @@ export class Quiz extends CustomBaseEntity {
   time_limit!: number;
 
   @Column({ type: 'text' })
-  @IsString()
   description!: string;
 
   @Column()
@@ -104,7 +98,6 @@ export class Quiz extends CustomBaseEntity {
   styles!: Style[];
 
   @Column()
-  @IsUUID()
   owner_id!: string;
 
   @ManyToOne(() => User, (user) => user.quizzes)
