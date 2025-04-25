@@ -7,6 +7,7 @@ import {
   Get,
   Inject,
   Logger,
+  OnApplicationBootstrap,
   OnModuleDestroy,
   Param,
   ParseIntPipe,
@@ -98,7 +99,9 @@ import { QuizCategory } from './type';
 //TODO whitelist 옵션 추가하여 보안강화 고려하기
 @UsePipes(new ValidationPipe({ transform: true }))
 @Controller('quiz')
-export class QuizController implements CrudController<Quiz>, OnModuleDestroy {
+export class QuizController
+  implements CrudController<Quiz>, OnApplicationBootstrap, OnModuleDestroy
+{
   constructor(
     public service: QuizService,
     @Inject(QuizScheduleService) private readonly scheduleService: QuizScheduleService,
@@ -419,7 +422,8 @@ export class QuizController implements CrudController<Quiz>, OnModuleDestroy {
   // - [ ] : 임시 사용자의 퀴즈 풀이 기록
   // - [ ] : 사용자의 퀴즈 싫어요/ 좋아요 기록
 
-  async initialize() {
+  async onApplicationBootstrap() {
+    Logger.log(`[onApplicationBootstrap] run`, QuizController.name);
     const weeklyPaintings = await this.paintingService.getWeeklyPaintings();
 
     const fixedContexts: QuizContext[] = weeklyPaintings.map((p) => {
@@ -429,6 +433,7 @@ export class QuizController implements CrudController<Quiz>, OnModuleDestroy {
       };
     });
     this.scheduleService.initialize(fixedContexts);
+    Logger.log(`[onApplicationBootstrap] done`, QuizController.name);
   }
 
   async validateQuizContextDTO(quizContext: QuizContextDTO): Promise<void> {
