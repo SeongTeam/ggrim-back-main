@@ -1,8 +1,9 @@
-import { PickType } from '@nestjs/mapped-types';
-import { IsDate, IsOptional, IsUrl } from 'class-validator';
-import { Artist } from '../entities/artist.entity';
+import { IsDate, IsOptional, IsString, IsUrl } from 'class-validator';
 
-export class CreateArtistDTO extends PickType(Artist, ['name']) {
+export class CreateArtistDTO {
+  @IsString()
+  name!: string;
+
   @IsOptional()
   @IsDate()
   birth_date!: Date;
