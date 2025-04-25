@@ -18,6 +18,10 @@ async function bootstrap() {
   const quizController = app.get(QuizController);
   quizController.initialize();
 
+  //Shutdown Hook is not supported to Window platform
+  //ref : https://docs.nestjs.com/fundamentals/lifecycle-events#application-shutdown
+  app.enableShutdownHooks();
+
   await app.listen(3000);
 }
 bootstrap();

@@ -7,10 +7,10 @@ import {
   Get,
   Inject,
   Logger,
+  OnModuleDestroy,
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
-  Patch,
   Post,
   Put,
   Query,
@@ -98,7 +98,7 @@ import { QuizCategory } from './type';
 //TODO whitelist 옵션 추가하여 보안강화 고려하기
 @UsePipes(new ValidationPipe({ transform: true }))
 @Controller('quiz')
-export class QuizController implements CrudController<Quiz> {
+export class QuizController implements CrudController<Quiz>, OnModuleDestroy {
   constructor(
     public service: QuizService,
     @Inject(QuizScheduleService) private readonly scheduleService: QuizScheduleService,
@@ -109,6 +109,13 @@ export class QuizController implements CrudController<Quiz> {
     @Inject(S3Service) private readonly s3Service: S3Service,
     @Inject(LoggerService) private readonly logger: LoggerService,
   ) {}
+
+  async onModuleDestroy() {
+    Logger.log(`[OnModuleDestroy] run `, QuizController.name);
+    await this.service.flushViewMap();
+    await this.service.flushSubmissionMap();
+    Logger.log(`[OnModuleDestroy] done `, QuizController.name);
+  }
 
   @Override('getOneBase')
   async getQuizAndIncreaseView(
@@ -151,19 +158,6 @@ export class QuizController implements CrudController<Quiz> {
         });
       });
     }
-  }
-
-  // TODO : flush 로직 개선
-  // [ ] : App 종료 이벤트시, flush 로직 실행되도록 하기
-  //   - > enableShutdownHooks 또는 onModuleDestroy 라이프사이클 훅 사용 고려
-  @Patch('/viewMap/flush')
-  async flushQuizViewMap() {
-    await this.service.flushViewMap();
-  }
-
-  @Patch('/viewMap/flush')
-  async flushQuizSubmissionMap() {
-    await this.service.flushSubmissionMap();
   }
 
   @Get(':id/reactions')
