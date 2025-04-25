@@ -79,6 +79,7 @@ export class AuthController {
       role,
       username,
     });
+    //TODO : 로그인 기록 남기기
 
     const response: SignInResponse = {
       accessToken,
