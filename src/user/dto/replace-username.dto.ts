@@ -1,4 +1,4 @@
 import { PickType } from '@nestjs/mapped-types';
-import { User } from '../entity/user.entity';
+import { CreateUserDTO } from './create-user.dto';
 
-export class ReplaceUsernameDTO extends PickType(User, ['username']) {}
+export class ReplaceUsernameDTO extends PickType(CreateUserDTO, ['username']) {}

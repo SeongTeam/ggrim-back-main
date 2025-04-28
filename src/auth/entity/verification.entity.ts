@@ -1,4 +1,3 @@
-import { IsDate, IsEmail, IsString, IsUUID } from 'class-validator';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../db/entity/custom.base.entity';
 
@@ -8,26 +7,20 @@ import { CustomBaseEntity } from '../../db/entity/custom.base.entity';
 @Entity()
 export class Verification extends CustomBaseEntity {
   @PrimaryGeneratedColumn('uuid')
-  @IsUUID()
   id!: string;
 
   @Column()
-  @IsEmail()
   email!: string;
 
   @Column({ nullable: true })
-  @IsDate()
   verification_success_date!: Date;
 
   @Column({ nullable: true })
-  @IsDate()
   last_verified_date!: Date;
 
   @Column()
-  @IsString()
   pin_code!: string;
 
   @Column({ type: 'timestamp with time zone', precision: 6 })
-  @IsDate()
   pin_code_expired_date!: Date;
 }

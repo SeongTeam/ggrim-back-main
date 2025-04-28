@@ -1,7 +1,7 @@
-import { NestFactory } from '@nestjs/core';
+import { ClassSerializerInterceptor, INestApplication } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
-import { QuizController } from './quiz/quiz.controller';
 import { winstonLogger } from './utils/winston.config';
 
 async function bootstrap() {
@@ -9,10 +9,18 @@ async function bootstrap() {
     bufferLogs: true,
     logger: winstonLogger,
   });
-  //initialize Providers
-  const quizController = app.get(QuizController);
-  quizController.initialize();
+
+  // config app
+  setNestApp(app);
+
+  //Shutdown Hook is not supported to Window platform
+  //ref : https://docs.nestjs.com/fundamentals/lifecycle-events#application-shutdown
+  app.enableShutdownHooks();
 
   await app.listen(3000);
 }
 bootstrap();
+
+export function setNestApp<T extends INestApplication>(app: T): void {
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+}

@@ -1,6 +1,5 @@
 import {
   Body,
-  ClassSerializerInterceptor,
   Controller,
   forwardRef,
   Get,
@@ -80,6 +79,7 @@ export class AuthController {
       role,
       username,
     });
+    //TODO : 로그인 기록 남기기
 
     const response: SignInResponse = {
       accessToken,
@@ -287,7 +287,6 @@ export class AuthController {
     serviceMethod: 'findOneTimeTokenByID',
   })
   @UseGuards(BasicGuard, OwnerGuard)
-  @UseInterceptors(ClassSerializerInterceptor) // serialize entity with applying transformer decorator
   async getOneTimeToken(@Param('id', ParseUUIDPipe) id: string): Promise<OneTimeToken | null> {
     const findOne = await this.service.findOneTimeToken({
       where: { id },

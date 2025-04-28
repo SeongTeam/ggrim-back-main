@@ -1,9 +1,17 @@
-import { PickType } from '@nestjs/mapped-types';
 import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
-import { Painting } from '../entities/painting.entity';
 
 //export class CreatePaintingDTO extends PartialType(Painting) {}
-export class CreatePaintingDTO extends PickType(Painting, ['title', 'image_url', 'description']) {
+export class CreatePaintingDTO {
+  @IsString()
+  title!: string;
+
+  //TODO IsUrl()으로 변경고려
+  @IsString()
+  image_url!: string;
+
+  @IsString()
+  description!: string;
+
   @IsOptional()
   @IsString()
   artistName?: string;

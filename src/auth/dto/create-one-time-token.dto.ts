@@ -1,4 +1,7 @@
-import { PickType } from '@nestjs/mapped-types';
-import { OneTimeToken } from '../entity/one-time-token.entity';
+import { IsInArray } from '../../utils/class-validator';
+import { OneTimeTokenPurpose, OneTimeTokenPurposeValues } from '../entity/one-time-token.entity';
 
-export class CreateOneTimeTokenDTO extends PickType(OneTimeToken, ['purpose']) {}
+export class CreateOneTimeTokenDTO {
+  @IsInArray(Object.values(OneTimeTokenPurposeValues))
+  purpose!: OneTimeTokenPurpose;
+}

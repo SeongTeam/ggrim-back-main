@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClsModule } from 'nestjs-cls';
 import { DataSource } from 'typeorm';
@@ -14,6 +15,7 @@ import { S3Module } from './aws/s3.module';
 import { MailModule } from './mail/mail.module';
 import { PaintingModule } from './painting/painting.module';
 import { QuizModule } from './quiz/quiz.module';
+import { SystemScheduleModule } from './schedule/schedule.module';
 import { StyleModule } from './style/style.module';
 import { TagModule } from './tag/tag.modue';
 import { UserModule } from './user/user.module';
@@ -37,6 +39,7 @@ const ENV = process.env[NODE_ENV];
         mount: true,
       },
     }),
+    ScheduleModule.forRoot(),
     LoggerModule,
     CommonModule,
     TagModule,
@@ -48,6 +51,7 @@ const ENV = process.env[NODE_ENV];
     UserModule,
     AuthModule,
     MailModule,
+    SystemScheduleModule,
   ],
   controllers: [AppController],
   providers: [AppService],

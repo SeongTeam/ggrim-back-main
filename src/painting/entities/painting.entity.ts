@@ -1,4 +1,3 @@
-import { IsNumber, IsString } from 'class-validator';
 import {
   Column,
   Entity,
@@ -18,15 +17,12 @@ import { WikiArtPainting } from './wikiArt-painting.entity';
 @Entity()
 export class Painting extends CustomBaseEntity {
   @PrimaryGeneratedColumn('uuid')
-  @IsString()
   id!: string;
 
   @Column()
-  @IsString()
   title!: string;
 
   @Column()
-  @IsString()
   searchTitle!: string;
 
   @OneToOne(() => WikiArtPainting, {
@@ -38,23 +34,18 @@ export class Painting extends CustomBaseEntity {
   @Column({
     nullable: true,
   })
-  @IsString()
   image_url!: string;
 
   @Column({ type: 'text', default: '' })
-  @IsString()
   description!: string; // painting description, default: ""
 
   @Column({ nullable: true })
-  @IsNumber()
   completition_year!: number; // painting completition year, default: null
 
   @Column({ nullable: true })
-  @IsNumber()
   width!: number;
 
   @Column({ nullable: true })
-  @IsNumber()
   height!: number;
 
   @ManyToMany(() => Tag, (tag) => tag.paintings)
