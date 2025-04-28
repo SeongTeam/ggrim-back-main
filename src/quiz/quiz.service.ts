@@ -1,6 +1,7 @@
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Mutex } from 'async-mutex';
 import { FindManyOptions, In, QueryRunner, Repository } from 'typeorm';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { Artist } from '../artist/entities/artist.entity';
@@ -12,7 +13,7 @@ import { Tag } from '../tag/entities/tag.entity';
 import { User } from '../user/entity/user.entity';
 import { extractValuesFromArray, updateProperty } from '../utils/object';
 import { getRandomElement, getRandomNumber } from '../utils/random';
-import { isNotFalsy } from '../utils/validator';
+import { isArrayEmpty, isNotFalsy } from '../utils/validator';
 import { QUIZ_TYPE_CONFIG } from './const';
 import { SearchQuizDTO } from './dto/SearchQuiz.dto';
 import { CreateQuizDTO } from './dto/create-quiz.dto';
@@ -31,6 +32,7 @@ import { QuizCategory } from './type';
 export class QuizService extends TypeOrmCrudService<Quiz> {
   private viewMap = new Map<string, number>();
   private submissionMap = new Map<string, QuizSubmission>();
+  private viewMapMutex = new Mutex();
   constructor(
     @InjectRepository(Quiz) repo: Repository<Quiz>,
     @Inject(PaintingService) private readonly paintingService: PaintingService,
@@ -354,13 +356,53 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
   // TODO : statistic Map 기능 개선
   // [ ] : Nodejs 최대 정수값(2^53-1) overflow 고려하기
   // [ ] : Update Query에 대해 트랜잭션 고려하기.
+  //  -> 트랜잭션으로 묶는 것보다, 별도의 쿼리를 여러개 보내서 병렬적으로 처리하는게 더 효과적이지 않을까?
+  // [ ] : 앱 종료 훅 시점에, 플러시 실패에 대응 로직 추가하기
+  // [ ] : 시스템 확장시, CONNECTION_POOL_SIZE 증가도 고려하기
+  //  -> : MAX CONNECTION POOL 등의 앱 메모리 및 리소스 관리 고려할 것
 
   async flushViewMap() {
     const key: keyof Quiz = 'view_count';
-    for (const [id, count] of this.viewMap.entries()) {
-      await this.repo.increment({ id }, key, count);
+    const CONNECTION_POOL_SIZE = 5;
+    const buffer: [string, number][] = await this.viewMapMutex.runExclusive(() => {
+      const arr = Array.from(this.viewMap.entries());
+      this.viewMap.clear();
+      return arr;
+    });
+    const failed: [string, number][] = [];
+    Logger.log(`[flushViewMap]start flush. size : ${buffer.length}`, QuizService.name);
+
+    const groupCount = Math.ceil(buffer.length / CONNECTION_POOL_SIZE);
+
+    for (let i = 0; i < groupCount; i++) {
+      const start = i * CONNECTION_POOL_SIZE;
+      const end = (i + 1) * CONNECTION_POOL_SIZE;
+      const queries = buffer.slice(start, end);
+
+      const results = await Promise.allSettled(
+        queries.map(([id, number]) => this.repo.increment({ id }, key, number)),
+      );
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          Logger.error(
+            `flushViewMap() failed to increment id=${queries[index][0]}: ${result.reason}`,
+            QuizService.name,
+          );
+          failed.push(queries[index]);
+        }
+      });
     }
-    this.viewMap.clear();
+
+    Logger.log(`[flushViewMap] end flush. failed_size : ${failed.length}`, QuizService.name);
+
+    if (!isArrayEmpty(failed)) {
+      await this.viewMapMutex.runExclusive(() => {
+        failed.forEach(([id, count]) => {
+          const current = this.viewMap.get(id) || 0;
+          this.viewMap.set(id, current + count);
+        });
+      });
+    }
   }
 
   async flushSubmissionMap() {
@@ -378,6 +420,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
         Logger.error(`Quiz ${id} is not exist. not update submission`);
       }
     }
+    // TODO transaction으로 설정하기
     await this.repo.save([...quizMap.values()]);
     this.submissionMap.clear();
   }
@@ -390,9 +433,8 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     this.submissionMap.set(id, current);
   }
 
-  isViewMapFull(): boolean {
-    const MAX_SiZE = 1000;
-    return this.viewMap.size > MAX_SiZE;
+  async isViewMapEmpty(): Promise<boolean> {
+    return await this.viewMapMutex.runExclusive(() => this.viewMap.size === 0);
   }
 
   isSubmissionMapFull(): boolean {
@@ -401,9 +443,11 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     return this.submissionMap.size > MAX_SiZE;
   }
 
-  increaseView(id: string) {
-    const current = this.viewMap.get(id) || 0;
-    this.viewMap.set(id, current + 1);
+  async increaseView(id: string): Promise<void> {
+    await this.viewMapMutex.runExclusive(() => {
+      const current = this.viewMap.get(id) || 0;
+      this.viewMap.set(id, current + 1);
+    });
   }
 
   async findQuizDislikes(options: FindManyOptions<QuizDislike>): Promise<QuizDislike[]> {
