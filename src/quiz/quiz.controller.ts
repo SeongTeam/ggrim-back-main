@@ -115,7 +115,14 @@ export class QuizController
 
   async onModuleDestroy() {
     Logger.log(`[OnModuleDestroy] run `, QuizController.name);
-    await this.service.flushViewMap();
+    const MAX_RETRY = 3;
+    for (let i = 0; i < MAX_RETRY; i++) {
+      const isEmpty = await this.service.isViewMapEmpty();
+      if (isEmpty) {
+        break;
+      }
+      await this.service.flushViewMap();
+    }
     await this.service.flushSubmissionMap();
     Logger.log(`[OnModuleDestroy] done `, QuizController.name);
   }
