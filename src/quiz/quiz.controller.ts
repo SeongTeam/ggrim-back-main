@@ -123,7 +123,14 @@ export class QuizController
       }
       await this.service.flushViewMap();
     }
-    await this.service.flushSubmissionMap();
+
+    for (let i = 0; i < MAX_RETRY; i++) {
+      const isEmpty = await this.service.isSubmissionMapEmpty();
+      if (isEmpty) {
+        break;
+      }
+      await this.service.flushSubmissionMap();
+    }
     Logger.log(`[OnModuleDestroy] done `, QuizController.name);
   }
 
