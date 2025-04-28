@@ -150,17 +150,7 @@ export class QuizController
 
   @Post('submit/:id')
   async submitQuiz(@Param('id', ParseUUIDPipe) id: string, @Body() dto: QuizSubmitDTO) {
-    this.service.insertSubmission(id, dto.isCorrect);
-
-    if (this.service.isSubmissionMapFull()) {
-      Logger.log('call flushSubmissionMap(). Map is full', QuizController.name);
-      //비동기 처리
-      this.service.flushSubmissionMap().catch((err) => {
-        this.logger.logUnknownError('flushSubmissionMap fail', err, {
-          className: QuizController.name,
-        });
-      });
-    }
+    await this.service.insertSubmission(id, dto.isCorrect);
   }
 
   @Get(':id/reactions')
