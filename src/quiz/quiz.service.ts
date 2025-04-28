@@ -358,7 +358,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
   // [ ] : Nodejs 최대 정수값(2^53-1) overflow 고려하기
   // [ ] : Update Query에 대해 트랜잭션 고려하기.
   //  -> 트랜잭션으로 묶는 것보다, 별도의 쿼리를 여러개 보내서 병렬적으로 처리하는게 더 효과적이지 않을까?
-  // [ ] : 앱 종료 훅 시점에, 플러시 실패에 대응 로직 추가하기
+  // [x] : 앱 종료 훅 시점에, 플러시 실패에 대응 로직 추가하기
   // [ ] : 시스템 확장시, CONNECTION_POOL_SIZE 증가도 고려하기
   //  -> : MAX CONNECTION POOL 등의 앱 메모리 및 리소스 관리 고려할 것
   // [ ] : Quiz Flush 로직 통합 또는 Redis 사용 고려하기
