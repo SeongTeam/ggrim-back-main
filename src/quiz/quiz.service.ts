@@ -2,7 +2,7 @@ import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Mutex } from 'async-mutex';
-import { FindManyOptions, In, QueryRunner, Repository } from 'typeorm';
+import { FindManyOptions, QueryRunner, Repository } from 'typeorm';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { Artist } from '../artist/entities/artist.entity';
 import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.lib';
@@ -33,6 +33,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
   private viewMap = new Map<string, number>();
   private submissionMap = new Map<string, QuizSubmission>();
   private viewMapMutex = new Mutex();
+  private submissionMapMutex = new Mutex();
   constructor(
     @InjectRepository(Quiz) repo: Repository<Quiz>,
     @Inject(PaintingService) private readonly paintingService: PaintingService,
@@ -406,41 +407,69 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
   }
 
   async flushSubmissionMap() {
-    const ids = Array.from(this.submissionMap.keys());
-    const existingQuizzes = await this.repo.findBy({ id: In(ids) });
+    const CONNECTION_POOL_SIZE = 5;
+    const buffer: [string, QuizSubmission][] = await this.submissionMapMutex.runExclusive(() => {
+      const arr = Array.from(this.submissionMap.entries());
+      this.submissionMap.clear();
+      return arr;
+    });
+    const failed: [string, QuizSubmission][] = [];
 
-    const quizMap = new Map(existingQuizzes.map((q) => [q.id, q]));
+    Logger.log(`[flushSubmissionMap]start flush. size : ${buffer.length}`, QuizService.name);
+    const groupCount = Math.ceil(buffer.length / CONNECTION_POOL_SIZE);
 
-    for (const [id, { correct_count, incorrect_count }] of this.submissionMap.entries()) {
-      const target = quizMap.get(id);
-      if (target) {
-        target.correct_count += correct_count;
-        target.incorrect_count += incorrect_count;
-      } else {
-        Logger.error(`Quiz ${id} is not exist. not update submission`);
-      }
+    for (let i = 0; i < groupCount; i++) {
+      const start = i * CONNECTION_POOL_SIZE;
+      const end = (i + 1) * CONNECTION_POOL_SIZE;
+      const queries = buffer.slice(start, end);
+
+      const results = await Promise.allSettled(
+        queries.map(([id, submission]) => this.repo.update(id, { ...submission })),
+      );
+
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          Logger.error(
+            `flushSubmissionMap() failed to increment id=${queries[index][0]}: ${result.reason}`,
+            QuizService.name,
+          );
+          failed.push(queries[index]);
+        }
+      });
     }
-    // TODO transaction으로 설정하기
-    await this.repo.save([...quizMap.values()]);
-    this.submissionMap.clear();
+
+    Logger.log(`[flushSubmissionMap] end flush. failed_size : ${failed.length}`, QuizService.name);
+
+    if (!isArrayEmpty(failed)) {
+      await this.submissionMapMutex.runExclusive(() => {
+        failed.forEach(([id, submission]) => {
+          const current = this.submissionMap.get(id) ?? new QuizSubmission();
+          const next = {
+            correct_count: current.correct_count + submission.correct_count,
+            incorrect_count: current.incorrect_count + submission.incorrect_count,
+          };
+          this.submissionMap.set(id, next);
+        });
+      });
+    }
   }
-  insertSubmission(id: string, isCorrect: boolean) {
-    const current: QuizSubmission = this.submissionMap.get(id) ?? new QuizSubmission();
-    const key: keyof QuizSubmission = isCorrect ? 'correct_count' : 'incorrect_count';
+  async insertSubmission(id: string, isCorrect: boolean): Promise<void> {
+    await this.submissionMapMutex.runExclusive(() => {
+      const current: QuizSubmission = this.submissionMap.get(id) ?? new QuizSubmission();
+      const key: keyof QuizSubmission = isCorrect ? 'correct_count' : 'incorrect_count';
 
-    current[key] += 1;
+      current[key] += 1;
 
-    this.submissionMap.set(id, current);
+      this.submissionMap.set(id, current);
+    });
   }
 
   async isViewMapEmpty(): Promise<boolean> {
     return await this.viewMapMutex.runExclusive(() => this.viewMap.size === 0);
   }
 
-  isSubmissionMapFull(): boolean {
-    const MAX_SiZE = 1000;
-
-    return this.submissionMap.size > MAX_SiZE;
+  async isSubmissionMapEmpty(): Promise<boolean> {
+    return await this.submissionMapMutex.runExclusive(() => this.submissionMap.size === 0);
   }
 
   async increaseView(id: string): Promise<void> {
