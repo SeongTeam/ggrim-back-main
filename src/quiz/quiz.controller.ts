@@ -127,18 +127,11 @@ export class QuizController
     @Query('user_id') user_id: string | undefined,
   ): Promise<QuizResponseDTO> {
     const quiz = await this.service.getOne(req);
-    this.service.increaseView(id);
 
-    if (this.service.isViewMapFull()) {
-      Logger.log('call flushViewMap(). Map is full', QuizController.name);
-      //비동기 처리
-      this.service.flushViewMap().catch((err) => {
-        this.logger.logUnknownError('flushViewMap fail', err, {
-          className: QuizController.name,
-        });
-      });
-    }
-    const reactionCount = await this.service.getQuizReactionCounts(id);
+    const [_, reactionCount] = await Promise.all([
+      this.service.increaseView(id),
+      this.service.getQuizReactionCounts(id),
+    ]);
 
     const userReaction: QuizReactionType | undefined = user_id
       ? await this.service.getUserReaction(id, user_id)
