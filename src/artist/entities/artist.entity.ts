@@ -1,4 +1,4 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { CustomBaseEntity } from '../../db/entity/custom.base.entity';
 import { Painting } from '../../painting/entities/painting.entity';
 
@@ -6,7 +6,7 @@ import { Painting } from '../../painting/entities/painting.entity';
 /*TODO
 - 동명이인을 구분할 방법을 찾아야함
 */
-// @Unique(['name'])
+@Unique(['name', 'search_name'])
 export class Artist extends CustomBaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -40,4 +40,8 @@ export class Artist extends CustomBaseEntity {
     onDelete: 'RESTRICT',
   })
   paintings!: Painting[];
+
+  //combination UpperCase and '_'
+  @Column()
+  search_name!: string;
 }
