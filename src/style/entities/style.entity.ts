@@ -3,7 +3,7 @@ import { CustomBaseEntity } from '../../db/entity/custom.base.entity';
 import { Painting } from '../../painting/entities/painting.entity';
 
 @Entity()
-@Unique(['name'])
+@Unique(['name', 'search_name'])
 export class Style extends CustomBaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -16,4 +16,7 @@ export class Style extends CustomBaseEntity {
 
   @ManyToMany(() => Painting, (painting) => painting.styles)
   paintings!: Painting[];
+
+  @Column()
+  search_name!: string;
 }
