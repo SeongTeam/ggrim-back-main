@@ -55,7 +55,9 @@ export class ArtistController implements CrudController<Artist> {
   @Roles('admin')
   @UseGuards(TokenAuthGuard, RolesGuard)
   async createOne(@ParsedRequest() req: CrudRequest, @ParsedBody() dto: CreateArtistDTO) {
-    return this.service.createOne(req, dto);
+    const { name } = dto;
+    const search_name = name.trim().split(/\s+/).join('_').toUpperCase();
+    return this.service.createOne(req, { search_name, ...dto });
   }
 
   @Override('replaceOneBase')
