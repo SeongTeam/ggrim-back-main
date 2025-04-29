@@ -35,7 +35,7 @@ export class TagService extends TypeOrmCrudService<Tag> {
     super(repo);
   }
 
-  insertCreateDtoToQueue(dto: CreateTagDTO): Promise<Tag> {
+  insertCreateDtoToQueue<T extends CreateTagDTO>(dto: T): Promise<Tag> {
     return this.creatingBatch.addToQueue(dto, 'CREATE');
   }
 
