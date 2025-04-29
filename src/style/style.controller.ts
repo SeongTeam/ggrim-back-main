@@ -30,12 +30,13 @@ const EXCLUDED_COLUMN = ['created_date', 'updated_date', 'deleted_date', 'versio
   query: {
     join: {
       paintings: {
-        eager: true,
+        eager: false,
+        allow: ['title', 'image_url'],
         exclude: [...EXCLUDED_COLUMN, 'width', 'height', 'completition_year', 'description'],
         persist: ['id', 'title', 'image_url'],
       },
     },
-    allow: ['name'],
+    allow: ['name', 'search_name'],
     exclude: [...EXCLUDED_COLUMN],
     persist: ['name', 'info_url'],
     softDelete: true,
