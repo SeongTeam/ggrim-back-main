@@ -37,7 +37,8 @@ const EXCLUDED_COLUMN = ['created_date', 'updated_date', 'deleted_date', 'versio
     exclude: [...EXCLUDED_COLUMN],
     join: {
       paintings: {
-        eager: true,
+        eager: false,
+        allow: ['id', 'title'], // TODO allow 옵션 적용안되는 버그 수정하기
         persist: ['id', 'title', 'image_url'],
         exclude: [...EXCLUDED_COLUMN, 'width', 'height', 'completition_year', 'description'],
       },
