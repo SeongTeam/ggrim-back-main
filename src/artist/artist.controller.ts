@@ -33,7 +33,7 @@ const EXCLUDED_COLUMN = ['created_date', 'updated_date', 'deleted_date', 'versio
     replace: CreateArtistDTO,
   },
   query: {
-    allow: ['id', 'name', 'info_url', 'birth_date', 'death_date'],
+    allow: ['id', 'name', 'info_url', 'birth_date', 'death_date', 'search_name'],
     exclude: [...EXCLUDED_COLUMN],
     join: {
       paintings: {
