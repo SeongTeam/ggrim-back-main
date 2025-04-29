@@ -52,12 +52,14 @@ export class ArtistController implements CrudController<Artist> {
   constructor(public service: ArtistService) {}
 
   @Override('createOneBase')
+  @Roles('admin')
   @UseGuards(TokenAuthGuard, RolesGuard)
   async createOne(@ParsedRequest() req: CrudRequest, @ParsedBody() dto: CreateArtistDTO) {
     return this.service.createOne(req, dto);
   }
 
   @Override('replaceOneBase')
+  @Roles('admin')
   @UseGuards(TokenAuthGuard, RolesGuard)
   async replaceOne(@ParsedRequest() req: CrudRequest, @ParsedBody() dto: CreateArtistDTO) {
     return this.service.replaceOne(req, dto);
