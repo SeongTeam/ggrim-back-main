@@ -26,7 +26,6 @@ import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.intercep
 import { getLatestMonday } from '../utils/date';
 import { CreatePaintingDTO } from './dto/create-painting.dto';
 import { GetByIdsQueryDTO } from './dto/get-by-ids.query.dto';
-import { WeeklyArtWorkSet } from './dto/output/weekly-art.dto';
 import { ReplacePaintingDTO } from './dto/replace-painting.dto';
 import { SearchPaintingDTO } from './dto/search-painting.dto';
 import { Painting } from './entities/painting.entity';
