@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { existsSync } from 'fs';
-import { QueryRunner, Repository } from 'typeorm';
+import { Brackets, QueryRunner, Repository } from 'typeorm';
 import { CONFIG_FILE_PATH } from '../_common/const/default.value';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { ArtistService } from '../artist/artist.service';
@@ -120,75 +120,83 @@ export class PaintingService {
   /*TODO
     - 함수 동작 사양 주석 양식 만들기
   */
-  /* Feature
 
-    - title 또는 artistId가 null인 행은 검색 대상에서 제외됨. 
-
-    - 반환값 
-      - tag가 없다면, 빈 배열 반환
-      - styles가 업더라도, 빈 배열 반환
-  */
   async searchPainting(dto: SearchPaintingDTO, page: number, paginationCount: number) {
     /*TODO
     - 입력된 tag와 style이 유효한지 점검하기
     - [ ] 배열의 각 원소가 공백인지 확인 필요.
       - 공백값이 삽입되어 DB QUERY에 적용되면, 공백값과 일치하는 조건이 추가됨.
+    - [ ] Join() 실행시, SELECT 쿼리가 2번 발생하는 상황 해결하기
+      -> TypeORM 로직 문제이거나, 프로젝트 로직 또는 설정 문제로 고려됨
     */
-    const targetTags = dto.tags as string[];
-    const targetStyles = dto.styles as string[];
-    Logger.debug(`tags : ${JSON.stringify(targetTags)}`);
+    // const selectColumns: (keyof Painting)[] = ['id', 'image_url', 'height', 'width'];
+    const paintingAlias = 'p';
+    const queryBuilder = await this.repo.createQueryBuilder(paintingAlias);
 
-    const subQueryFilterByTag = await this.repo
-      .createQueryBuilder()
-      .subQuery()
-      .select('painting_tags.paintingId')
-      .from('painting_tags_tag', 'painting_tags') // Many-to-Many 연결 테이블
-      .innerJoin('tag', 'tag', 'tag.id = painting_tags.tagId') // 연결 테이블과 Tag JOIN
-      .where('tag.name IN (:...tagNames)') // tagNames 필터링
-      .groupBy('painting_tags.paintingId')
-      .having('COUNT(DISTINCT tag.id) = :tagCount') // 정확한 태그 갯수 매칭
-      .getQuery();
+    queryBuilder.where(`p.searchTitle like '%' || :searchTitle|| '%'`, {
+      searchTitle: dto.title.trim().split(/\s+/).join('_').toUpperCase(),
+    });
 
-    const subQueryFilterByStyle = await this.repo
-      .createQueryBuilder()
-      .subQuery()
-      .select('painting_styles.paintingId')
-      .from('painting_styles_style', 'painting_styles') // Many-to-Many 연결 테이블
-      .innerJoin('style', 'style', 'style.id = painting_styles.styleId')
-      .where('style.name IN (:...styleNames)')
-      .groupBy('painting_styles.paintingId')
-      .having('COUNT(DISTINCT style.id) = :styleCount')
-      .getQuery();
-
-    const mainQuery = await this.repo
-      .createQueryBuilder('p')
-      .leftJoinAndSelect('p.tags', 'tag')
-      .leftJoinAndSelect('p.styles', 'style')
-      .leftJoinAndSelect('p.artist', 'artist')
-      .where("p.searchTitle like '%' || :title || '%'", { title: dto.title.toUpperCase() })
-      .andWhere("artist.name like '%' || :artist || '%'", {
-        artist: dto.artistName,
-      });
-
-    if (targetTags.length > 0) {
-      mainQuery.andWhere(`p.id IN ${subQueryFilterByTag}`, {
-        tagNames: targetTags,
-        tagCount: targetTags.length,
-      });
+    if (isNotFalsy(dto.artistName) && dto.artistName.trim().length > 0) {
+      const alias = 'a';
+      const path: keyof Painting = 'artist';
+      queryBuilder.innerJoinAndSelect(`${paintingAlias}.${path}`, alias).andWhere(
+        new Brackets((qb) => {
+          qb.where(`${alias}.name = :artistName`, {
+            artistName: dto.artistName,
+          });
+        }),
+      );
     }
 
-    if (targetStyles.length > 0) {
-      mainQuery.andWhere(`p.id IN ${subQueryFilterByStyle}`, {
-        styleNames: targetStyles,
-        styleCount: targetStyles.length,
-      });
+    if (!isArrayEmpty(dto.tags)) {
+      const subQueryFilterByTag = await this.repo
+        .createQueryBuilder()
+        .subQuery()
+        .select('painting_tags.paintingId')
+        .from('painting_tags_tag', 'painting_tags') // Many-to-Many 연결 테이블
+        .innerJoin('tag', 'tag', 'tag.id = painting_tags.tagId') // 연결 테이블과 Tag JOIN
+        .where('tag.name IN (:...tagNames)') // tagNames 필터링
+        .groupBy('painting_tags.paintingId')
+        .having('COUNT(DISTINCT tag.id) = :tagCount') // 정확한 태그 갯수 매칭
+        .getQuery();
+
+      const alias = 't';
+      const path: keyof Painting = 'tags';
+      queryBuilder
+        .innerJoinAndSelect(`${paintingAlias}.${path}`, alias)
+        .andWhere(`p.id IN ${subQueryFilterByTag}`, {
+          tagNames: dto.tags,
+          tagCount: dto.tags.length,
+        });
     }
 
-    Logger.debug(mainQuery.getSql());
+    if (!isArrayEmpty(dto.styles)) {
+      const subQueryFilterByStyle = await this.repo
+        .createQueryBuilder()
+        .subQuery()
+        .select('painting_styles.paintingId')
+        .from('painting_styles_style', 'painting_styles') // Many-to-Many 연결 테이블
+        .innerJoin('style', 'style', 'style.id = painting_styles.styleId')
+        .where('style.name IN (:...styleNames)')
+        .groupBy('painting_styles.paintingId')
+        .having('COUNT(DISTINCT style.id) = :styleCount')
+        .getQuery();
 
-    const result = mainQuery
+      const alias = 's';
+      const path: keyof Painting = 'styles';
+      queryBuilder
+        .innerJoinAndSelect(`${paintingAlias}.${path}`, alias)
+        .andWhere(`p.id IN ${subQueryFilterByStyle}`, {
+          styleNames: dto.styles,
+          styleCount: dto.styles.length,
+        });
+    }
+
+    const result = await queryBuilder
       .skip(page * paginationCount)
       .take(paginationCount)
+      .orderBy('p.created_date', 'DESC')
       .getMany();
 
     return result;
