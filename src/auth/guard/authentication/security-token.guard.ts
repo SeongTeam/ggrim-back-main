@@ -32,6 +32,12 @@ const ENUM_SECURITY_TOKEN_HEADER = {
 //Guard does't Update OneTimeToken Table.
 //It just validate OneTimeToken for Security data from client
 
+// TODO :  SecurityTokenGuard 개선
+// [ ] OneTimeToken 마킹 로직 추가하기
+//  -> QueryRunner를 Middleware에서 생성하도록 수정하여, Guard에서도 QueryRunner 접근하도록 만들기
+//     Transaction 커밋과 롤백은 그대로 Interceptor에서 진행하기
+//     MiddleWare와 InterCeptor는 전역으로 설정하는게 편할듯 하다.
+
 @Injectable()
 export class SecurityTokenGuard implements CanActivate {
   constructor(
