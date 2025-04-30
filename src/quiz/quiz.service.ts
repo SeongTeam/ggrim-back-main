@@ -326,6 +326,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     const result = mainQuery
       .skip(page * paginationCount)
       .take(paginationCount)
+      .orderBy('quiz.created_date', 'DESC')
       .getMany();
 
     return result;
