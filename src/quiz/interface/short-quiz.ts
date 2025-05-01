@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import { Artist } from '../../artist/entities/artist.entity';
 import { Style } from '../../style/entities/style.entity';
 import { Tag } from '../../tag/entities/tag.entity';
@@ -7,8 +8,11 @@ import { Quiz } from '../entities/quiz.entity';
 export class ShortQuiz
   implements Pick<Quiz, 'title' | 'created_date' | 'id' | 'owner' | 'time_limit' | 'updated_date'>
 {
+  @Exclude()
   private _tags?: Tag[];
+  @Exclude()
   private _artists?: Artist[];
+  @Exclude()
   private _styles?: Style[];
 
   id!: string;
