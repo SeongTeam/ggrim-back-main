@@ -29,9 +29,9 @@ import { GetByIdsQueryDTO } from './dto/get-by-ids.query.dto';
 import { ReplacePaintingDTO } from './dto/replace-painting.dto';
 import { SearchPaintingDTO } from './dto/search-painting.dto';
 import { Painting } from './entities/painting.entity';
+import { ShortPainting } from './interface/short-painting';
 import { PaintingService } from './painting.service';
-import { IPaginationResult, ShortPaintingResponseDTO } from './responseDTO';
-import { DetailPaintingResponseDTO } from './responseDTO/detail-painting-response.dto';
+import { IPaginationResult } from './responseDTO';
 
 @UsePipes(new ValidationPipe({ transform: true }))
 @Controller('painting')
@@ -46,11 +46,12 @@ export class PaintingController {
    * ex) http://localhost:3000/painting/by-ids?ids=409ba4c6-0553-4b72-a53a-d9b9857c253d&ids=4f4d9398-b10a-45b8-912c-6ccd0c6700ab
    */
   @Get('/by-ids')
-  async getByIds(@Query(new ValidationPipe({ transform: true })) query: GetByIdsQueryDTO) {
+  async getByIds(
+    @Query(new ValidationPipe({ transform: true })) query: GetByIdsQueryDTO,
+  ): Promise<Painting[]> {
     const foundPaintings: Painting[] = await this.service.getByIds(query.ids);
-    const data = foundPaintings.map((painting) => DetailPaintingResponseDTO.fromPainting(painting));
 
-    return data;
+    return foundPaintings;
   }
   @Get(':id')
   async getById(@Param('id', ParseUUIDPipe) id: string) {
@@ -65,17 +66,12 @@ export class PaintingController {
     @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
   ) {
     const paginationCount = 50;
-    const foundPaintings: Painting[] = await this.service.searchPainting(
-      dto,
-      page,
-      paginationCount,
-    );
-    const data = foundPaintings.map((painting) => ShortPaintingResponseDTO.fromPainting(painting));
+    const data: ShortPainting[] = await this.service.searchPainting(dto, page, paginationCount);
 
-    const ret: IPaginationResult<ShortPaintingResponseDTO> = {
+    const ret: IPaginationResult<ShortPainting> = {
       data,
-      isMore: foundPaintings.length === paginationCount,
-      count: foundPaintings.length,
+      isMore: data.length === paginationCount,
+      count: data.length,
       pagination: page,
     };
 

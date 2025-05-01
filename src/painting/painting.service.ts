@@ -19,6 +19,7 @@ import { WeeklyArtWorkSet } from './dto/output/weekly-art.dto';
 import { ReplacePaintingDTO } from './dto/replace-painting.dto';
 import { SearchPaintingDTO } from './dto/search-painting.dto';
 import { Painting } from './entities/painting.entity';
+import { ShortPainting } from './interface/short-painting';
 
 @Injectable()
 export class PaintingService {
@@ -121,7 +122,11 @@ export class PaintingService {
     - 함수 동작 사양 주석 양식 만들기
   */
 
-  async searchPainting(dto: SearchPaintingDTO, page: number, paginationCount: number) {
+  async searchPainting(
+    dto: SearchPaintingDTO,
+    page: number,
+    paginationCount: number,
+  ): Promise<ShortPainting[]> {
     /*TODO
     - 입력된 tag와 style이 유효한지 점검하기
     - [ ] 배열의 각 원소가 공백인지 확인 필요.
@@ -193,13 +198,13 @@ export class PaintingService {
         });
     }
 
-    const result = await queryBuilder
+    const paintings = await queryBuilder
       .skip(page * paginationCount)
       .take(paginationCount)
       .orderBy('p.created_date', 'DESC')
       .getMany();
 
-    return result;
+    return paintings.map((p) => new ShortPainting(p));
   }
   async getPaintingsByArtist(artistName: string) {
     const result = await this.repo
