@@ -258,17 +258,6 @@ export class QuizController
     return this.service.generateQuizByValue(dto.category, dto.keyword);
   }
 
-  @Get('quizContext')
-  async getQuizContext(
-    @Query()
-    dto: QuizContextDTO,
-  ) {
-    Logger.log('test api:' + JSON.stringify(dto));
-    // const classInstance = plainToInstance(QuizContextDTO, dto, { enableImplicitConversion: true });
-    // Logger.log('transformation :' + JSON.stringify(classInstance));
-    return dto;
-  }
-
   @Get('schedule')
   async getScheduledQuiz(@Query() dto: ScheduleQuizQueryDTO): Promise<ResponseQuizDTO> {
     Logger.log(`context : `, dto.context);
