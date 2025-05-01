@@ -17,7 +17,6 @@ import { isArrayEmpty, isNotFalsy } from '../utils/validator';
 import { QUIZ_TYPE_CONFIG } from './const';
 import { SearchQuizDTO } from './dto/SearchQuiz.dto';
 import { CreateQuizDTO } from './dto/create-quiz.dto';
-import { ShortQuiz } from './dto/output/short-quiz.dto';
 import { QuizReactionType } from './dto/quiz-reaction.dto';
 import { QuizDTO } from './dto/quiz.dto';
 import { UpdateQuizDTO } from './dto/update-quiz.dto';
@@ -27,6 +26,7 @@ import { Quiz } from './entities/quiz.entity';
 import { QuizSubmission } from './interface/quiz-Submission';
 import { QuizReactionCount } from './interface/reaction-count';
 import { RelatedPaintingIds, RelatedPaintings } from './interface/related-paintings.interface';
+import { ShortQuiz } from './interface/short-quiz';
 import { QuizCategory } from './type';
 
 @Injectable()
