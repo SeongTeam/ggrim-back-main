@@ -42,7 +42,7 @@ export class PaintingService {
       .values([
         {
           title: dto.title,
-          searchTitle: dto.title.toUpperCase(),
+          searchTitle: dto.title.trim().split(/\s+/).join('_').toUpperCase(),
           image_url: dto.image_url,
           description: dto.description,
           width: dto.width,
@@ -88,6 +88,7 @@ export class PaintingService {
         height: dto.height,
         width: dto.width,
         completition_year: dto.completition_year,
+        searchTitle: dto.title.trim().split(/\s+/).join('_').toUpperCase(),
       })
       .where('painting.id = :paintingId', { paintingId: painting.id });
 
