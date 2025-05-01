@@ -45,6 +45,7 @@ import { CreateQuizDTO } from './dto/create-quiz.dto';
 import { GenerateQuizQueryDTO } from './dto/generate-quiz.query.dto';
 import { QuizResponseDTO } from './dto/output/response-quiz.dto';
 import { ResponseQuizDTO } from './dto/output/response-schedule-quiz.dto';
+import { ShortQuiz } from './dto/output/short-quiz.dto';
 import { QuizContextDTO } from './dto/quiz-context.dto';
 import { QuizReactionDTO, QuizReactionType } from './dto/quiz-reaction.dto';
 import { QuizReactionQueryDTO } from './dto/quiz-reaction.query.dto';
@@ -279,7 +280,7 @@ export class QuizController
 
       const searchDTO: SearchQuizDTO = await this.buildSearchDTO(context);
 
-      const quizList: Quiz[] = await this.service.searchQuiz(
+      const quizList: ShortQuiz[] = await this.service.searchQuiz(
         searchDTO,
         context.page,
         QUIZ_PAGINATION,
@@ -374,9 +375,9 @@ export class QuizController
     @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
   ) {
     const paginationCount = 20;
-    const data: Quiz[] = await this.service.searchQuiz(dto, page, paginationCount);
+    const data: ShortQuiz[] = await this.service.searchQuiz(dto, page, paginationCount);
 
-    const ret: IPaginationResult<Quiz> = {
+    const ret: IPaginationResult<ShortQuiz> = {
       data,
       isMore: data.length === paginationCount,
       count: data.length,
@@ -468,9 +469,9 @@ export class QuizController
 
   private buildSearchDTO(context: QuizContext): SearchQuizDTO {
     return {
-      artist: JSON.stringify(context.artist ? [context.artist] : []),
-      tags: JSON.stringify(context.tag ? [context.tag] : []),
-      styles: JSON.stringify(context.style ? [context.style] : []),
+      artists: context.artist ? [context.artist] : [],
+      tags: context.tag ? [context.tag] : [],
+      styles: context.style ? [context.style] : [],
     };
   }
 }
