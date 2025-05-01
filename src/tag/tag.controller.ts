@@ -84,7 +84,12 @@ export class TagController implements CrudController<Tag> {
       throw new ServiceException('DB_CONFLICT', 'CONFLICT', `${dto.name} is already exist`);
     }
 
-    const updatedTag: Tag = await this.service.replaceOne({} as CrudRequest, dto);
+    const search_name = dto.name.trim().split(/\s+/).join('_').toUpperCase();
+
+    const updatedTag: Tag = await this.service.replaceOne({} as CrudRequest, {
+      ...dto,
+      search_name,
+    });
 
     return updatedTag;
   }
