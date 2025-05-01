@@ -26,6 +26,7 @@ import { Quiz } from './entities/quiz.entity';
 import { QuizSubmission } from './interface/quiz-Submission';
 import { QuizReactionCount } from './interface/reaction-count';
 import { RelatedPaintingIds, RelatedPaintings } from './interface/related-paintings.interface';
+import { ShortQuiz } from './interface/short-quiz';
 import { QuizCategory } from './type';
 
 @Injectable()
@@ -245,90 +246,98 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     return paintings;
   }
 
-  async searchQuiz(dto: SearchQuizDTO, page: number, paginationCount: number) {
-    /*TODO
+  async searchQuiz(
+    dto: SearchQuizDTO,
+    page: number,
+    paginationCount: number,
+  ): Promise<ShortQuiz[]> {
+    /*TODO 검색 로직 개선
       - [ ]각 JSON 값이 string[]인지 확인 필요.
       - [ ] 배열의 각 원소가 공백("")인지 확인 필요.
         - 공백값이 삽입되어 DB QUERY에 적용되면, 공백값과 일치하는 조건이 추가됨.
+      - [ ] title, description 검색 고려하기
     */
-    const tags = JSON.parse(dto.tags) as string[];
-    const styles = JSON.parse(dto.styles) as string[];
-    const artists = JSON.parse(dto.artist) as string[];
+    const { tags, styles, artists } = dto;
 
-    const subQueryFilterByTags = await this.repo
-      .createQueryBuilder()
-      .subQuery()
-      .select('quiz_tags.quizId')
-      .from('quiz_tags_tag', 'quiz_tags') // Many-to-Many 연결 테이블
-      .innerJoin('tag', 'tag', 'tag.id = quiz_tags.tagId') // 연결 테이블과 Tag JOIN
-      .where('tag.name IN (:...tagNames)') // tagNames 필터링
-      .groupBy('quiz_tags.quizId')
-      .having('COUNT(DISTINCT tag.id) = :tagCount') // 정확한 태그 갯수 매칭
-      .getQuery();
-    const subQueryFilterByStyles = await this.repo
-      .createQueryBuilder()
-      .subQuery()
-      .select('quiz_styles.quizId')
-      .from('quiz_styles_style', 'quiz_styles') // Many-to-Many 연결 테이블
-      .innerJoin('style', 'style', 'style.id = quiz_styles.styleId') // 연결 테이블과 Tag JOIN
-      .where('style.name IN (:...styleNames)') // tagNames 필터링
-      .groupBy('quiz_styles.quizId')
-      .having('COUNT(DISTINCT style.id) = :styleCount') // 정확한 태그 갯수 매칭
-      .getQuery();
+    const quizAlias = 'q';
+    const queryBuilder = await this.repo.createQueryBuilder('q').select();
 
-    const subQueryFilterByArtists = await this.repo
-      .createQueryBuilder()
-      .subQuery()
-      .select('quiz_artists.quizId')
-      .from('quiz_artists_artist', 'quiz_artists') // Many-to-Many 연결 테이블
-      .innerJoin('artist', 'artist', 'artist.id = quiz_artists.artistId') // 연결 테이블과 Tag JOIN
-      .where('artist.name IN (:...artistNames)') // tagNames 필터링
-      .groupBy('quiz_artists.quizId')
-      .having('COUNT(DISTINCT artist.id) = :artistCount') // 정확한 태그 갯수 매칭
-      .getQuery();
+    if (!isArrayEmpty(tags)) {
+      const subQueryFilterByTags = await this.repo
+        .createQueryBuilder()
+        .subQuery()
+        .select('quiz_tags.quizId')
+        .from('quiz_tags_tag', 'quiz_tags') // Many-to-Many 연결 테이블
+        .innerJoin('tag', 'tag', 'tag.id = quiz_tags.tagId') // 연결 테이블과 Tag JOIN
+        .where('tag.name IN (:...tagNames)') // tagNames 필터링
+        .groupBy('quiz_tags.quizId')
+        .having('COUNT(DISTINCT tag.id) = :tagCount') // 정확한 태그 갯수 매칭
+        .getQuery();
 
-    /*TODO
-        - JOIN 횟수가 성능에 끼치는 영향 정도를 점검하기
-          => 영향이 크면, 최적화 진행하기
-      */
-    const mainQuery = await this.repo
-      .createQueryBuilder('quiz')
-      .leftJoinAndSelect('quiz.tags', 'tag')
-      .leftJoinAndSelect('quiz.styles', 'style')
-      .leftJoinAndSelect('quiz.artists', 'artist')
-      .leftJoinAndSelect('quiz.answer_paintings', 'answer_paintings')
-      .leftJoinAndSelect('quiz.distractor_paintings', 'distractor_paintings')
-      .leftJoinAndSelect('quiz.example_painting', 'example_painting');
+      const alias = 't';
+      const relation: keyof Quiz = 'tags';
 
-    if (tags.length > 0) {
-      mainQuery.andWhere(`quiz.id IN ${subQueryFilterByTags}`, {
-        tagNames: tags,
-        tagCount: tags.length,
-      });
+      queryBuilder
+        .innerJoinAndSelect(`${quizAlias}.${relation}`, alias)
+        .andWhere(`${quizAlias}.id IN ${subQueryFilterByTags}`, {
+          tagNames: tags,
+          tagCount: tags.length,
+        });
     }
 
-    if (styles.length > 0) {
-      mainQuery.andWhere(`quiz.id IN ${subQueryFilterByStyles}`, {
-        styleNames: styles,
-        styleCount: styles.length,
-      });
+    if (!isArrayEmpty(styles)) {
+      const subQueryFilterByStyles = await this.repo
+        .createQueryBuilder()
+        .subQuery()
+        .select('quiz_styles.quizId')
+        .from('quiz_styles_style', 'quiz_styles') // Many-to-Many 연결 테이블
+        .innerJoin('style', 'style', 'style.id = quiz_styles.styleId') // 연결 테이블과 Tag JOIN
+        .where('style.name IN (:...styleNames)') // tagNames 필터링
+        .groupBy('quiz_styles.quizId')
+        .having('COUNT(DISTINCT style.id) = :styleCount') // 정확한 태그 갯수 매칭
+        .getQuery();
+      const alias = 's';
+      const relation: keyof Quiz = 'styles';
+
+      queryBuilder
+        .innerJoinAndSelect(`${quizAlias}.${relation}`, alias)
+        .andWhere(`${quizAlias}.id IN ${subQueryFilterByStyles}`, {
+          styleNames: styles,
+          styleCount: styles.length,
+        });
     }
 
-    if (artists.length > 0) {
-      mainQuery.andWhere(`quiz.id IN ${subQueryFilterByArtists}`, {
-        artistNames: artists,
-        artistCount: artists.length,
-      });
+    if (!isArrayEmpty(artists)) {
+      const subQueryFilterByArtists = await this.repo
+        .createQueryBuilder()
+        .subQuery()
+        .select('quiz_artists.quizId')
+        .from('quiz_artists_artist', 'quiz_artists') // Many-to-Many 연결 테이블
+        .innerJoin('artist', 'artist', 'artist.id = quiz_artists.artistId') // 연결 테이블과 Tag JOIN
+        .where('artist.name IN (:...artistNames)') // tagNames 필터링
+        .groupBy('quiz_artists.quizId')
+        .having('COUNT(DISTINCT artist.id) = :artistCount') // 정확한 태그 갯수 매칭
+        .getQuery();
+
+      const alias = 'a';
+      const relation: keyof Quiz = 'artists';
+      queryBuilder
+        .innerJoinAndSelect(`${quizAlias}.${relation}`, alias)
+        .andWhere(`${quizAlias}.id IN ${subQueryFilterByArtists}`, {
+          artistNames: artists,
+          artistCount: artists.length,
+        });
     }
 
-    Logger.debug(mainQuery.getSql());
+    Logger.debug(queryBuilder.getSql());
 
-    const result = mainQuery
+    const quizzes = await queryBuilder
       .skip(page * paginationCount)
       .take(paginationCount)
+      .orderBy(`${quizAlias}.created_date`, 'DESC')
       .getMany();
 
-    return result;
+    return quizzes.map((quiz) => new ShortQuiz(quiz));
   }
 
   async getQuizById(id: string): Promise<Quiz | null> {

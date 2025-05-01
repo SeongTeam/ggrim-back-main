@@ -1,5 +1,15 @@
-import { Crud, CrudController } from '@dataui/crud';
-import { Controller, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  Crud,
+  CrudController,
+  CrudRequest,
+  Override,
+  ParsedBody,
+  ParsedRequest,
+} from '@dataui/crud';
+import { Controller, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
+import { TokenAuthGuard } from '../auth/guard/authentication/token-auth.guard';
+import { RolesGuard } from '../auth/guard/authorization/roles.guard';
+import { Roles } from '../user/decorator/role';
 import { CreateStyleDTO } from './dto/create-style.dto';
 import { ReplaceStyleDTO } from './dto/replace-style.dto';
 import { Style } from './entities/style.entity';
@@ -30,12 +40,13 @@ const EXCLUDED_COLUMN = ['created_date', 'updated_date', 'deleted_date', 'versio
   query: {
     join: {
       paintings: {
-        eager: true,
+        eager: false,
+        allow: ['title', 'image_url'],
         exclude: [...EXCLUDED_COLUMN, 'width', 'height', 'completition_year', 'description'],
         persist: ['id', 'title', 'image_url'],
       },
     },
-    allow: ['name'],
+    allow: ['name', 'search_name'],
     exclude: [...EXCLUDED_COLUMN],
     persist: ['name', 'info_url'],
     softDelete: true,
@@ -49,5 +60,28 @@ export class StyleController implements CrudController<Style> {
 
   get base(): CrudController<Style> {
     return this;
+  }
+
+  @Override('createOneBase')
+  @Roles('admin')
+  @UseGuards(TokenAuthGuard, RolesGuard)
+  async createOne(@ParsedRequest() req: CrudRequest, @ParsedBody() dto: CreateStyleDTO) {
+    const { name } = dto;
+    const search_name = name.trim().split(/\s+/).join('_').toUpperCase();
+    return this.service.createOne(req, { search_name, ...dto });
+  }
+
+  @Override('replaceOneBase')
+  @Roles('admin')
+  @UseGuards(TokenAuthGuard, RolesGuard)
+  async replaceOne(@ParsedRequest() req: CrudRequest, @ParsedBody() dto: ReplaceStyleDTO) {
+    const search_name = dto.name.trim().split(/\s+/).join('_').toUpperCase();
+    return this.service.replaceOne(req, { ...dto, search_name });
+  }
+  @Override('deleteOneBase')
+  @Roles('admin')
+  @UseGuards(TokenAuthGuard, RolesGuard)
+  async deleteOne(@ParsedRequest() req: CrudRequest) {
+    return this.service.deleteOne(req);
   }
 }

@@ -55,6 +55,7 @@ import { QuizDislike } from './entities/quiz-dislike.entity';
 import { QuizLike } from './entities/quiz-like.entity';
 import { Quiz } from './entities/quiz.entity';
 import { QuizContext } from './interface/quiz-context';
+import { ShortQuiz } from './interface/short-quiz';
 import { QuizScheduleService } from './quiz-schedule.service';
 import { QuizService } from './quiz.service';
 import { QuizCategory } from './type';
@@ -132,27 +133,6 @@ export class QuizController
       await this.service.flushSubmissionMap();
     }
     Logger.log(`[OnModuleDestroy] done `, QuizController.name);
-  }
-
-  @Override('getOneBase')
-  async getQuizAndIncreaseView(
-    @Param('id') id: string,
-    @ParsedRequest() req: CrudRequest,
-    @Query('user_id') user_id: string | undefined,
-  ): Promise<QuizResponseDTO> {
-    const quiz = await this.service.getOne(req);
-
-    const [_, reactionCount] = await Promise.all([
-      this.service.increaseView(id),
-      this.service.getQuizReactionCounts(id),
-    ]);
-
-    const userReaction: QuizReactionType | undefined = user_id
-      ? await this.service.getUserReaction(id, user_id)
-      : undefined;
-
-    // responseDTO 정의하기
-    return { quiz, userReaction, reactionCount };
   }
 
   @Post('submit/:id')
@@ -257,17 +237,6 @@ export class QuizController
     return this.service.generateQuizByValue(dto.category, dto.keyword);
   }
 
-  @Get('quizContext')
-  async getQuizContext(
-    @Query()
-    dto: QuizContextDTO,
-  ) {
-    Logger.log('test api:' + JSON.stringify(dto));
-    // const classInstance = plainToInstance(QuizContextDTO, dto, { enableImplicitConversion: true });
-    // Logger.log('transformation :' + JSON.stringify(classInstance));
-    return dto;
-  }
-
   @Get('schedule')
   async getScheduledQuiz(@Query() dto: ScheduleQuizQueryDTO): Promise<ResponseQuizDTO> {
     Logger.log(`context : `, dto.context);
@@ -279,7 +248,7 @@ export class QuizController
 
       const searchDTO: SearchQuizDTO = await this.buildSearchDTO(context);
 
-      const quizList: Quiz[] = await this.service.searchQuiz(
+      const quizList: ShortQuiz[] = await this.service.searchQuiz(
         searchDTO,
         context.page,
         QUIZ_PAGINATION,
@@ -329,6 +298,27 @@ export class QuizController
     return this.service.createQuiz(qr, dto, userPayload.user);
   }
 
+  @Override('getOneBase')
+  async getQuizAndIncreaseView(
+    @Param('id') id: string,
+    @ParsedRequest() req: CrudRequest,
+    @Query('user_id') user_id: string | undefined,
+  ): Promise<QuizResponseDTO> {
+    const quiz = await this.service.getOne(req);
+
+    const [_, reactionCount] = await Promise.all([
+      this.service.increaseView(id),
+      this.service.getQuizReactionCounts(id),
+    ]);
+
+    const userReaction: QuizReactionType | undefined = user_id
+      ? await this.service.getUserReaction(id, user_id)
+      : undefined;
+
+    // responseDTO 정의하기
+    return { quiz, userReaction, reactionCount };
+  }
+
   @Put(':id')
   @CheckOwner({
     serviceClass: QuizService,
@@ -374,9 +364,9 @@ export class QuizController
     @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
   ) {
     const paginationCount = 20;
-    const data: Quiz[] = await this.service.searchQuiz(dto, page, paginationCount);
+    const data: ShortQuiz[] = await this.service.searchQuiz(dto, page, paginationCount);
 
-    const ret: IPaginationResult<Quiz> = {
+    const ret: IPaginationResult<ShortQuiz> = {
       data,
       isMore: data.length === paginationCount,
       count: data.length,
@@ -468,9 +458,9 @@ export class QuizController
 
   private buildSearchDTO(context: QuizContext): SearchQuizDTO {
     return {
-      artist: JSON.stringify(context.artist ? [context.artist] : []),
-      tags: JSON.stringify(context.tag ? [context.tag] : []),
-      styles: JSON.stringify(context.style ? [context.style] : []),
+      artists: context.artist ? [context.artist] : [],
+      tags: context.tag ? [context.tag] : [],
+      styles: context.style ? [context.style] : [],
     };
   }
 }

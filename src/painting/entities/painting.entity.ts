@@ -22,7 +22,7 @@ export class Painting extends CustomBaseEntity {
   @Column()
   title!: string;
 
-  @Column()
+  @Column({ type: 'text' })
   searchTitle!: string;
 
   @OneToOne(() => WikiArtPainting, {
