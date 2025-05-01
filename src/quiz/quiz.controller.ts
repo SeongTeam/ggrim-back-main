@@ -135,27 +135,6 @@ export class QuizController
     Logger.log(`[OnModuleDestroy] done `, QuizController.name);
   }
 
-  @Override('getOneBase')
-  async getQuizAndIncreaseView(
-    @Param('id') id: string,
-    @ParsedRequest() req: CrudRequest,
-    @Query('user_id') user_id: string | undefined,
-  ): Promise<QuizResponseDTO> {
-    const quiz = await this.service.getOne(req);
-
-    const [_, reactionCount] = await Promise.all([
-      this.service.increaseView(id),
-      this.service.getQuizReactionCounts(id),
-    ]);
-
-    const userReaction: QuizReactionType | undefined = user_id
-      ? await this.service.getUserReaction(id, user_id)
-      : undefined;
-
-    // responseDTO 정의하기
-    return { quiz, userReaction, reactionCount };
-  }
-
   @Post('submit/:id')
   async submitQuiz(@Param('id', ParseUUIDPipe) id: string, @Body() dto: QuizSubmitDTO) {
     await this.service.insertSubmission(id, dto.isCorrect);
@@ -317,6 +296,27 @@ export class QuizController
     const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
 
     return this.service.createQuiz(qr, dto, userPayload.user);
+  }
+
+  @Override('getOneBase')
+  async getQuizAndIncreaseView(
+    @Param('id') id: string,
+    @ParsedRequest() req: CrudRequest,
+    @Query('user_id') user_id: string | undefined,
+  ): Promise<QuizResponseDTO> {
+    const quiz = await this.service.getOne(req);
+
+    const [_, reactionCount] = await Promise.all([
+      this.service.increaseView(id),
+      this.service.getQuizReactionCounts(id),
+    ]);
+
+    const userReaction: QuizReactionType | undefined = user_id
+      ? await this.service.getUserReaction(id, user_id)
+      : undefined;
+
+    // responseDTO 정의하기
+    return { quiz, userReaction, reactionCount };
   }
 
   @Put(':id')
