@@ -75,7 +75,8 @@ export class StyleController implements CrudController<Style> {
   @Roles('admin')
   @UseGuards(TokenAuthGuard, RolesGuard)
   async replaceOne(@ParsedRequest() req: CrudRequest, @ParsedBody() dto: ReplaceStyleDTO) {
-    return this.service.replaceOne(req, dto);
+    const search_name = dto.name.trim().split(/\s+/).join('_').toUpperCase();
+    return this.service.replaceOne(req, { ...dto, search_name });
   }
   @Override('deleteOneBase')
   @Roles('admin')
