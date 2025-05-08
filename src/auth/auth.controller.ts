@@ -187,7 +187,7 @@ export class AuthController {
 
     if (!isVerified) {
       await this.service.updateVerification(qr, latestVerification.id, { last_verified_date: now });
-      return null;
+      throw new ServiceException('BASE', 'FORBIDDEN', `Check pin-code again`);
     }
     await this.service.updateVerification(qr, latestVerification.id, {
       last_verified_date: now,
