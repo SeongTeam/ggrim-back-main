@@ -58,6 +58,10 @@ export class AuthController {
     @Inject(ConfigService) private readonly configService: ConfigService,
   ) {}
 
+  //TODO : 로그인 API 개선
+  // - [x] : 로그인 성공시, 사용자 정보 응답하기
+  // - [ ] : 로그인 성공 또는 실패에 대한 기록 저장하기
+
   @Post('sign-in')
   @UseGuards(BasicGuard)
   async signin(@Request() request: any) {
@@ -84,7 +88,7 @@ export class AuthController {
     const response: SignInResponse = {
       accessToken,
       refreshToken,
-      email,
+      user,
     };
 
     return response;
