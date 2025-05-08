@@ -133,7 +133,7 @@ export class AuthController {
     const verification = await this.service.createVerification(qr, email, pinCode);
 
     await this.mailService.sendVerificationPinCode(email, pinCode);
-    verification.pin_code = pinCode;
+    // verification.pin_code = pinCode;
 
     return verification;
   }
