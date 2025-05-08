@@ -43,7 +43,7 @@ import { CATEGORY_VALUES } from './const';
 import { SearchQuizDTO } from './dto/SearchQuiz.dto';
 import { CreateQuizDTO } from './dto/create-quiz.dto';
 import { GenerateQuizQueryDTO } from './dto/generate-quiz.query.dto';
-import { QuizResponseDTO } from './dto/output/response-quiz.dto';
+import { DetailQuizDTO } from './dto/output/detail-quiz.dto';
 import { ResponseQuizDTO } from './dto/output/response-schedule-quiz.dto';
 import { QuizContextDTO } from './dto/quiz-context.dto';
 import { QuizReactionDTO, QuizReactionType } from './dto/quiz-reaction.dto';
@@ -303,7 +303,7 @@ export class QuizController
     @Param('id') id: string,
     @ParsedRequest() req: CrudRequest,
     @Query('user_id') user_id: string | undefined,
-  ): Promise<QuizResponseDTO> {
+  ): Promise<DetailQuizDTO> {
     const quiz = await this.service.getOne(req);
 
     const [_, reactionCount] = await Promise.all([
