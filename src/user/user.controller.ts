@@ -87,7 +87,7 @@ export class UserController implements CrudController<User> {
 
   @Override(`createOneBase`)
   @UseInterceptors(QueryRunnerInterceptor)
-  @PurposeOneTimeToken('email-verification')
+  @PurposeOneTimeToken('sign-up')
   @UseGuards(TempUserGuard)
   async signUp(
     @DBQueryRunner() qr: QueryRunner,

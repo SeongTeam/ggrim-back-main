@@ -193,11 +193,7 @@ export class AuthController {
       last_verified_date: now,
       verification_success_date: now,
     });
-    const oneTimeToken: OneTimeToken = await this.createOneTimeToken(
-      qr,
-      email,
-      'email-verification',
-    );
+    const oneTimeToken: OneTimeToken = await this.createOneTimeToken(qr, email, 'sign-up');
     return oneTimeToken;
   }
 
