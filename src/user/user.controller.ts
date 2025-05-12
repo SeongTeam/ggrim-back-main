@@ -112,8 +112,7 @@ export class UserController implements CrudController<User> {
     this.authService.markOneTimeJWT(qr, oneTimeTokenID);
 
     const encryptedPW = await this.authService.hash(dto.password);
-    const encryptedDTO: CreateUserDTO = { ...dto, password: encryptedPW };
-    return await this.service.createUser(qr, encryptedDTO);
+    return await this.service.createUser(qr, { ...dto, password: encryptedPW, email });
   }
 
   // TODO: 사용자 정보 변경 로직 개선하기
