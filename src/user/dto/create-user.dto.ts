@@ -1,6 +1,4 @@
 import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
-import { IsInArray } from '../../utils/class-validator';
-import { UserRole } from '../entity/user.entity';
 
 export class CreateUserDTO {
   @IsString()
@@ -8,8 +6,8 @@ export class CreateUserDTO {
   @MaxLength(30)
   password!: string;
 
-  @IsInArray(['admin', 'user'])
-  role!: UserRole;
+  // @IsInArray(['admin', 'user'])
+  // role!: UserRole;
 
   @IsString()
   @MinLength(4)
