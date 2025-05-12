@@ -94,19 +94,10 @@ export class UserController implements CrudController<User> {
     @Request() request: any,
     @Body() dto: CreateUserDTO,
   ) {
-    const { email, username } = dto;
-    const sameUsers = await this.service.find({ where: [{ email }, { username }] });
     const tempUserPayload: TempUserPayload = request[ENUM_AUTH_CONTEXT_KEY.TEMP_USER];
-    const { oneTimeTokenID, email: TokenEmail } = tempUserPayload;
-
-    if (email !== TokenEmail) {
-      throw new ServiceException(
-        'BASE',
-        'FORBIDDEN',
-        `can't create user by using other's email.
-        TokenEmail is different to bodyEmail`,
-      );
-    }
+    const { oneTimeTokenID, email } = tempUserPayload;
+    const { username } = dto;
+    const sameUsers = await this.service.find({ where: [{ email }, { username }] });
 
     sameUsers.forEach((user) => {
       if (user.email == email) {

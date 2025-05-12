@@ -1,11 +1,8 @@
-import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { IsInArray } from '../../utils/class-validator';
 import { UserRole } from '../entity/user.entity';
 
 export class CreateUserDTO {
-  @IsEmail()
-  email!: string;
-
   @IsString()
   @MinLength(8)
   @MaxLength(30)
