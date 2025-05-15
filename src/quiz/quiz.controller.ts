@@ -94,6 +94,9 @@ import { QuizCategory } from './type';
       tags: {
         eager: true,
       },
+      owner: {
+        eager: true,
+      },
     },
   },
 })
@@ -317,7 +320,7 @@ export class QuizController
       : undefined;
 
     // responseDTO 정의하기
-    return { quiz, userReaction, reactionCount };
+    return new DetailQuizDTO(quiz, reactionCount, userReaction);
   }
 
   @Put(':id')
