@@ -332,6 +332,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     Logger.debug(queryBuilder.getSql());
 
     const quizzes = await queryBuilder
+      .innerJoinAndSelect(`${quizAlias}.owner`, 'user')
       .skip(page * paginationCount)
       .take(paginationCount)
       .orderBy(`${quizAlias}.created_date`, 'DESC')
