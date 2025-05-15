@@ -138,6 +138,7 @@ export class QuizController
   @Post('submit/:id')
   async submitQuiz(@Param('id', ParseUUIDPipe) id: string, @Body() dto: QuizSubmitDTO) {
     await this.service.insertSubmission(id, dto.isCorrect);
+    return true;
   }
 
   @Get(':id/reactions')
