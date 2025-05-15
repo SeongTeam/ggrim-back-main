@@ -302,7 +302,7 @@ export class QuizController
   async getQuizAndIncreaseView(
     @Param('id') id: string,
     @ParsedRequest() req: CrudRequest,
-    @Query('user_id') user_id: string | undefined,
+    @Query('user-id') userId: string | undefined,
   ): Promise<DetailQuizDTO> {
     const quiz = await this.service.getOne(req);
 
@@ -311,8 +311,8 @@ export class QuizController
       this.service.getQuizReactionCounts(id),
     ]);
 
-    const userReaction: QuizReactionType | undefined = user_id
-      ? await this.service.getUserReaction(id, user_id)
+    const userReaction: QuizReactionType | undefined = userId
+      ? await this.service.getUserReaction(id, userId)
       : undefined;
 
     // responseDTO 정의하기
