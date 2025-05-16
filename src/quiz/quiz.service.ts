@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Mutex } from 'async-mutex';
 import { FindManyOptions, QueryRunner, Repository } from 'typeorm';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
+import { IPaginationResult } from '../_common/interface';
 import { Artist } from '../artist/entities/artist.entity';
 import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.lib';
 import { Painting } from '../painting/entities/painting.entity';
@@ -250,7 +251,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
     dto: SearchQuizDTO,
     page: number,
     paginationCount: number,
-  ): Promise<ShortQuiz[]> {
+  ): Promise<IPaginationResult<ShortQuiz>> {
     /*TODO 검색 로직 개선
       - [ ]각 JSON 값이 string[]인지 확인 필요.
       - [ ] 배열의 각 원소가 공백("")인지 확인 필요.
@@ -331,14 +332,22 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 
     Logger.debug(queryBuilder.getSql());
 
-    const quizzes = await queryBuilder
+    const [quizzes, total] = await queryBuilder
       .innerJoinAndSelect(`${quizAlias}.owner`, 'user')
       .skip(page * paginationCount)
       .take(paginationCount)
       .orderBy(`${quizAlias}.created_date`, 'DESC')
-      .getMany();
+      .getManyAndCount();
 
-    return quizzes.map((quiz) => new ShortQuiz(quiz));
+    const data = quizzes.map((quiz) => new ShortQuiz(quiz));
+
+    return {
+      data,
+      count: data.length,
+      total,
+      page,
+      pageCount: Math.floor(total / paginationCount) + (total % paginationCount === 0 ? 0 : 1),
+    };
   }
 
   async getQuizById(id: string): Promise<Quiz | null> {

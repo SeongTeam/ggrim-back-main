@@ -26,7 +26,6 @@ import { LoggerService } from '../Logger/logger.service';
 import { CONFIG_FILE_PATH } from '../_common/const/default.value';
 import { AWS_BUCKET, AWS_INIT_FILE_KEY_PREFIX } from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
-import { IPaginationResult } from '../_common/interface';
 import { ArtistService } from '../artist/artist.service';
 import { CheckOwner } from '../auth/decorator/owner';
 import { TokenAuthGuard } from '../auth/guard/authentication/token-auth.guard';
@@ -252,11 +251,9 @@ export class QuizController
 
       const searchDTO: SearchQuizDTO = await this.buildSearchDTO(context);
 
-      const quizList: ShortQuiz[] = await this.service.searchQuiz(
-        searchDTO,
-        context.page,
-        QUIZ_PAGINATION,
-      );
+      const pagination = await this.service.searchQuiz(searchDTO, context.page, QUIZ_PAGINATION);
+
+      const quizList: ShortQuiz[] = pagination.data;
       if (quizList.length === 0) {
         await this.scheduleService.requestDeleteContext(context);
         dto.context = undefined;
@@ -368,14 +365,7 @@ export class QuizController
     @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
   ) {
     const paginationCount = 20;
-    const data: ShortQuiz[] = await this.service.searchQuiz(dto, page, paginationCount);
-
-    const ret: IPaginationResult<ShortQuiz> = {
-      data,
-      isMore: data.length === paginationCount,
-      count: data.length,
-      pagination: page,
-    };
+    const ret = await this.service.searchQuiz(dto, page, paginationCount);
 
     return ret;
   }

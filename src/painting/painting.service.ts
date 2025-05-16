@@ -4,6 +4,7 @@ import { existsSync } from 'fs';
 import { Brackets, QueryRunner, Repository } from 'typeorm';
 import { CONFIG_FILE_PATH } from '../_common/const/default.value';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
+import { IPaginationResult } from '../_common/interface';
 import { ArtistService } from '../artist/artist.service';
 import { Artist } from '../artist/entities/artist.entity';
 import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.lib';
@@ -127,7 +128,7 @@ export class PaintingService {
     dto: SearchPaintingDTO,
     page: number,
     paginationCount: number,
-  ): Promise<ShortPainting[]> {
+  ): Promise<IPaginationResult<ShortPainting>> {
     /*TODO
     - 입력된 tag와 style이 유효한지 점검하기
     - [ ] 배열의 각 원소가 공백인지 확인 필요.
@@ -199,13 +200,21 @@ export class PaintingService {
         });
     }
 
-    const paintings = await queryBuilder
-      .skip(page * paginationCount)
+    const [paintings, total] = await queryBuilder
+      .skip((page - 1) * paginationCount)
       .take(paginationCount)
       .orderBy('p.created_date', 'DESC')
-      .getMany();
+      .getManyAndCount();
 
-    return paintings.map((p) => new ShortPainting(p));
+    const data = paintings.map((p) => new ShortPainting(p));
+
+    return {
+      data,
+      count: data.length,
+      total,
+      page,
+      pageCount: Math.floor(total / paginationCount) + (total % paginationCount === 0 ? 0 : 1),
+    };
   }
   async getPaintingsByArtist(artistName: string) {
     const result = await this.repo

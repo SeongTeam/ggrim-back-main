@@ -20,7 +20,6 @@ import { QueryRunner } from 'typeorm';
 import { CONFIG_FILE_PATH } from '../_common/const/default.value';
 import { AWS_BUCKET, AWS_INIT_FILE_KEY_PREFIX } from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
-import { IPaginationResult } from '../_common/interface';
 import { S3Service } from '../aws/s3.service';
 import { DBQueryRunner } from '../db/query-runner/decorator/query-runner.decorator';
 import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.interceptor';
@@ -30,7 +29,6 @@ import { GetByIdsQueryDTO } from './dto/get-by-ids.query.dto';
 import { ReplacePaintingDTO } from './dto/replace-painting.dto';
 import { SearchPaintingDTO } from './dto/search-painting.dto';
 import { Painting } from './entities/painting.entity';
-import { ShortPainting } from './interface/short-painting';
 import { PaintingService } from './painting.service';
 
 @UsePipes(new ValidationPipe({ transform: true }))
@@ -104,18 +102,10 @@ export class PaintingController {
   @Get('/')
   async searchPainting(
     @Query() dto: SearchPaintingDTO,
-    @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
   ) {
     const paginationCount = 50;
-    const data: ShortPainting[] = await this.service.searchPainting(dto, page, paginationCount);
-
-    const ret: IPaginationResult<ShortPainting> = {
-      data,
-      isMore: data.length === paginationCount,
-      count: data.length,
-      pagination: page,
-    };
-
+    const ret = await this.service.searchPainting(dto, page, paginationCount);
     return ret;
   }
 
