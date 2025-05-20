@@ -102,7 +102,7 @@ export class PaintingController {
   @Get('/')
   async searchPainting(
     @Query() dto: SearchPaintingDTO,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
   ) {
     const paginationCount = 50;
     const ret = await this.service.searchPainting(dto, page, paginationCount);

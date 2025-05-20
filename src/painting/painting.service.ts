@@ -201,7 +201,7 @@ export class PaintingService {
     }
 
     const [paintings, total] = await queryBuilder
-      .skip((page - 1) * paginationCount)
+      .skip(page * paginationCount)
       .take(paginationCount)
       .orderBy('p.created_date', 'DESC')
       .getManyAndCount();
