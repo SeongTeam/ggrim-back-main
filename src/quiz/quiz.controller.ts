@@ -363,9 +363,9 @@ export class QuizController
   async searchQuiz(
     @Query() dto: SearchQuizDTO,
     @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
+    @Query('count', new DefaultValuePipe(20), ParseIntPipe) count: number,
   ) {
-    const paginationCount = 20;
-    const ret = await this.service.searchQuiz(dto, page, paginationCount);
+    const ret = await this.service.searchQuiz(dto, page, count);
 
     return ret;
   }
