@@ -16,11 +16,11 @@ COPY . ./
 RUN echo "build start: "  && pwd && ls -la
 RUN npm ci && npm run build
 
-RUN echo "comlete build: "  && pwd && ls -la
+RUN echo "complete build: "  && pwd && ls -la
 # 이미지 크기를 줄이기 위해서 어떻게 해야하는가? 빌드->빌드 결과 복사-> 빌드 실행?
 
-# stage :: build-completor
-FROM node:${NODE_VERSION} AS build-completor
+# stage :: build-completer
+FROM node:${NODE_VERSION} AS build-completer
 ARG WORK_DIR="app" \
     BUILD_RESULT_PATH="/build-back/dist"
 
@@ -61,7 +61,7 @@ ARG WORK_DIR="app"
 # RUN aws --version
 
 #디렉토리 복사
-COPY --chown=node:node --from=build-completor /${WORK_DIR} /${WORK_DIR}
+COPY --chown=node:node --from=build-completer /${WORK_DIR} /${WORK_DIR}
 RUN echo "init image : " && pwd && ls -la
 
 WORKDIR /${WORK_DIR}
