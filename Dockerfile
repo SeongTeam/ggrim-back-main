@@ -25,13 +25,14 @@ ARG WORK_DIR="app" \
     BUILD_RESULT_PATH="/build-back/dist"
 
 WORKDIR /${WORK_DIR}
-COPY package.json package-lock.json .env.production.gpg *.sh .
+COPY package.json package-lock.json *.sh .
 RUN mkdir app-config
 COPY app-config/ ./app-config/
 
-ARG GPG_TOKEN="your_password"
-RUN apk add --no-cache gnupg
-RUN gpg --batch --verbose --yes --passphrase ${GPG_TOKEN} .env.production.gpg > .env.production
+RUN mkdir src;
+RUN mkdir src/mail
+RUN mkdir src/mail/templates
+COPY src/mail/templates/ ./src/mail/templates/
 
 # Add entrypoint script and set permissions
 RUN chmod +x run.sh
