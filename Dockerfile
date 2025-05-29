@@ -2,7 +2,7 @@
 ARG NODE_VERSION=22-alpine
 FROM node:${NODE_VERSION} AS builder
 
-LABEL mainainer="ggrim@back" \
+LABEL maintainer="ggrim@back" \
       version="0.1.0" \
       description="test"
 
