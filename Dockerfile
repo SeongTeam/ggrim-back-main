@@ -25,20 +25,16 @@ ARG WORK_DIR="app" \
     BUILD_RESULT_PATH="/build-back/dist"
 
 WORKDIR /${WORK_DIR}
-COPY package.json package-lock.json *.sh .
-RUN mkdir app-config
-COPY app-config/ ./app-config/
 
-RUN mkdir src;
-RUN mkdir src/mail
-RUN mkdir src/mail/templates
+# 필수 파일 복사
+COPY package.json package-lock.json run.sh ./
+COPY app-config/ ./app-config/
 COPY src/mail/templates/ ./src/mail/templates/
 
 # Add entrypoint script and set permissions
-RUN chmod +x run.sh
-RUN echo "Before create image : " && pwd && ls -la
-
-RUN npm ci --omit=dev
+RUN chmod +x run.sh && \
+    echo "Before create image : " && pwd && ls -la && \
+    npm ci --omit=dev
 
 # Copy build artifacts from builder stage
 COPY --from=builder $BUILD_RESULT_PATH ./dist/
@@ -51,14 +47,6 @@ RUN chown -R node:node /${WORK_DIR}
 # stage : init 
 FROM node:${NODE_VERSION} AS init
 ARG WORK_DIR="app"
-
-
-# AWS CLI 설치 (apk 사용)
-# RUN apk update && \
-#     apk add --no-cache aws-cli
-
-# # AWS CLI 버전 확인
-# RUN aws --version
 
 #디렉토리 복사
 COPY --chown=node:node --from=build-completer /${WORK_DIR} /${WORK_DIR}
