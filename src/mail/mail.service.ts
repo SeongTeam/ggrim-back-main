@@ -63,7 +63,7 @@ export class MailService {
           throw new ServiceException(
             'SERVICE_RUN_ERROR',
             'INTERNAL_SERVER_ERROR',
-            `fail to send verification to ${to}`,
+            `fail to send verification to ${to.replace(/(.{2}).+(@.*)/, '$1***$2')}`,
             { cause: err },
           );
         });
@@ -93,7 +93,7 @@ export class MailService {
           throw new ServiceException(
             'SERVICE_RUN_ERROR',
             'INTERNAL_SERVER_ERROR',
-            `fail to send verification to ${to}`,
+            `fail to send verification to ${to.replace(/(.{2}).+(@.*)/, '$1***$2')}`,
             { cause: err },
           );
         });
