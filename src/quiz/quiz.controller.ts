@@ -26,7 +26,6 @@ import { LoggerService } from '../Logger/logger.service';
 import { CONFIG_FILE_PATH } from '../_common/const/default.value';
 import { AWS_BUCKET, AWS_INIT_FILE_KEY_PREFIX } from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
-import { IPaginationResult } from '../_common/interface';
 import { ArtistService } from '../artist/artist.service';
 import { CheckOwner } from '../auth/decorator/owner';
 import { TokenAuthGuard } from '../auth/guard/authentication/token-auth.guard';
@@ -43,7 +42,7 @@ import { CATEGORY_VALUES } from './const';
 import { SearchQuizDTO } from './dto/SearchQuiz.dto';
 import { CreateQuizDTO } from './dto/create-quiz.dto';
 import { GenerateQuizQueryDTO } from './dto/generate-quiz.query.dto';
-import { QuizResponseDTO } from './dto/output/response-quiz.dto';
+import { DetailQuizDTO } from './dto/output/detail-quiz.dto';
 import { ResponseQuizDTO } from './dto/output/response-schedule-quiz.dto';
 import { QuizContextDTO } from './dto/quiz-context.dto';
 import { QuizReactionDTO, QuizReactionType } from './dto/quiz-reaction.dto';
@@ -94,6 +93,9 @@ import { QuizCategory } from './type';
       tags: {
         eager: true,
       },
+      owner: {
+        eager: true,
+      },
     },
   },
 })
@@ -138,6 +140,7 @@ export class QuizController
   @Post('submit/:id')
   async submitQuiz(@Param('id', ParseUUIDPipe) id: string, @Body() dto: QuizSubmitDTO) {
     await this.service.insertSubmission(id, dto.isCorrect);
+    return true;
   }
 
   @Get(':id/reactions')
@@ -248,11 +251,9 @@ export class QuizController
 
       const searchDTO: SearchQuizDTO = await this.buildSearchDTO(context);
 
-      const quizList: ShortQuiz[] = await this.service.searchQuiz(
-        searchDTO,
-        context.page,
-        QUIZ_PAGINATION,
-      );
+      const pagination = await this.service.searchQuiz(searchDTO, context.page, QUIZ_PAGINATION);
+
+      const quizList: ShortQuiz[] = pagination.data;
       if (quizList.length === 0) {
         await this.scheduleService.requestDeleteContext(context);
         dto.context = undefined;
@@ -302,8 +303,8 @@ export class QuizController
   async getQuizAndIncreaseView(
     @Param('id') id: string,
     @ParsedRequest() req: CrudRequest,
-    @Query('user_id') user_id: string | undefined,
-  ): Promise<QuizResponseDTO> {
+    @Query('user-id') userId: string | undefined,
+  ): Promise<DetailQuizDTO> {
     const quiz = await this.service.getOne(req);
 
     const [_, reactionCount] = await Promise.all([
@@ -311,12 +312,12 @@ export class QuizController
       this.service.getQuizReactionCounts(id),
     ]);
 
-    const userReaction: QuizReactionType | undefined = user_id
-      ? await this.service.getUserReaction(id, user_id)
+    const userReaction: QuizReactionType | undefined = userId
+      ? await this.service.getUserReaction(id, userId)
       : undefined;
 
     // responseDTO 정의하기
-    return { quiz, userReaction, reactionCount };
+    return new DetailQuizDTO(quiz, reactionCount, userReaction);
   }
 
   @Put(':id')
@@ -362,16 +363,9 @@ export class QuizController
   async searchQuiz(
     @Query() dto: SearchQuizDTO,
     @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
+    @Query('count', new DefaultValuePipe(20), ParseIntPipe) count: number,
   ) {
-    const paginationCount = 20;
-    const data: ShortQuiz[] = await this.service.searchQuiz(dto, page, paginationCount);
-
-    const ret: IPaginationResult<ShortQuiz> = {
-      data,
-      isMore: data.length === paginationCount,
-      count: data.length,
-      pagination: page,
-    };
+    const ret = await this.service.searchQuiz(dto, page, count);
 
     return ret;
   }

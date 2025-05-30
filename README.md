@@ -201,16 +201,39 @@ ref : https://awesome-nestjs.com/resources/boilerplate.html
 1. .env.production 파일 생성
 - .sample.env 참조
 
-2. .env.production.gpg 파일 생성
-- 다음 명령어를 실행후, 암호 입력
+2. 환경 변수 설정 및 빌드 명령어 실행
 ```bash
-$ gpg -c .env.production
+$ docker build --no-cache --progress=plain -t my-nestjs-app . &> build.log
 ```
 
-
-3. 환경 변수 설정 및 빌드 명령어 실행
+3. 환경 변수 주입 및 실행 
 ```bash
-$ docker build --build-arg GPG_TOKEN='your_gpg_password' --no-cache --progress=plain -t my-nestjs-app . &> build.log
+docker run -d \
+  -e DB_HOST="your-host" \
+  -e DB_PORT="your port" \
+  -e DB_USERNAME="username" \
+  -e DB_PASSWORD="password" \
+  -e DB_DATABASE="database" \
+  -e APP_NAME="your-app-name" \
+  -e AWS_ACCESS_KEY="aws-access-key" \
+  -e AWS_ACCESS_SECRET_KEY="aws-secret-key" \
+  -e AWS_BUCKET="bucket-name" \
+  -e AWS_INIT_FILE_KEY_PREFIX="key-prefix" \
+  -e AWS_REGION="aws-region" \
+  -e ENV_HASH_ROUNDS_KEY="hash-round-key" \
+  -e ENV_JWT_SECRET_KEY="secret-key" \
+  -e ENV_SMTP_PORT="smtp-port"  \
+  -e ENV_MAIL_HOST="smtp-host" \
+  -e ENV_MAIL_SERVICE="mail-service" \
+  -e ENV_SMTP_ID="smtp-id" \
+  -e ENV_SMTP_PW="smtp-pw" \
+  -e ENV_SMTP_FROM_EMAIL="host mailer service email" \
+  -e ENV_SMTP_FROM_NAME="host mailer service name" \
+  -e ENV_ADMIN_EMAIL="app-admin-email" \
+  -e FRONT_ROUTE_USER_EMAIL_VERIFICATION="front-route-for-email-verification" \
+  -e ENV_EMAIL_TEST_ADDRESS="test-receiver-email" \
+  -p 3000:3000 \
+  my-nestjs-app
 ```
 
 
