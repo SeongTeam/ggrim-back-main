@@ -8,6 +8,7 @@ import {
   ENV_SMTP_FROM_EMAIL,
   ENV_SMTP_ID,
   ENV_SMTP_PW,
+  NODE_ENV,
 } from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 
@@ -32,13 +33,16 @@ export class MailService {
   private transporter: nodemailer.Transporter;
 
   constructor(@Inject(ConfigService) private readonly configService: ConfigService) {
+    const isProduction = this.configService.get(NODE_ENV) === 'production';
     this.transporter = nodemailer.createTransport({
       service: this.configService.get(ENV_MAIL_SERVICE) || ENV_MAIL_SERVICE,
       auth: {
         user: this.configService.get(ENV_SMTP_ID),
         pass: this.configService.get(ENV_SMTP_PW),
       },
+      logger: !isProduction,
       secure: true,
+      // debug: !isProduction,
     });
 
     Handlebars.registerHelper('safeLink', (url: string) => {
