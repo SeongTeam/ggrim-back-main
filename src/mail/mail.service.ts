@@ -40,6 +40,11 @@ export class MailService {
       },
       secure: true,
     });
+
+    Handlebars.registerHelper('safeLink', (url: string) => {
+      const isSafe = /^(https?):\/\/[\w.-]+/i.test(url);
+      return isSafe ? new Handlebars.SafeString(url) : '#?message=UnSafeLinkContained';
+    });
   }
   async sendVerificationPinCode(to: string, pinCode: string) {
     const html = this.getTemplate(this.ENUM_TEMPLATE.EMAIL_VERIFY, { pinCode });
