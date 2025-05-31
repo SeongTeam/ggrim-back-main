@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { existsSync } from 'fs';
-import { Brackets, QueryRunner, Repository } from 'typeorm';
+import { QueryRunner, Repository } from 'typeorm';
 import { CONFIG_FILE_PATH } from '../_common/const/default.value';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { ArtistService } from '../artist/artist.service';
@@ -137,22 +137,21 @@ export class PaintingService {
     */
     // const selectColumns: (keyof Painting)[] = ['id', 'image_url', 'height', 'width'];
     const paintingAlias = 'p';
+    const artistAlias = 'a';
     const queryBuilder = await this.repo.createQueryBuilder(paintingAlias);
 
-    queryBuilder.where(`p.searchTitle like '%' || :searchTitle|| '%'`, {
-      searchTitle: dto.title.trim().split(/\s+/).join('_').toUpperCase(),
-    });
+    if (isNotFalsy(dto.title) && dto.title.trim().length > 0) {
+      queryBuilder.andWhere(`${paintingAlias}.searchTitle LIKE '%' || :searchTitle || '%'`, {
+        searchTitle: dto.title.trim().split(/\s+/).join('_').toUpperCase(),
+      });
+    }
 
     if (isNotFalsy(dto.artistName) && dto.artistName.trim().length > 0) {
-      const alias = 'a';
-      const path: keyof Painting = 'artist';
-      queryBuilder.innerJoinAndSelect(`${paintingAlias}.${path}`, alias).andWhere(
-        new Brackets((qb) => {
-          qb.where(`${alias}.name = :artistName`, {
-            artistName: dto.artistName,
-          });
-        }),
-      );
+      queryBuilder
+        .leftJoin(`${paintingAlias}.artist`, artistAlias)
+        .andWhere(`${artistAlias}.search_name LIKE '%' || :searchName || '%'`, {
+          searchName: dto.artistName.trim().split(/\s+/).join('_').toUpperCase(),
+        });
     }
 
     if (!isArrayEmpty(dto.tags)) {
@@ -171,7 +170,7 @@ export class PaintingService {
       const path: keyof Painting = 'tags';
       queryBuilder
         .innerJoinAndSelect(`${paintingAlias}.${path}`, alias)
-        .andWhere(`p.id IN ${subQueryFilterByTag}`, {
+        .andWhere(`${paintingAlias}.id IN ${subQueryFilterByTag}`, {
           tagNames: dto.tags,
           tagCount: dto.tags.length,
         });
@@ -193,7 +192,7 @@ export class PaintingService {
       const path: keyof Painting = 'styles';
       queryBuilder
         .innerJoinAndSelect(`${paintingAlias}.${path}`, alias)
-        .andWhere(`p.id IN ${subQueryFilterByStyle}`, {
+        .andWhere(`${paintingAlias}.id IN ${subQueryFilterByStyle}`, {
           styleNames: dto.styles,
           styleCount: dto.styles.length,
         });
@@ -202,7 +201,7 @@ export class PaintingService {
     const paintings = await queryBuilder
       .skip(page * paginationCount)
       .take(paginationCount)
-      .orderBy('p.created_date', 'DESC')
+      .orderBy(`${paintingAlias}.created_date`, 'DESC')
       .getMany();
 
     return paintings.map((p) => new ShortPainting(p));
