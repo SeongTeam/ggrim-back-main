@@ -7,6 +7,7 @@ import {
   Inject,
   Logger,
   Param,
+  ParseBoolPipe,
   ParseIntPipe,
   ParseUUIDPipe,
   Post,
@@ -18,7 +19,11 @@ import {
 } from '@nestjs/common';
 import { QueryRunner } from 'typeorm';
 import { CONFIG_FILE_PATH } from '../_common/const/default.value';
-import { AWS_BUCKET, AWS_INIT_FILE_KEY_PREFIX } from '../_common/const/env-keys.const';
+import {
+  AWS_BUCKET,
+  AWS_BUCKET_ARTWORK,
+  AWS_INIT_FILE_KEY_PREFIX,
+} from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { S3Service } from '../aws/s3.service';
 import { DBQueryRunner } from '../db/query-runner/decorator/query-runner.decorator';
@@ -29,6 +34,7 @@ import { GetByIdsQueryDTO } from './dto/get-by-ids.query.dto';
 import { ReplacePaintingDTO } from './dto/replace-painting.dto';
 import { SearchPaintingDTO } from './dto/search-painting.dto';
 import { Painting } from './entities/painting.entity';
+import { ShortPainting } from './interface/short-painting';
 import { PaintingService } from './painting.service';
 
 @UsePipes(new ValidationPipe({ transform: true }))
@@ -46,15 +52,28 @@ export class PaintingController {
   @Get('/by-ids')
   async getByIds(
     @Query(new ValidationPipe({ transform: true })) query: GetByIdsQueryDTO,
+    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: string,
   ): Promise<Painting[]> {
-    const foundPaintings: Painting[] = await this.service.getByIds(query.ids);
+    let foundPaintings: Painting[] = await this.service.getByIds(query.ids);
+
+    if (isS3Access) {
+      foundPaintings = await this.replaceImageSrcToS3(foundPaintings);
+    }
 
     return foundPaintings;
   }
 
   @Get('artwork-of-week')
-  async getWeeklyArtworkData() {
-    return this.service.getWeeklyPaintings();
+  async getWeeklyArtworkData(
+    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: string,
+  ) {
+    let paintings = await this.service.getWeeklyPaintings();
+
+    if (isS3Access) {
+      paintings = await this.replaceImageSrcToS3(paintings);
+    }
+
+    return paintings;
   }
 
   /*TODO 
@@ -93,8 +112,16 @@ export class PaintingController {
   }
 
   @Get(':id')
-  async getById(@Param('id', ParseUUIDPipe) id: string) {
+  async getById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: string,
+  ) {
     const paintings = await this.service.getByIds([id]);
+
+    if (isS3Access) {
+      const ret = await this.replaceImageSrcToS3([paintings[0]]);
+      return ret[0];
+    }
 
     return paintings[0];
   }
@@ -103,9 +130,15 @@ export class PaintingController {
   async searchPainting(
     @Query() dto: SearchPaintingDTO,
     @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
+    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: string,
   ) {
     const paginationCount = 50;
     const ret = await this.service.searchPainting(dto, page, paginationCount);
+    if (isS3Access) {
+      const replaced = await this.replaceImageSrcToS3(ret.data);
+      ret.data = replaced;
+    }
+
     return ret;
   }
 
@@ -157,5 +190,26 @@ export class PaintingController {
   ) {
     const targetPainting = await this.service.findPaintingOrThrow(id);
     return this.service.deleteOne(queryRunner, targetPainting);
+  }
+
+  async replaceImageSrcToS3<T extends ShortPainting>(paintings: T[]) {
+    const bucket = process.env[AWS_BUCKET_ARTWORK];
+    if (!bucket) {
+      throw new ServiceException(
+        'SERVICE_RUN_ERROR',
+        'INTERNAL_SERVER_ERROR',
+        `AWS_BUCKET_ARTWORK env is not config`,
+      );
+    }
+
+    const urls = await Promise.all(
+      paintings.map((p) => this.s3Service.getPresignedUrl(bucket, p.image_s3_key)),
+    );
+
+    paintings.forEach((p, idx) => {
+      p.image_url = urls[idx];
+    });
+
+    return paintings;
   }
 }
