@@ -49,6 +49,7 @@ export class PaintingService {
           width: dto.width,
           height: dto.height,
           completition_year: dto.completition_year,
+          image_s3_key: dto.image_s3_key,
           artist,
         },
       ]);
@@ -89,6 +90,7 @@ export class PaintingService {
         height: dto.height,
         width: dto.width,
         completition_year: dto.completition_year,
+        image_s3_key: dto.image_s3_key,
         searchTitle: dto.title.trim().split(/\s+/).join('_').toUpperCase(),
       })
       .where('painting.id = :paintingId', { paintingId: painting.id });

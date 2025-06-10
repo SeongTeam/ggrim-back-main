@@ -45,4 +45,8 @@ export class CreatePaintingDTO {
     each: true,
   })
   styles?: string[];
+
+  @IsOptional()
+  @IsString()
+  image_s3_key?: string;
 }
