@@ -48,6 +48,9 @@ export class Painting extends CustomBaseEntity {
   @Column({ nullable: true })
   height!: number;
 
+  @Column({ nullable: true })
+  image_s3_key!: string;
+
   @ManyToMany(() => Tag, (tag) => tag.paintings)
   @JoinTable()
   tags!: Tag[];
