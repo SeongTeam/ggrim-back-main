@@ -16,6 +16,7 @@ export const NODE_ENV = 'NODE_ENV';
 export const AWS_ACCESS_KEY = 'AWS_ACCESS_KEY';
 export const AWS_ACCESS_SECRET_KEY = 'AWS_ACCESS_SECRET_KEY';
 export const AWS_BUCKET = 'AWS_BUCKET';
+export const AWS_BUCKET_ARTWORK = 'AWS_BUCKET_ARTWORK';
 export const AWS_REGION = 'AWS_REGION';
 export const AWS_INIT_FILE_KEY_PREFIX = 'AWS_INIT_FILE_KEY_PREFIX';
 

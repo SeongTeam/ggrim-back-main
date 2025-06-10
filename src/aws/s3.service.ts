@@ -1,4 +1,5 @@
 import { GetObjectCommand, GetObjectCommandOutput, S3Client } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import { pipeline } from 'stream';
@@ -56,5 +57,21 @@ export class S3Service {
       fs.createWriteStream(destinationPath),
     );
     return destinationPath;
+  }
+
+  async getPresignedUrl(
+    bucketName: string,
+    s3Key: string,
+    expiresInSeconds = 3600,
+  ): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: s3Key,
+    });
+
+    const url = await getSignedUrl(this.client, command, {
+      expiresIn: expiresInSeconds,
+    });
+    return url;
   }
 }
