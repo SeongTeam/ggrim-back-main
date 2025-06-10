@@ -10,6 +10,7 @@ import {
   OnApplicationBootstrap,
   OnModuleDestroy,
   Param,
+  ParseBoolPipe,
   ParseIntPipe,
   ParseUUIDPipe,
   Post,
@@ -24,7 +25,11 @@ import {
 import { QueryRunner } from 'typeorm';
 import { LoggerService } from '../Logger/logger.service';
 import { CONFIG_FILE_PATH } from '../_common/const/default.value';
-import { AWS_BUCKET, AWS_INIT_FILE_KEY_PREFIX } from '../_common/const/env-keys.const';
+import {
+  AWS_BUCKET,
+  AWS_BUCKET_ARTWORK,
+  AWS_INIT_FILE_KEY_PREFIX,
+} from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { ArtistService } from '../artist/artist.service';
 import { CheckOwner } from '../auth/decorator/owner';
@@ -302,10 +307,15 @@ export class QuizController
   @Override('getOneBase')
   async getQuizAndIncreaseView(
     @Param('id') id: string,
+    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: string,
     @ParsedRequest() req: CrudRequest,
     @Query('user-id') userId: string | undefined,
   ): Promise<DetailQuizDTO> {
-    const quiz = await this.service.getOne(req);
+    let quiz = await this.service.getOne(req);
+
+    if (isS3Access) {
+      quiz = await this.replaceImageSrcToS3(quiz);
+    }
 
     const [_, reactionCount] = await Promise.all([
       this.service.increaseView(id),
@@ -456,5 +466,32 @@ export class QuizController
       tags: context.tag ? [context.tag] : [],
       styles: context.style ? [context.style] : [],
     };
+  }
+
+  async replaceImageSrcToS3(quiz: Quiz) {
+    const bucket = process.env[AWS_BUCKET_ARTWORK];
+    if (!bucket) {
+      throw new ServiceException(
+        'SERVICE_RUN_ERROR',
+        'INTERNAL_SERVER_ERROR',
+        `AWS_BUCKET_ARTWORK env is not config`,
+      );
+    }
+
+    const { answer_paintings, distractor_paintings } = quiz;
+    const paintings = [...answer_paintings, ...distractor_paintings];
+
+    const urls = await Promise.all(
+      paintings.map((p) => this.s3Service.getPresignedUrl(bucket, p.image_s3_key)),
+    );
+
+    paintings.forEach((p, idx) => {
+      p.image_url = urls[idx];
+    });
+
+    quiz.answer_paintings = paintings.slice(0, answer_paintings.length);
+    quiz.distractor_paintings = paintings.slice(answer_paintings.length);
+
+    return quiz;
   }
 }
