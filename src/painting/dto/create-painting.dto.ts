@@ -16,11 +16,9 @@ export class CreatePaintingDTO {
   @IsString()
   artistName?: string;
 
-  @IsOptional()
   @IsNumber()
   width?: number;
 
-  @IsOptional()
   @IsNumber()
   height?: number;
 
@@ -46,7 +44,6 @@ export class CreatePaintingDTO {
   })
   styles?: string[];
 
-  @IsOptional()
   @IsString()
   image_s3_key?: string;
 }
