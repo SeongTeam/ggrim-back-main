@@ -31,9 +31,7 @@ export class Painting extends CustomBaseEntity {
   @JoinColumn()
   wikiArtPainting!: WikiArtPainting;
 
-  @Column({
-    nullable: true,
-  })
+  @Column()
   image_url!: string;
 
   @Column({ type: 'text', default: '' })
@@ -42,13 +40,13 @@ export class Painting extends CustomBaseEntity {
   @Column({ nullable: true })
   completition_year!: number; // painting completition year, default: null
 
-  @Column({ nullable: true })
+  @Column()
   width!: number;
 
-  @Column({ nullable: true })
+  @Column()
   height!: number;
 
-  @Column({ nullable: true })
+  @Column()
   image_s3_key!: string;
 
   @ManyToMany(() => Tag, (tag) => tag.paintings)
