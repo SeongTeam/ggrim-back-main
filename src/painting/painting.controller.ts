@@ -7,6 +7,7 @@ import {
   Inject,
   Logger,
   Param,
+  ParseBoolPipe,
   ParseIntPipe,
   ParseUUIDPipe,
   Post,
@@ -18,9 +19,12 @@ import {
 } from '@nestjs/common';
 import { QueryRunner } from 'typeorm';
 import { CONFIG_FILE_PATH } from '../_common/const/default.value';
-import { AWS_BUCKET, AWS_INIT_FILE_KEY_PREFIX } from '../_common/const/env-keys.const';
+import {
+  AWS_BUCKET,
+  AWS_BUCKET_ARTWORK,
+  AWS_INIT_FILE_KEY_PREFIX,
+} from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
-import { IPaginationResult } from '../_common/interface';
 import { S3Service } from '../aws/s3.service';
 import { DBQueryRunner } from '../db/query-runner/decorator/query-runner.decorator';
 import { QueryRunnerInterceptor } from '../db/query-runner/query-runner.interceptor';
@@ -48,14 +52,76 @@ export class PaintingController {
   @Get('/by-ids')
   async getByIds(
     @Query(new ValidationPipe({ transform: true })) query: GetByIdsQueryDTO,
+    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: string,
   ): Promise<Painting[]> {
-    const foundPaintings: Painting[] = await this.service.getByIds(query.ids);
+    let foundPaintings: Painting[] = await this.service.getByIds(query.ids);
+
+    if (isS3Access) {
+      foundPaintings = await this.replaceImageSrcToS3(foundPaintings);
+    }
 
     return foundPaintings;
   }
+
+  @Get('artwork-of-week')
+  async getWeeklyArtworkData(
+    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: string,
+  ) {
+    let paintings = await this.service.getWeeklyPaintings();
+
+    if (isS3Access) {
+      paintings = await this.replaceImageSrcToS3(paintings);
+    }
+
+    return paintings;
+  }
+
+  /*TODO 
+  - [ ]`artwork_of_week_${latestMonday}.json` 파일 내용형식을 DB에 저장된 Painting ID로 명시하기
+  - [ ]artist 이름 표기 방식을 서양식으로 변경하기. 현재는 성 + 이름 으로 표기됨. 
+  - [ ]GUI 만들기? => DB의 painting id를 찾는 것은 어렵기에
+       - painting 검색 후 나온 그림을 클릭으로 .json에 추가하기
+  - [ ]API 예외 처리 => id가 없는 경우 response에 메세지 나옴/ 다른 그림의 id일 경우 예외 처리 필요
+   */
+
+  @Get('init')
+  async initFile(): Promise<string> {
+    const latestMonday: string = getLatestMonday();
+    const artworkFileName: string = `artwork_of_week_${latestMonday}.json`;
+    const bucketName = process.env[AWS_BUCKET] || 'no bucket';
+    const prefixKey = process.env[AWS_INIT_FILE_KEY_PREFIX];
+
+    try {
+      await this.s3Service.downloadFile(
+        bucketName,
+        prefixKey + artworkFileName,
+        CONFIG_FILE_PATH + artworkFileName,
+      );
+
+      return 'success init';
+    } catch (err: unknown) {
+      throw new ServiceException(
+        'EXTERNAL_SERVICE_FAILED',
+        'INTERNAL_SERVER_ERROR',
+        `${this.initFile.name}() failed. need to check config`,
+        {
+          cause: err,
+        },
+      );
+    }
+  }
+
   @Get(':id')
-  async getById(@Param('id', ParseUUIDPipe) id: string) {
+  async getById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: string,
+  ) {
     const paintings = await this.service.getByIds([id]);
+
+    if (isS3Access) {
+      const ret = await this.replaceImageSrcToS3([paintings[0]]);
+      return ret[0];
+    }
 
     return paintings[0];
   }
@@ -64,16 +130,14 @@ export class PaintingController {
   async searchPainting(
     @Query() dto: SearchPaintingDTO,
     @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
+    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: string,
   ) {
     const paginationCount = 50;
-    const data: ShortPainting[] = await this.service.searchPainting(dto, page, paginationCount);
-
-    const ret: IPaginationResult<ShortPainting> = {
-      data,
-      isMore: data.length === paginationCount,
-      count: data.length,
-      pagination: page,
-    };
+    const ret = await this.service.searchPainting(dto, page, paginationCount);
+    if (isS3Access) {
+      const replaced = await this.replaceImageSrcToS3(ret.data);
+      ret.data = replaced;
+    }
 
     return ret;
   }
@@ -115,7 +179,11 @@ export class PaintingController {
   ) {
     const targetPainting = await this.service.findPaintingOrThrow(id);
 
-    return this.service.replace(queryRunner, targetPainting, dto);
+    await this.service.replace(queryRunner, targetPainting, dto);
+
+    const target = (await this.service.getByIds([id]))[0];
+
+    return target;
   }
 
   @Delete('/:id')
@@ -127,42 +195,25 @@ export class PaintingController {
     const targetPainting = await this.service.findPaintingOrThrow(id);
     return this.service.deleteOne(queryRunner, targetPainting);
   }
-  /*TODO 
-  - [ ]`artwork_of_week_${latestMonday}.json` 파일 내용형식을 DB에 저장된 Painting ID로 명시하기
-  - [ ]artist 이름 표기 방식을 서양식으로 변경하기. 현재는 성 + 이름 으로 표기됨. 
-  - [ ]GUI 만들기? => DB의 painting id를 찾는 것은 어렵기에
-       - painting 검색 후 나온 그림을 클릭으로 .json에 추가하기
-  - [ ]API 예외 처리 => id가 없는 경우 response에 메세지 나옴/ 다른 그림의 id일 경우 예외 처리 필요
-   */
-  @Get('artwork-of-week')
-  async getWeeklyArtworkData() {
-    return this.service.getWeeklyPaintings();
-  }
 
-  @Get('init')
-  async initFile(): Promise<string> {
-    const latestMonday: string = getLatestMonday();
-    const artworkFileName: string = `artwork_of_week_${latestMonday}.json`;
-    const bucketName = process.env[AWS_BUCKET] || 'no bucket';
-    const prefixKey = process.env[AWS_INIT_FILE_KEY_PREFIX];
-
-    try {
-      await this.s3Service.downloadFile(
-        bucketName,
-        prefixKey + artworkFileName,
-        CONFIG_FILE_PATH + artworkFileName,
-      );
-
-      return 'success init';
-    } catch (err: unknown) {
+  async replaceImageSrcToS3<T extends ShortPainting>(paintings: T[]) {
+    const bucket = process.env[AWS_BUCKET_ARTWORK];
+    if (!bucket) {
       throw new ServiceException(
-        'EXTERNAL_SERVICE_FAILED',
+        'SERVICE_RUN_ERROR',
         'INTERNAL_SERVER_ERROR',
-        `${this.initFile.name}() failed. need to check config`,
-        {
-          cause: err,
-        },
+        `AWS_BUCKET_ARTWORK env is not config`,
       );
     }
+
+    const urls = await Promise.all(
+      paintings.map((p) => this.s3Service.getCloudFrontUrl(bucket, p.image_s3_key)),
+    );
+
+    paintings.forEach((p, idx) => {
+      p.image_url = urls[idx];
+    });
+
+    return paintings;
   }
 }

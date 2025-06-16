@@ -4,6 +4,7 @@ import { existsSync } from 'fs';
 import { Brackets, QueryRunner, Repository } from 'typeorm';
 import { CONFIG_FILE_PATH } from '../_common/const/default.value';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
+import { IPaginationResult } from '../_common/interface';
 import { ArtistService } from '../artist/artist.service';
 import { Artist } from '../artist/entities/artist.entity';
 import { createTransactionQueryBuilder } from '../db/query-runner/query-Runner.lib';
@@ -48,6 +49,7 @@ export class PaintingService {
           width: dto.width,
           height: dto.height,
           completition_year: dto.completition_year,
+          image_s3_key: dto.image_s3_key,
           artist,
         },
       ]);
@@ -78,7 +80,7 @@ export class PaintingService {
     queryRunner: QueryRunner,
     painting: Painting,
     dto: ReplacePaintingDTO,
-  ): Promise<Painting> {
+  ): Promise<void> {
     const query = createTransactionQueryBuilder(queryRunner, Painting)
       .update(Painting)
       .set({
@@ -88,6 +90,7 @@ export class PaintingService {
         height: dto.height,
         width: dto.width,
         completition_year: dto.completition_year,
+        image_s3_key: dto.image_s3_key,
         searchTitle: dto.title.trim().split(/\s+/).join('_').toUpperCase(),
       })
       .where('painting.id = :paintingId', { paintingId: painting.id });
@@ -116,7 +119,7 @@ export class PaintingService {
       await this.notRelateToStyle(queryRunner, painting, styleNamesToOmit);
     }
 
-    return result.generatedMaps[0] as Painting;
+    return;
   }
 
   /*TODO
@@ -127,7 +130,7 @@ export class PaintingService {
     dto: SearchPaintingDTO,
     page: number,
     paginationCount: number,
-  ): Promise<ShortPainting[]> {
+  ): Promise<IPaginationResult<ShortPainting>> {
     /*TODO
     - 입력된 tag와 style이 유효한지 점검하기
     - [ ] 배열의 각 원소가 공백인지 확인 필요.
@@ -199,13 +202,21 @@ export class PaintingService {
         });
     }
 
-    const paintings = await queryBuilder
+    const [paintings, total] = await queryBuilder
       .skip(page * paginationCount)
       .take(paginationCount)
       .orderBy('p.created_date', 'DESC')
-      .getMany();
+      .getManyAndCount();
 
-    return paintings.map((p) => new ShortPainting(p));
+    const data = paintings.map((p) => new ShortPainting(p));
+
+    return {
+      data,
+      count: data.length,
+      total,
+      page,
+      pageCount: Math.floor(total / paginationCount) + (total % paginationCount === 0 ? 0 : 1),
+    };
   }
   async getPaintingsByArtist(artistName: string) {
     const result = await this.repo
