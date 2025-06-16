@@ -482,7 +482,7 @@ export class QuizController
     const paintings = [...answer_paintings, ...distractor_paintings];
 
     const urls = await Promise.all(
-      paintings.map((p) => this.s3Service.getPresignedUrl(bucket, p.image_s3_key)),
+      paintings.map((p) => this.s3Service.getCloudFrontUrl(bucket, p.image_s3_key)),
     );
 
     paintings.forEach((p, idx) => {
