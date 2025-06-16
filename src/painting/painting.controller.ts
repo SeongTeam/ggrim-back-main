@@ -179,7 +179,11 @@ export class PaintingController {
   ) {
     const targetPainting = await this.service.findPaintingOrThrow(id);
 
-    return this.service.replace(queryRunner, targetPainting, dto);
+    await this.service.replace(queryRunner, targetPainting, dto);
+
+    const target = (await this.service.getByIds([id]))[0];
+
+    return target;
   }
 
   @Delete('/:id')

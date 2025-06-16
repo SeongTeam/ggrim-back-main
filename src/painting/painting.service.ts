@@ -80,7 +80,7 @@ export class PaintingService {
     queryRunner: QueryRunner,
     painting: Painting,
     dto: ReplacePaintingDTO,
-  ): Promise<Painting> {
+  ): Promise<void> {
     const query = createTransactionQueryBuilder(queryRunner, Painting)
       .update(Painting)
       .set({
@@ -119,7 +119,7 @@ export class PaintingService {
       await this.notRelateToStyle(queryRunner, painting, styleNamesToOmit);
     }
 
-    return result.generatedMaps[0] as Painting;
+    return;
   }
 
   /*TODO
