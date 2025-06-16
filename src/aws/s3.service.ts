@@ -1,9 +1,16 @@
 import { GetObjectCommand, GetObjectCommandOutput, S3Client } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import { pipeline } from 'stream';
 import { promisify } from 'util';
-import { AWS_ACCESS_KEY, AWS_ACCESS_SECRET_KEY, AWS_REGION } from '../_common/const/env-keys.const';
+import {
+  AWS_ACCESS_KEY,
+  AWS_ACCESS_SECRET_KEY,
+  AWS_BUCKET_ARTWORK,
+  AWS_CLOUD_FRONT_URL,
+  AWS_REGION,
+} from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 
 @Injectable()
@@ -56,5 +63,26 @@ export class S3Service {
       fs.createWriteStream(destinationPath),
     );
     return destinationPath;
+  }
+
+  async getPresignedUrl(bucketName: string, s3Key: string, expiresInSeconds = 60): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: s3Key,
+    });
+
+    const url = await getSignedUrl(this.client, command, {
+      expiresIn: expiresInSeconds,
+    });
+    return url;
+  }
+
+  async getCloudFrontUrl(bucketName: string, s3Key: string): Promise<string> {
+    if (bucketName === process.env[AWS_BUCKET_ARTWORK]) {
+      const url = process.env[AWS_CLOUD_FRONT_URL] + '/' + s3Key;
+      return url;
+    }
+
+    return 'not-implemented';
   }
 }

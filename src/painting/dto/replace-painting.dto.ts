@@ -10,6 +10,7 @@ export class ReplacePaintingDTO extends PickType(CreatePaintingDTO, [
   'height',
   'completition_year',
   'artistName',
+  'image_s3_key',
 ]) {
   @IsArray()
   @IsString({ each: true })

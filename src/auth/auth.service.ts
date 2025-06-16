@@ -75,6 +75,7 @@ export class AuthService {
   private ACCESS_TOKEN_TTL_SECOND = 3600 * 2;
   private REFRESH_TOKEN_TTL_SECOND = 3600 * 10;
   private ONE_TIME_TOKEN_TTL_SECOND = 15 * 60;
+  private ONE_TIME_TOKEN_SIGN_UP_TTL_SECOND = 20 * 60;
   private VERIFICATION_EXPIRED_TTL_SECOND = 60 * 5 + 5; // margin value 5
   private VERIFY_INTERVAL_MS = 30 * 1000;
 
@@ -148,9 +149,14 @@ export class AuthService {
       case 'REFRESH':
         expiresIn = this.REFRESH_TOKEN_TTL_SECOND;
         break;
-      case 'ONE_TIME':
-        expiresIn = this.ONE_TIME_TOKEN_TTL_SECOND;
+      case 'ONE_TIME': {
+        if (payload.purpose === 'sign-up') {
+          expiresIn = this.ONE_TIME_TOKEN_SIGN_UP_TTL_SECOND;
+        } else {
+          expiresIn = this.ONE_TIME_TOKEN_TTL_SECOND;
+        }
         break;
+      }
       default:
         throw new Error(`Unknown token type: ${payload.type}`);
     }

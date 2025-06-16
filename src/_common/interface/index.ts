@@ -1,8 +1,9 @@
 export interface IPaginationResult<T> {
   data: T[];
   count: number;
-  pagination: number;
-  isMore?: boolean;
+  total: number;
+  page: number;
+  pageCount: number;
 }
 
 export interface UpdateInfo {

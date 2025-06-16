@@ -5,7 +5,7 @@ import { Tag } from '../../tag/entities/tag.entity';
 import { Painting } from '../entities/painting.entity';
 
 export class ShortPainting
-  implements Pick<Painting, 'id' | 'title' | 'image_url' | 'width' | 'height'>
+  implements Pick<Painting, 'id' | 'title' | 'image_url' | 'width' | 'height' | 'image_s3_key'>
 {
   @Exclude()
   _artist?: Artist;
@@ -21,6 +21,7 @@ export class ShortPainting
   image_url!: string;
   width!: number;
   height!: number;
+  image_s3_key: string;
 
   public constructor(painting: Painting) {
     const {
@@ -29,6 +30,7 @@ export class ShortPainting
       width,
       height,
       image_url,
+      image_s3_key,
       artist: _artist,
       tags: _tags,
       styles: _styles,
@@ -41,6 +43,7 @@ export class ShortPainting
     this._artist = _artist;
     this._tags = _tags;
     this._styles = _styles;
+    this.image_s3_key = image_s3_key;
 
     Object.seal(this); //  객체 보호 (새 속성 추가 방지)
   }

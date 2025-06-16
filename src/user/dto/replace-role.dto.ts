@@ -1,4 +1,7 @@
-import { PickType } from '@nestjs/mapped-types';
-import { CreateUserDTO } from './create-user.dto';
+import { IsInArray } from '../../utils/class-validator';
+import { UserRole } from '../entity/user.entity';
 
-export class ReplaceRoleDTO extends PickType(CreateUserDTO, ['role']) {}
+export class ReplaceRoleDTO {
+  @IsInArray(['admin', 'user'])
+  role!: UserRole;
+}
