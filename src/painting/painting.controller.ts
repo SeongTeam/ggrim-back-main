@@ -52,7 +52,7 @@ export class PaintingController {
   @Get('/by-ids')
   async getByIds(
     @Query(new ValidationPipe({ transform: true })) query: GetByIdsQueryDTO,
-    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: string,
+    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
   ): Promise<Painting[]> {
     let foundPaintings: Painting[] = await this.service.getByIds(query.ids);
 
@@ -65,7 +65,7 @@ export class PaintingController {
 
   @Get('artwork-of-week')
   async getWeeklyArtworkData(
-    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: string,
+    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
   ) {
     let paintings = await this.service.getWeeklyPaintings();
 
@@ -114,7 +114,7 @@ export class PaintingController {
   @Get(':id')
   async getById(
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: string,
+    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
   ) {
     const paintings = await this.service.getByIds([id]);
 
@@ -130,7 +130,7 @@ export class PaintingController {
   async searchPainting(
     @Query() dto: SearchPaintingDTO,
     @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
-    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: string,
+    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
   ) {
     const paginationCount = 50;
     const ret = await this.service.searchPainting(dto, page, paginationCount);
