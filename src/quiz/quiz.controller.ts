@@ -307,7 +307,7 @@ export class QuizController
   @Override('getOneBase')
   async getQuizAndIncreaseView(
     @Param('id') id: string,
-    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: string,
+    @Query('isS3Access', new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
     @ParsedRequest() req: CrudRequest,
     @Query('user-id') userId: string | undefined,
   ): Promise<DetailQuizDTO> {
