@@ -1,27 +1,8 @@
-import { ExecutionContext, HttpStatus, Injectable } from '@nestjs/common';
+import { ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { RATE_LIMIT_METADATA } from '../const/env-keys.const';
 import { ServiceException } from '../filter/exception/service/service-exception';
 import { RateLimitService } from './rate-limit.service.js';
-
-class ThrottlerException extends Error {
-  public status: number;
-  public response: {
-    statusCode: number;
-    message: string;
-    retryAfter: number;
-  };
-
-  constructor(message: string, retryAfter = 1) {
-    super(message);
-    this.status = HttpStatus.TOO_MANY_REQUESTS;
-    this.response = {
-      statusCode: HttpStatus.TOO_MANY_REQUESTS,
-      message,
-      retryAfter,
-    };
-  }
-}
 
 export interface RateLimitOptions {
   ttl?: number;
