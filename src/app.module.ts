@@ -7,6 +7,8 @@ import { DataSource } from 'typeorm';
 import { LoggerModule } from './Logger/logger.module';
 import { CommonModule } from './_common/common.module';
 import { NODE_ENV } from './_common/const/env-keys.const';
+import { RateLimitTestController } from './_common/rate-limit/rate-limit-test.controller';
+import { RateLimitModule } from './_common/rate-limit/rate-limit.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ArtistModule } from './artist/artist.module';
@@ -28,6 +30,15 @@ const ENV = process.env[NODE_ENV];
     ConfigModule.forRoot({
       envFilePath: !ENV ? '.env' : `.env.${ENV}`,
       isGlobal: true,
+      load: [
+        () => {
+          return {
+            RATE_LIMIT_ENABLED: process.env.RATE_LIMIT_ENABLED || 'true',
+            RATE_LIMIT_MAX: process.env.RATE_LIMIT_MAX || '100',
+            RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS || '1000',
+          };
+        },
+      ],
     }),
     TypeOrmModule.forRootAsync({
       useClass: TypeORMConfig,
@@ -52,8 +63,9 @@ const ENV = process.env[NODE_ENV];
     AuthModule,
     MailModule,
     SystemScheduleModule,
+    RateLimitModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, RateLimitTestController],
   providers: [AppService],
 })
 export class AppModule {}
