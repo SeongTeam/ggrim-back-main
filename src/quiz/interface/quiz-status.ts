@@ -1,7 +1,7 @@
-import { QuizContext } from './quiz-context';
+import { QuizContext } from "./quiz-context";
 
 export interface QuizStatus {
-  context: QuizContext;
-  currentIndex: number;
-  endIndex: number;
+	context: QuizContext;
+	currentIndex: number;
+	endIndex: number;
 }

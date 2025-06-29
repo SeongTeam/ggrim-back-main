@@ -1,7 +1,7 @@
-import { User } from '../../../user/entity/user.entity';
+import { User } from "../../../user/entity/user.entity";
 
 export interface SignInResponse {
-  accessToken: string;
-  refreshToken: String;
-  user: User;
+	accessToken: string;
+	refreshToken: String;
+	user: User;
 }

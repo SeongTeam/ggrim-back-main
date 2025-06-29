@@ -1,9 +1,9 @@
 export interface QuizContext {
-  artist?: string;
+	artist?: string;
 
-  tag?: string;
+	tag?: string;
 
-  style?: string;
+	style?: string;
 
-  page: number;
+	page: number;
 }

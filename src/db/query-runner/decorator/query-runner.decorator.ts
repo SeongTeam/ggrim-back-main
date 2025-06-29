@@ -1,19 +1,19 @@
-import { ExecutionContext, createParamDecorator } from '@nestjs/common';
-import { QueryRunner } from 'typeorm';
-import { ServiceException } from '../../../_common/filter/exception/service/service-exception';
+import { ExecutionContext, createParamDecorator } from "@nestjs/common";
+import { QueryRunner } from "typeorm";
+import { ServiceException } from "../../../_common/filter/exception/service/service-exception";
 
 export const DBQueryRunner = createParamDecorator(
-  (data, context: ExecutionContext): QueryRunner => {
-    const req = context.switchToHttp().getRequest();
+	(data, context: ExecutionContext): QueryRunner => {
+		const req = context.switchToHttp().getRequest();
 
-    if (!req.queryRunner) {
-      throw new ServiceException(
-        'SERVICE_RUN_ERROR',
-        'INTERNAL_SERVER_ERROR',
-        `QueryRunner Decorator를 사용하려면 TransactionInterceptor를 적용해야 합니다.`,
-      );
-    }
+		if (!req.queryRunner) {
+			throw new ServiceException(
+				"SERVICE_RUN_ERROR",
+				"INTERNAL_SERVER_ERROR",
+				`QueryRunner Decorator를 사용하려면 TransactionInterceptor를 적용해야 합니다.`,
+			);
+		}
 
-    return req.queryRunner;
-  },
+		return req.queryRunner;
+	},
 );

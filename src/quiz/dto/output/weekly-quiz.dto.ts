@@ -1,6 +1,6 @@
-import { Quiz } from '../../entities/quiz.entity';
+import { Quiz } from "../../entities/quiz.entity";
 
 export interface WeeklyQuizSet {
-  dataName: string;
-  data: Quiz[];
+	dataName: string;
+	data: Quiz[];
 }

@@ -1,9 +1,9 @@
-import { IsArray, IsUUID } from 'class-validator';
+import { IsArray, IsUUID } from "class-validator";
 
 export class FindPaintingQueryDTO {
-  @IsArray()
-  @IsUUID(undefined, {
-    each: true,
-  })
-  ids!: string[];
+	@IsArray()
+	@IsUUID(undefined, {
+		each: true,
+	})
+	ids!: string[];
 }

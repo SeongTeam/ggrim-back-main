@@ -1,29 +1,29 @@
-import { IsUUID } from 'class-validator';
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
-import { CustomBaseEntity } from '../../db/entity/custom.base.entity';
-import { User } from '../../user/entity/user.entity';
-import { Quiz } from './quiz.entity';
+import { IsUUID } from "class-validator";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
+import { CustomBaseEntity } from "../../db/entity/custom.base.entity";
+import { User } from "../../user/entity/user.entity";
+import { Quiz } from "./quiz.entity";
 
 @Entity()
-@Unique(['user', 'quiz'])
+@Unique(["user", "quiz"])
 export class QuizDislike extends CustomBaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  @IsUUID()
-  id!: string;
+	@PrimaryGeneratedColumn("uuid")
+	@IsUUID()
+	id!: string;
 
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'user_id' })
-  user!: User;
+	@ManyToOne(() => User)
+	@JoinColumn({ name: "user_id" })
+	user!: User;
 
-  @Column()
-  @IsUUID()
-  user_id!: string;
+	@Column()
+	@IsUUID()
+	user_id!: string;
 
-  @ManyToOne(() => Quiz)
-  @JoinColumn({ name: 'quiz_id' })
-  quiz!: Quiz;
+	@ManyToOne(() => Quiz)
+	@JoinColumn({ name: "quiz_id" })
+	quiz!: Quiz;
 
-  @Column()
-  @IsUUID()
-  quiz_id!: string;
+	@Column()
+	@IsUUID()
+	quiz_id!: string;
 }

@@ -1,20 +1,20 @@
-import { randomInt } from 'node:crypto';
-import { QuizContext } from '../../interface/quiz-context';
-import { QuizStatus } from '../../interface/quiz-status';
-import { ShortQuiz } from '../../interface/short-quiz';
+import { randomInt } from "node:crypto";
+import { QuizContext } from "../../interface/quiz-context";
+import { QuizStatus } from "../../interface/quiz-status";
+import { ShortQuiz } from "../../interface/short-quiz";
 
 export class ResponseQuizDTO {
-  shortQuiz!: ShortQuiz;
-  status!: QuizStatus;
+	shortQuiz!: ShortQuiz;
+	status!: QuizStatus;
 
-  constructor(shortQuizzes: ShortQuiz[], context: QuizContext, currentIndex?: number) {
-    const INIT_INDEX = -1;
-    this.status = { currentIndex: INIT_INDEX, endIndex: INIT_INDEX, context };
-    this.status.currentIndex = currentIndex
-      ? (currentIndex + 1) % shortQuizzes.length
-      : randomInt(shortQuizzes.length);
+	constructor(shortQuizzes: ShortQuiz[], context: QuizContext, currentIndex?: number) {
+		const INIT_INDEX = -1;
+		this.status = { currentIndex: INIT_INDEX, endIndex: INIT_INDEX, context };
+		this.status.currentIndex = currentIndex
+			? (currentIndex + 1) % shortQuizzes.length
+			: randomInt(shortQuizzes.length);
 
-    this.status.endIndex = shortQuizzes.length - 1;
-    this.shortQuiz = shortQuizzes[this.status.currentIndex];
-  }
+		this.status.endIndex = shortQuizzes.length - 1;
+		this.shortQuiz = shortQuizzes[this.status.currentIndex];
+	}
 }

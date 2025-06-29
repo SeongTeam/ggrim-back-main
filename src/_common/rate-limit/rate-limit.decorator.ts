@@ -1,9 +1,9 @@
-import { SetMetadata } from '@nestjs/common';
-import { RATE_LIMIT_METADATA } from '../const/env-keys.const';
+import { SetMetadata } from "@nestjs/common";
+import { RATE_LIMIT_METADATA } from "../const/env-keys.const";
 
 export interface RateLimitOptions {
-  ttl?: number; // in ms
-  limit?: number; // number of requests
+	ttl?: number; // in ms
+	limit?: number; // number of requests
 }
 
 /**
@@ -25,7 +25,7 @@ export interface RateLimitOptions {
  * @RateLimit({ ttl: 5, limit: 10 }) // 10 requests per 5 seconds
  */
 export const RateLimit = (options: RateLimitOptions = {}) => {
-  // The actual values will be read from environment variables in RateLimitService
-  // This just passes through the options to be used as overrides
-  return SetMetadata(RATE_LIMIT_METADATA, options);
+	// The actual values will be read from environment variables in RateLimitService
+	// This just passes through the options to be used as overrides
+	return SetMetadata(RATE_LIMIT_METADATA, options);
 };
