@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RATE_LIMIT_DEFAULT_COUNT, RATE_LIMIT_DEFAULT_TTL_MS, RATE_LIMIT_ENABLED } from '../const/env-keys.const';
 
@@ -16,7 +16,7 @@ export class RateLimitService {
   private readonly  DEFAULT_LIMIT: number;
 
 
-  constructor(private configService: ConfigService) {
+  constructor(@Inject() private configService: ConfigService ) {
     this.ENABLED = this.configService.get<string>(RATE_LIMIT_ENABLED, 'true') === 'true';
 
     this.DEFAULT_TTL_MS =parseInt(this.configService.get<string>(RATE_LIMIT_DEFAULT_TTL_MS, '60000'));
