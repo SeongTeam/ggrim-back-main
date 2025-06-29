@@ -1,12 +1,44 @@
 {
     "editor.codeActionsOnSave" : {
-        "source.fixAll": "explicit",
-        "source.organizeImports": "explicit",
+        "source.fixAll.eslint": "never"
     },
-    "typescript.validate.enable" : true,
+	"eslint.validate": ["javascript", "typescript",],
+    "prettier.enable": true,
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+
+	"prettier.requireConfig": true,
+	"[typescript]": {
+		"editor.formatOnSave": true,
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[javascript]": {
+		"editor.formatOnSave": true,
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[markdown]": {
+		"editor.unicodeHighlight.ambiguousCharacters": false,
+		"editor.unicodeHighlight.invisibleCharacters": false,
+		"diffEditor.ignoreTrimWhitespace": false,
+		"editor.wordWrap": "on",
+		"editor.quickSuggestions": {
+			"comments": "off",
+			"strings": "off",
+			"other": "off"
+		},
+		"cSpell.fixSpellingWithRenameProvider": true,
+		"cSpell.advanced.feature.useReferenceProviderWithRename": true,
+		"cSpell.advanced.feature.useReferenceProviderRemove": "/^#+\\s/",
+		"editor.formatOnSave": true,
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[handlebars]": {
+		"editor.suggest.insertMode": "replace",
+		"editor.formatOnSave": true,
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
     
     "cSpell.language": "en",
-    "cSpell.enableFiletypes": ["typescript", "javascript", "python","markdown","plaintext"],
+    "cSpell.enabledFileTypes": ["typescript", "javascript", "python","markdown","plaintext"],
     "cSpell.words": [
         "completition",
         "distractor",
