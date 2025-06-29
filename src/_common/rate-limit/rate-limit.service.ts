@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { RATE_LIMIT_ENABLED, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS } from '../const/env-keys.const';
+import { RATE_LIMIT_DEFAULT_COUNT, RATE_LIMIT_DEFAULT_TTL_MS, RATE_LIMIT_ENABLED } from '../const/env-keys.const';
 
 interface RateLimitEntry {
   count: number;
@@ -19,8 +19,8 @@ export class RateLimitService {
   constructor(private configService: ConfigService) {
     this.ENABLED = this.configService.get<string>(RATE_LIMIT_ENABLED, 'true') === 'true';
 
-    this.DEFAULT_TTL_MS =parseInt(this.configService.get<string>(RATE_LIMIT_WINDOW_MS, '60000'));
-    this.DEFAULT_LIMIT = parseInt(this.configService.get<string>(RATE_LIMIT_MAX, '100'));
+    this.DEFAULT_TTL_MS =parseInt(this.configService.get<string>(RATE_LIMIT_DEFAULT_TTL_MS, '60000'));
+    this.DEFAULT_LIMIT = parseInt(this.configService.get<string>(RATE_LIMIT_DEFAULT_COUNT, '100'));
     
     this.CLEAN_UP_INTERVAL = this.DEFAULT_TTL_MS;
     setInterval(() => this.cleanup(), this.CLEAN_UP_INTERVAL).unref();
