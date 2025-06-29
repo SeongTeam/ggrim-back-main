@@ -2,7 +2,7 @@ import { SetMetadata } from '@nestjs/common';
 import { RATE_LIMIT_METADATA } from '../const/env-keys.const';
 
 export interface RateLimitOptions {
-  ttl?: number; // in seconds
+  ttl?: number; // in ms
   limit?: number; // number of requests
 }
 

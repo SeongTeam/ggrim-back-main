@@ -53,44 +53,21 @@ export class RateLimitGuard {
     const options = this.reflector.get<RateLimitOptions>(RATE_LIMIT_METADATA, handler) || {};
 
     // Apply decorator options if they exist, otherwise use service defaults
-    if (Object.keys(options).length > 0) {
-      // Convert TTL from seconds to milliseconds if provided
-      const overrideOptions = { ...options };
-      if (overrideOptions.ttl) {
-        overrideOptions.ttl = overrideOptions.ttl * 1000; // Convert to milliseconds
-      }
-
-      return this.rateLimitService
-        .checkRateLimitWithOptions(this.getClientIp(request), request.path, overrideOptions)
-        .then(({ allowed, remaining, reset }) => {
-          // Set rate limit headers
-          const response = context.switchToHttp().getResponse();
-          response.setHeader(
-            'X-RateLimit-Limit',
-            overrideOptions.limit || this.rateLimitService.getLimit(),
-          );
-          response.setHeader('X-RateLimit-Remaining', remaining);
-          response.setHeader('X-RateLimit-Reset', Math.ceil(reset / 1000)); // Convert to seconds
-          return allowed;
-        });
-    }
-
-    // Use default rate limiting if no decorator options are provided
-    return this.rateLimitService
-      .checkRateLimit(this.getClientIp(request), request.path)
+    const result = await this.rateLimitService
+      .checkRateLimit(this.getClientIp(request), request.path, options)
       .then(({ allowed, remaining, reset }) => {
         // Set rate limit headers
         const response = context.switchToHttp().getResponse();
-        response.setHeader('X-RateLimit-Limit', this.rateLimitService.getLimit());
+        response.setHeader(
+          'X-RateLimit-Allowed',
+          allowed,
+        );
         response.setHeader('X-RateLimit-Remaining', remaining);
-        response.setHeader('X-RateLimit-Reset', reset);
-
-        if (!allowed) {
-          throw new ThrottlerException('Too Many Requests');
-        }
-
-        return true;
+        response.setHeader('X-RateLimit-Reset', Math.ceil(reset / 1000)); // Convert to seconds
+        return allowed;
       });
+
+      return result;
   }
 
   private getClientIp(request: any): string {

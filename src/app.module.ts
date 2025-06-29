@@ -30,15 +30,6 @@ const ENV = process.env[NODE_ENV];
     ConfigModule.forRoot({
       envFilePath: !ENV ? '.env' : `.env.${ENV}`,
       isGlobal: true,
-      load: [
-        () => {
-          return {
-            RATE_LIMIT_ENABLED: process.env.RATE_LIMIT_ENABLED || 'true',
-            RATE_LIMIT_MAX: process.env.RATE_LIMIT_MAX || '100',
-            RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS || '1000',
-          };
-        },
-      ],
     }),
     TypeOrmModule.forRootAsync({
       useClass: TypeORMConfig,
