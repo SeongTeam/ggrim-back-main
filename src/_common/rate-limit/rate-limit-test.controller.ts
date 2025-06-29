@@ -15,4 +15,10 @@ export class RateLimitTestController {
   getUnlimited() {
     return { message: 'This endpoint is not rate limited' };
   }
+
+  @Get('limited-with-option')
+  @RateLimit({ ttl : 5000, limit : 5})
+  getLimitedWithOption() {
+    return { message: 'This is a rate-limited endpoint' };
+  }
 }

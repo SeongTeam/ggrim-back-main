@@ -1,5 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { LoggerService } from '../../Logger/logger.service';
+import { RATE_LIMIT_DEFAULT_COUNT, RATE_LIMIT_DEFAULT_TTL_MS, RATE_LIMIT_ENABLED } from '../const/env-keys.const';
 
 interface RateLimitEntry {
   count: number;
@@ -8,25 +10,20 @@ interface RateLimitEntry {
 
 @Injectable()
 export class RateLimitService {
-  private readonly logger = new Logger(RateLimitService.name);
   private readonly store: Map<string, RateLimitEntry> = new Map();
-  private ttl: number;
-  private limit: number;
-  private readonly enabled: boolean;
+  private readonly CLEAN_UP_INTERVAL_MS : number  = 60*1000;
+  private readonly ENABLED: boolean;
+  private readonly DEFAULT_TTL_MS: number;
+  private readonly  DEFAULT_LIMIT: number;
 
-  getLimit(): number {
-    return this.limit;
-  }
 
-  constructor(private configService: ConfigService) {
-    this.enabled = this.configService.get<string>('ENABLE_RATE_LIMIT', 'true') === 'true';
+  constructor(@Inject() private configService: ConfigService, @Inject(forwardRef(() => LoggerService)) private readonly logger: LoggerService ) {
+    this.ENABLED = this.configService.get<string>(RATE_LIMIT_ENABLED, 'true') === 'true';
 
-    const ttlSeconds = parseInt(this.configService.get<string>('RATE_LIMIT_TTL', '60'));
-    this.ttl = ttlSeconds * 1000;
-
-    this.limit = parseInt(this.configService.get<string>('RATE_LIMIT_COUNT', '100'));
-
-    setInterval(() => this.cleanup(), this.ttl).unref();
+    this.DEFAULT_TTL_MS =parseInt(this.configService.get<string>(RATE_LIMIT_DEFAULT_TTL_MS, '60000'));
+    this.DEFAULT_LIMIT = parseInt(this.configService.get<string>(RATE_LIMIT_DEFAULT_COUNT, '100'));
+    
+    setInterval(() => this.cleanup(), this.CLEAN_UP_INTERVAL_MS).unref();
   }
 
   private getKey(ip: string, path: string): string {
@@ -34,45 +31,44 @@ export class RateLimitService {
   }
 
   // Check rate limit with custom options
-  async checkRateLimitWithOptions(
+  async checkRateLimit(
     ip: string,
     path: string,
     options: { ttl?: number; limit?: number },
   ): Promise<{ allowed: boolean; remaining: number; reset: number }> {
-    const originalTtl = this.ttl;
-    const originalLimit = this.limit;
 
-    try {
-      // Temporarily override the defaults with custom values
-      if (options.ttl) this.ttl = options.ttl;
-      if (options.limit) this.limit = options.limit;
-
-      return this.checkRateLimit(ip, path);
-    } finally {
-      this.ttl = originalTtl;
-      this.limit = originalLimit;
-    }
-  }
-
-  // Check rate limit with default options
-  async checkRateLimit(
-    ip: string,
-    path: string,
-  ): Promise<{ allowed: boolean; remaining: number; reset: number }> {
-    if (!this.enabled) {
+    if (!this.ENABLED) {
       return { allowed: true, remaining: Number.MAX_SAFE_INTEGER, reset: 0 };
     }
 
+    let ttl = this.DEFAULT_TTL_MS;
+    let limit = this.DEFAULT_LIMIT;
+
+
+    // Temporarily override the defaults with custom values
+    if (options.ttl) ttl = options.ttl;
+    if (options.limit) limit = options.limit;
+
+    return this.recordRequest(ip, path,ttl,limit);
+    
+  }
+
+  // find rate limit info 
+  private async recordRequest(
+    ip: string,
+    path: string,
+    ttl : number,
+    limit : number,
+  ): Promise<{ allowed: boolean; remaining: number; reset: number }> {
     const now = Date.now();
     const key = this.getKey(ip, path);
     let entry = this.store.get(key);
-    const requestId = Math.random().toString(36).substring(2, 9);
 
     if (!entry || entry.resetTime <= now) {
       // Create or reset the entry
       entry = {
         count: 1,
-        resetTime: now + this.ttl,
+        resetTime: now + ttl,
       };
       this.store.set(key, entry);
     } else {
@@ -80,8 +76,8 @@ export class RateLimitService {
       this.store.set(key, entry);
     }
 
-    const remaining = Math.max(0, this.limit - entry.count);
-    const allowed = entry.count <= this.limit;
+    const remaining = Math.max(0, limit - entry.count);
+    const allowed = entry.count <= limit;
 
     return {
       allowed,
@@ -92,10 +88,13 @@ export class RateLimitService {
 
   private cleanup(): void {
     const now = Date.now();
+    this.logger.log(`Start clean up. before : ${this.store.size}`,{className : 'RateLimitService' });
     for (const [key, entry] of this.store.entries()) {
       if (entry.resetTime <= now) {
         this.store.delete(key);
       }
     }
+
+    this.logger.log(`End clean up. after : ${this.store.size}`,{className : 'RateLimitService' });
   }
 }
