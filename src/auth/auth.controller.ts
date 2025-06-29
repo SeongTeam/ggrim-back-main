@@ -18,8 +18,7 @@ import { isNotEmpty } from 'class-validator';
 import { QueryRunner } from 'typeorm';
 import {
   ENV_EMAIL_TEST_ADDRESS,
-  FRONT_ROUTE_RECOVER_ACCOUNT,
-  FRONT_ROUTE_UPDATE_PASSWORD,
+  FRONT_ROUTE_USER_EMAIL_VERIFICATION,
 } from '../_common/const/env-keys.const';
 import { ServiceException } from '../_common/filter/exception/service/service-exception';
 import { DBQueryRunner } from '../db/query-runner/decorator/query-runner.decorator';
@@ -31,6 +30,7 @@ import { isArrayEmpty } from '../utils/validator';
 import { AuthService } from './auth.service';
 import { CheckOwner } from './decorator/owner';
 import { PurposeOneTimeToken } from './decorator/purpose-one-time-token';
+import { SecurityTokenGuardOptions } from './decorator/security-token.guard.options';
 import { CreateOneTimeTokenDTO } from './dto/create-one-time-token.dto';
 import { requestVerificationDTO } from './dto/request-verification.dto';
 import { SignInResponse } from './dto/response/sign-in.response.dto';
@@ -58,6 +58,10 @@ export class AuthController {
     @Inject(ConfigService) private readonly configService: ConfigService,
   ) {}
 
+  //TODO : 로그인 API 개선
+  // - [x] : 로그인 성공시, 사용자 정보 응답하기
+  // - [ ] : 로그인 성공 또는 실패에 대한 기록 저장하기
+
   @Post('sign-in')
   @UseGuards(BasicGuard)
   async signin(@Request() request: any) {
@@ -84,7 +88,7 @@ export class AuthController {
     const response: SignInResponse = {
       accessToken,
       refreshToken,
-      email,
+      user,
     };
 
     return response;
@@ -133,7 +137,7 @@ export class AuthController {
     const verification = await this.service.createVerification(qr, email, pinCode);
 
     await this.mailService.sendVerificationPinCode(email, pinCode);
-    verification.pin_code = pinCode;
+    // verification.pin_code = pinCode;
 
     return verification;
   }
@@ -183,17 +187,13 @@ export class AuthController {
 
     if (!isVerified) {
       await this.service.updateVerification(qr, latestVerification.id, { last_verified_date: now });
-      return null;
+      throw new ServiceException('BASE', 'FORBIDDEN', `Check pin-code again`);
     }
     await this.service.updateVerification(qr, latestVerification.id, {
       last_verified_date: now,
       verification_success_date: now,
     });
-    const oneTimeToken: OneTimeToken = await this.createOneTimeToken(
-      qr,
-      email,
-      'email-verification',
-    );
+    const oneTimeToken: OneTimeToken = await this.createOneTimeToken(qr, email, 'sign-up');
     return oneTimeToken;
   }
 
@@ -214,34 +214,30 @@ export class AuthController {
     return securityToken;
   }
 
-  @Post('security-token/send')
+  @Post('security-token/email-verification')
   @UseInterceptors(QueryRunnerInterceptor)
   async sendSecurityActionToken(
     @DBQueryRunner() qr: QueryRunner,
     @Body() dto: SendOneTimeTokenDTO,
   ): Promise<string> {
     const { email, purpose } = dto;
-    const withDeleted = purpose === 'recover-account';
+    const withDeleted = true;
     const user: User | null = await this.userService.findOne({ where: { email }, withDeleted });
 
     if (!user) {
       throw new ServiceException('ENTITY_NOT_FOUND', 'FORBIDDEN', `user is not existed. ${email}`);
     }
-    let proxyUrl: string = '';
-    let securityToken: OneTimeToken | null = null;
-    let url: string = '';
+    const proxyUrl: string = this.configService.getOrThrow<string>(
+      FRONT_ROUTE_USER_EMAIL_VERIFICATION,
+    );
+    const securityToken = await this.createOneTimeToken(qr, email, 'email-verification', user);
+    const url = `${proxyUrl}?identifier=${securityToken.id}&purpose=${purpose}&token=${securityToken.token}`;
 
     switch (purpose) {
       case 'update-password':
-        proxyUrl = this.configService.getOrThrow<string>(FRONT_ROUTE_UPDATE_PASSWORD);
-        securityToken = await this.createOneTimeToken(qr, email, purpose, user);
-        url = `${proxyUrl}?identifier=${securityToken.id}&token=${securityToken.token}`;
         await this.mailService.sendSecurityTokenLink(email, 'Update Forgotten password', url);
         break;
       case 'recover-account':
-        proxyUrl = this.configService.getOrThrow<string>(FRONT_ROUTE_RECOVER_ACCOUNT);
-        securityToken = await this.createOneTimeToken(qr, email, purpose, user);
-        url = `${proxyUrl}?identifier=${securityToken.id}&token=${securityToken.token}`;
         await this.mailService.sendSecurityTokenLink(email, 'Recover Account', url);
         break;
       default:
@@ -253,6 +249,30 @@ export class AuthController {
     }
 
     return 'send email';
+  }
+
+  @Post('security-token/from-email-verification')
+  @UseInterceptors(QueryRunnerInterceptor)
+  @PurposeOneTimeToken('email-verification')
+  @SecurityTokenGuardOptions({ withDeleted: true })
+  @UseGuards(SecurityTokenGuard)
+  async generateSecurityTokenByEmailVerification(
+    @DBQueryRunner() qr: QueryRunner,
+    @Request() request: any,
+    @Body() dto: CreateOneTimeTokenDTO,
+  ): Promise<OneTimeToken> {
+    const { purpose } = dto;
+    const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+    const securityTokenPayload: SecurityTokenPayload =
+      request[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN];
+    const { user } = userPayload;
+
+    await this.service.markOneTimeJWT(qr, securityTokenPayload.oneTimeTokenID);
+
+    const { email } = user;
+    const securityToken = await this.createOneTimeToken(qr, email, purpose, user!);
+
+    return securityToken;
   }
 
   @Get('emailTest')

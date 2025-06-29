@@ -45,18 +45,20 @@ export class BasicGuard implements CanActivate {
     const user = await this.userService.findOne({ where: { email } });
 
     if (!user) {
-      throw new UnauthorizedException('EMAIL_NOT_FOUND');
+      throw new UnauthorizedException('Not exist email');
     }
 
     const isAuthenticated = await this.authService.isHashMatched(password, user.password);
-    if (isAuthenticated) {
-      const result: AuthUserPayload = {
-        user,
-      };
-      req[ENUM_AUTH_CONTEXT_KEY.USER] = result;
+    if (!isAuthenticated) {
+      throw new UnauthorizedException(`Check your email or password`);
     }
 
-    return isAuthenticated;
+    const result: AuthUserPayload = {
+      user,
+    };
+    req[ENUM_AUTH_CONTEXT_KEY.USER] = result;
+
+    return true;
   }
 
   decodeBasicToken(base64String: string): BasicTokenGuardDTO {

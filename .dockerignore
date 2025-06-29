@@ -12,5 +12,4 @@ docker
 *.csv
 .sample.env
 .env*
-!.env.production.gpg
 !/dist

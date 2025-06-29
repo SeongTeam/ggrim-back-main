@@ -87,26 +87,17 @@ export class UserController implements CrudController<User> {
 
   @Override(`createOneBase`)
   @UseInterceptors(QueryRunnerInterceptor)
-  @PurposeOneTimeToken('email-verification')
+  @PurposeOneTimeToken('sign-up')
   @UseGuards(TempUserGuard)
   async signUp(
     @DBQueryRunner() qr: QueryRunner,
     @Request() request: any,
     @Body() dto: CreateUserDTO,
   ) {
-    const { email, username } = dto;
-    const sameUsers = await this.service.find({ where: [{ email }, { username }] });
     const tempUserPayload: TempUserPayload = request[ENUM_AUTH_CONTEXT_KEY.TEMP_USER];
-    const { oneTimeTokenID, email: TokenEmail } = tempUserPayload;
-
-    if (email !== TokenEmail) {
-      throw new ServiceException(
-        'BASE',
-        'FORBIDDEN',
-        `can't create user by using other's email.
-        TokenEmail is different to bodyEmail`,
-      );
-    }
+    const { oneTimeTokenID, email } = tempUserPayload;
+    const { username } = dto;
+    const sameUsers = await this.service.find({ where: [{ email }, { username }] });
 
     sameUsers.forEach((user) => {
       if (user.email == email) {
@@ -121,8 +112,7 @@ export class UserController implements CrudController<User> {
     this.authService.markOneTimeJWT(qr, oneTimeTokenID);
 
     const encryptedPW = await this.authService.hash(dto.password);
-    const encryptedDTO: CreateUserDTO = { ...dto, password: encryptedPW };
-    return await this.service.createUser(qr, encryptedDTO);
+    return await this.service.createUser(qr, { ...dto, password: encryptedPW, email });
   }
 
   // TODO: 사용자 정보 변경 로직 개선하기
