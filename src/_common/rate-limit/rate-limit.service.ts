@@ -11,7 +11,7 @@ interface RateLimitEntry {
 @Injectable()
 export class RateLimitService {
   private readonly store: Map<string, RateLimitEntry> = new Map();
-  private readonly CLEAN_UP_INTERVAL : number 
+  private readonly CLEAN_UP_INTERVAL_MS : number  = 60*1000;
   private readonly ENABLED: boolean;
   private readonly DEFAULT_TTL_MS: number;
   private readonly  DEFAULT_LIMIT: number;
@@ -23,8 +23,7 @@ export class RateLimitService {
     this.DEFAULT_TTL_MS =parseInt(this.configService.get<string>(RATE_LIMIT_DEFAULT_TTL_MS, '60000'));
     this.DEFAULT_LIMIT = parseInt(this.configService.get<string>(RATE_LIMIT_DEFAULT_COUNT, '100'));
     
-    this.CLEAN_UP_INTERVAL = this.DEFAULT_TTL_MS;
-    setInterval(() => this.cleanup(), this.CLEAN_UP_INTERVAL).unref();
+    setInterval(() => this.cleanup(), this.CLEAN_UP_INTERVAL_MS).unref();
   }
 
   private getKey(ip: string, path: string): string {
