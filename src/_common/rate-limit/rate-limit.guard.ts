@@ -73,11 +73,11 @@ export class RateLimitGuard {
   private getClientIp(request: any): string {
     // Check for proxy headers
     const xForwardedFor = request.headers['x-forwarded-for'];
-    if (xForwardedFor) {
-      return xForwardedFor.split(',')[0].trim();
+    if (!xForwardedFor) {
+     throw new ServiceException('BASE','BAD_REQUEST',`request header[x-forwarded-for] field is undefined `);
     }
 
     // Fall back to connection remote address
-    return request.connection.remoteAddress || 'unknown';
+    return xForwardedFor.split(',')[0].trim();
   }
 }
