@@ -1,6 +1,7 @@
 import { ExecutionContext, HttpStatus, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { RATE_LIMIT_METADATA } from '../const/env-keys.const';
+import { ServiceException } from '../filter/exception/service/service-exception';
 import { RateLimitService } from './rate-limit.service.js';
 
 class ThrottlerException extends Error {
@@ -66,6 +67,10 @@ export class RateLimitGuard {
         response.setHeader('X-RateLimit-Reset', Math.ceil(reset / 1000)); // Convert to seconds
         return allowed;
       });
+
+      if(!result){
+        throw new ServiceException('BASE','TOO_MANY_REQUESTS','exceed rate limit');
+      }
 
       return result;
   }
