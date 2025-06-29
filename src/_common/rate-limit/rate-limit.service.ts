@@ -1,5 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { LoggerService } from '../../Logger/logger.service';
 import { RATE_LIMIT_DEFAULT_COUNT, RATE_LIMIT_DEFAULT_TTL_MS, RATE_LIMIT_ENABLED } from '../const/env-keys.const';
 
 interface RateLimitEntry {
@@ -16,7 +17,7 @@ export class RateLimitService {
   private readonly  DEFAULT_LIMIT: number;
 
 
-  constructor(@Inject() private configService: ConfigService ) {
+  constructor(@Inject() private configService: ConfigService, @Inject(forwardRef(() => LoggerService)) private readonly logger: LoggerService ) {
     this.ENABLED = this.configService.get<string>(RATE_LIMIT_ENABLED, 'true') === 'true';
 
     this.DEFAULT_TTL_MS =parseInt(this.configService.get<string>(RATE_LIMIT_DEFAULT_TTL_MS, '60000'));
@@ -88,10 +89,13 @@ export class RateLimitService {
 
   private cleanup(): void {
     const now = Date.now();
+    this.logger.log(`Start clean up. before : ${this.store.size}`,{className : 'RateLimitService' });
     for (const [key, entry] of this.store.entries()) {
       if (entry.resetTime <= now) {
         this.store.delete(key);
       }
     }
+
+    this.logger.log(`End clean up. after : ${this.store.size}`,{className : 'RateLimitService' });
   }
 }
