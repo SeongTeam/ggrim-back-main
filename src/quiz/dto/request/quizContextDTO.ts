@@ -20,7 +20,9 @@ export class QuizContextDTO implements QuizContext {
 	page!: number;
 
 	@Expose()
-	@Transform(({ obj }) => [obj.artist, obj.tag, obj.style].filter((v) => v))
+	@Transform(({ obj }: { obj: QuizContextDTO }) =>
+		[obj.artist, obj.tag, obj.style].filter((v) => v),
+	)
 	@ArrayNotEmpty({ message: "At least one of artist, tag, or style must be provided!" })
 	_atLeastOne!: object; // 내부 필드 검증용 더미 객체
 }
