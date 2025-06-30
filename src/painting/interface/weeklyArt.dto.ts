@@ -1,4 +1,4 @@
-import { Painting } from "../../entities/painting.entity";
+import { Painting } from "../entities/painting.entity";
 
 export interface WeeklyArtWorkSet {
 	dataName: string;
