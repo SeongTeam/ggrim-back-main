@@ -1,4 +1,4 @@
-import { CreateQuizDTO } from "../dto/request/createQuiz.dto";
+import { CreateQuizDTO } from "../dto/request/createQuizDTO";
 
 export interface RelatedPaintingIds
 	extends Pick<

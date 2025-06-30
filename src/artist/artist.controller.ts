@@ -11,7 +11,7 @@ import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
 import { RolesGuard } from "../auth/guard/authorization/roles.guard";
 import { Roles } from "../user/decorator/role";
 import { ArtistService } from "./artist.service";
-import { CreateArtistDTO } from "./dto/request/createArtist.dto";
+import { CreateArtistDTO } from "./dto/request/createArtistDTO";
 import { Artist } from "./entities/artist.entity";
 const EXCLUDED_COLUMN = ["created_date", "updated_date", "deleted_date", "version"] as const;
 @Crud({

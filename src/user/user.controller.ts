@@ -37,10 +37,10 @@ import {
 import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner.decorator";
 import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
 import { Roles } from "./decorator/role";
-import { CreateUserDTO } from "./dto/request/createUser.dto";
-import { ReplacePassWordDTO } from "./dto/request/replacePw.dto";
-import { ReplaceRoleDTO } from "./dto/request/replaceRole.dto";
-import { ReplaceUsernameDTO } from "./dto/request/replaceUsername.dto";
+import { CreateUserDTO } from "./dto/request/createUserDTO";
+import { ReplacePassWordDTO } from "./dto/request/replacePwDTO";
+import { ReplaceRoleDTO } from "./dto/request/replaceRoleDTO";
+import { ReplaceUsernameDTO } from "./dto/request/replaceUsernameDTO";
 import { User } from "./entity/user.entity";
 import { UserService } from "./user.service";
 

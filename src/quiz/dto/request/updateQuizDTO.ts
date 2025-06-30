@@ -1,4 +1,4 @@
 import { OmitType } from "@nestjs/mapped-types";
-import { CreateQuizDTO } from "./createQuiz.dto";
+import { CreateQuizDTO } from "./createQuizDTO";
 
 export class UpdateQuizDTO extends OmitType(CreateQuizDTO, ["type"]) {}

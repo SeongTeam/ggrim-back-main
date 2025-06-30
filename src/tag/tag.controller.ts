@@ -4,8 +4,8 @@ import { ServiceException } from "../_common/filter/exception/service/serviceExc
 import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
 import { RolesGuard } from "../auth/guard/authorization/roles.guard";
 import { Roles } from "../user/decorator/role";
-import { CreateTagDTO } from "./dto/request/createTag.dto";
-import { ReplaceTagDTO } from "./dto/request/replaceTag.dto";
+import { CreateTagDTO } from "./dto/request/createTagDTO";
+import { ReplaceTagDTO } from "./dto/request/replaceTagDTO";
 import { Tag } from "./entities/tag.entity";
 import { TagService } from "./tag.service";
 const EXCLUDED_COLUMN = ["created_date", "updated_date", "deleted_date", "version"] as const;

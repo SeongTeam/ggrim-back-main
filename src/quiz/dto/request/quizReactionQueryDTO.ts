@@ -1,7 +1,7 @@
 import { PickType } from "@nestjs/mapped-types";
 import { Transform } from "class-transformer";
 import { IsNumber, IsOptional, IsUUID } from "class-validator";
-import { QuizReactionDTO } from "./quizReaction.dto";
+import { QuizReactionDTO } from "./quizReactionDTO";
 
 export class QuizReactionQueryDTO extends PickType(QuizReactionDTO, ["type"]) {
 	@IsOptional()
