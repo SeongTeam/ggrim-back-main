@@ -3,7 +3,7 @@ import { QuizContext } from "../../interface/quizContext";
 import { QuizStatus } from "../../interface/quizStatus";
 import { ShortQuiz } from "../../interface/shortQuiz";
 
-export class ResponseQuizDTO {
+export class QuizResponse {
 	shortQuiz!: ShortQuiz;
 	status!: QuizStatus;
 

@@ -48,7 +48,7 @@ import { SearchQuizDTO } from "./dto/request/SearchQuiz.dto";
 import { CreateQuizDTO } from "./dto/request/createQuiz.dto";
 import { GenerateQuizQueryDTO } from "./dto/request/generateQuizQuery.dto";
 import { DetailQuizResponse } from "./dto/response/detailQuizResponse";
-import { ResponseQuizDTO } from "./dto/response/responseSchedule-quiz.dto";
+import { QuizResponse } from "./dto/response/quizResponse";
 import { QuizContextDTO } from "./dto/request/quizContext.dto";
 import { QuizReactionDTO, QuizReactionType } from "./dto/request/quizReaction.dto";
 import { QuizReactionQueryDTO } from "./dto/request/quizReactionQuery.dto";
@@ -254,7 +254,7 @@ export class QuizController
 	}
 
 	@Get("schedule")
-	async getScheduledQuiz(@Query() dto: ScheduleQuizQueryDTO): Promise<ResponseQuizDTO> {
+	async getScheduledQuiz(@Query() dto: ScheduleQuizQueryDTO): Promise<QuizResponse> {
 		Logger.log(`context : `, dto.context);
 		const QUIZ_PAGINATION = 20;
 		const MAX_RETRY = 10;
@@ -280,7 +280,7 @@ export class QuizController
 			const isContextChanged = dto.context !== context;
 			const currentIndex = isContextChanged ? undefined : dto.currentIndex;
 
-			return new ResponseQuizDTO(quizList, context, currentIndex);
+			return new QuizResponse(quizList, context, currentIndex);
 		}
 		throw new ServiceException(
 			`SERVICE_RUN_ERROR`,
