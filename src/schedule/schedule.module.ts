@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { LoggerModule } from "../Logger/logger.module";
+import { LoggerModule } from "../logger/logger.module";
 import { QuizModule } from "../quiz/quiz.module";
 import { ScheduleController } from "./schedule.controller";
 

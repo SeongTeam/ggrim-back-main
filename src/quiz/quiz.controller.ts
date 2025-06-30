@@ -23,7 +23,7 @@ import {
 	ValidationPipe,
 } from "@nestjs/common";
 import { QueryRunner } from "typeorm";
-import { LoggerService } from "../Logger/logger.service";
+import { LoggerService } from "../logger/logger.service";
 import { CONFIG_FILE_PATH } from "../_common/const/default.value";
 import {
 	AWS_BUCKET,

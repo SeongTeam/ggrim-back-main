@@ -1,6 +1,6 @@
 import { forwardRef, Inject, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { LoggerService } from "../../Logger/logger.service";
+import { LoggerService } from "../../logger/logger.service";
 import {
 	RATE_LIMIT_DEFAULT_COUNT,
 	RATE_LIMIT_DEFAULT_TTL_MS,

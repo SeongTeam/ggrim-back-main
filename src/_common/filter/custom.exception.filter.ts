@@ -1,7 +1,7 @@
 import { ArgumentsHost, ExceptionFilter, HttpStatus, Inject } from "@nestjs/common";
 import { Request, Response } from "express";
 import { TypeORMError } from "typeorm";
-import { LoggerService } from "../../Logger/logger.service";
+import { LoggerService } from "../../logger/logger.service";
 import { BaseException } from "./exception/baseException";
 
 interface CauseInfo {

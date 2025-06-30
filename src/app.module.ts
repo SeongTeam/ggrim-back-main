@@ -4,7 +4,7 @@ import { ScheduleModule } from "@nestjs/schedule";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { ClsModule } from "nestjs-cls";
 import { DataSource } from "typeorm";
-import { LoggerModule } from "./Logger/logger.module";
+import { LoggerModule } from "./logger/logger.module";
 import { CommonModule } from "./_common/common.module";
 import { NODE_ENV } from "./_common/const/envKeys.const";
 import { RateLimitTestController } from "./_common/rate-limit/rateLimitTest.controller";

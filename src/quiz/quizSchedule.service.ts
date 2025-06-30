@@ -1,7 +1,7 @@
 import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common";
 import { Mutex, MutexInterface, withTimeout } from "async-mutex";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
-import { LoggerService } from "../Logger/logger.service";
+import { LoggerService } from "../logger/logger.service";
 import { QuizContext } from "./interface/quizContext";
 
 type QuizContextID = string;

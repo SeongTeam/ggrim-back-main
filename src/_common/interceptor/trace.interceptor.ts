@@ -3,7 +3,7 @@ import { Request } from "express";
 import { ClsService } from "nestjs-cls";
 import { Observable, catchError } from "rxjs";
 import { v4 as uuidv4 } from "uuid";
-import { LoggerService } from "../../Logger/logger.service";
+import { LoggerService } from "../../logger/logger.service";
 @Injectable()
 export class TraceInterceptor implements NestInterceptor {
 	className = `TraceInterceptor`;

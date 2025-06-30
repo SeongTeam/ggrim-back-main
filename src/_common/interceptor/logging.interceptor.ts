@@ -3,7 +3,7 @@ import { ModuleRef } from "@nestjs/core";
 import { Request, Response } from "express";
 import { Observable } from "rxjs";
 import { tap } from "rxjs/operators";
-import { LoggerService } from "../../Logger/logger.service";
+import { LoggerService } from "../../logger/logger.service";
 import { NODE_ENV } from "../const/envKeys.const";
 
 interface HttpInfo {
