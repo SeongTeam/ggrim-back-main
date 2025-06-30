@@ -1,7 +1,8 @@
 import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from "@nestjs/common";
-import { Observable, catchError, tap } from "rxjs";
-import { DataSource } from "typeorm";
+import { Observable, catchError, from, mergeMap } from "rxjs";
+import { DataSource, QueryRunner } from "typeorm";
 import { ServiceException } from "../../_common/filter/exception/service/serviceException";
+import { QueryRunnerRequest } from "./interface/queryRunnerRequest";
 
 @Injectable()
 export class QueryRunnerInterceptor implements NestInterceptor {
@@ -24,24 +25,14 @@ export class QueryRunnerInterceptor implements NestInterceptor {
 		request.queryRunner = qr;
 
 		return next.handle().pipe(
-			catchError(async (e) => {
-				Logger.error(`[intercept] rollback transaction`);
-				qr.clearDatabase;
-				await qr.rollbackTransaction();
-				await qr.release();
-				throw e;
-			}),
-			tap(async () => {
-				Logger.debug(`[intercept] commit transaction`);
-				await qr.commitTransaction();
-				await qr.release();
-			}),
+			mergeMap((result) => from(this.commitAndRelease(qr, result))),
+			catchError((error) => from(this.rollbackAndRelease(qr, error))),
 		);
 	}
 
 	private getRequest(context: ExecutionContext) {
 		if (context.getType() === "http") {
-			return context.switchToHttp().getRequest();
+			return context.switchToHttp().getRequest<QueryRunnerRequest>();
 		}
 
 		throw new ServiceException(
@@ -49,5 +40,20 @@ export class QueryRunnerInterceptor implements NestInterceptor {
 			"NOT_IMPLEMENTED",
 			`${context.getType()} is not implemented`,
 		);
+	}
+
+	private async commitAndRelease(queryRunner: QueryRunner, result: any): Promise<any> {
+		Logger.debug("[QueryRunnerInterceptor] Commit transaction");
+		await queryRunner.commitTransaction();
+		await queryRunner.release();
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+		return result;
+	}
+
+	private async rollbackAndRelease(queryRunner: QueryRunner, error: unknown): Promise<never> {
+		Logger.error("[QueryRunnerInterceptor] Rollback transaction");
+		await queryRunner.rollbackTransaction();
+		await queryRunner.release();
+		throw error;
 	}
 }

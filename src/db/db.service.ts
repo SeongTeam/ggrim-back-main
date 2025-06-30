@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { DataSource, ObjectLiteral, Repository } from "typeorm";
+import { DataSource, EntityTarget, ObjectLiteral, Repository } from "typeorm";
 
 export interface IEntity {
 	name: string;
@@ -11,21 +11,21 @@ export class DatabaseService {
 	constructor(private readonly dataSource: DataSource) {
 		Logger.log(`[${DatabaseService.name}] init`);
 	}
-	public async getRepository<T extends ObjectLiteral>(entity: any): Promise<Repository<T>> {
+	public getRepository<T extends ObjectLiteral>(entity: EntityTarget<T>): Repository<T> {
 		return this.dataSource.getRepository(entity);
 	}
 
-	public async isConnected(): Promise<boolean> {
+	public isConnected(): boolean {
 		return this.dataSource.isInitialized;
 	}
 
 	public async close(): Promise<void> {
-		if (await this.isConnected()) {
-			this.dataSource.destroy();
+		if (this.isConnected()) {
+			await this.dataSource.destroy();
 		}
 	}
 
-	public async getEntities() {
+	public getEntities() {
 		const entities: IEntity[] = [];
 		this.dataSource.entityMetadatas.forEach((x) =>
 			entities.push({ name: x.name, tableName: x.tableName }),

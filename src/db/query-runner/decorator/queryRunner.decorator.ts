@@ -1,10 +1,11 @@
 import { ExecutionContext, createParamDecorator } from "@nestjs/common";
 import { QueryRunner } from "typeorm";
 import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
+import { QueryRunnerRequest } from "../interface/queryRunnerRequest";
 
 export const DBQueryRunner = createParamDecorator(
 	(data, context: ExecutionContext): QueryRunner => {
-		const req = context.switchToHttp().getRequest();
+		const req = context.switchToHttp().getRequest<QueryRunnerRequest>();
 
 		if (!req.queryRunner) {
 			throw new ServiceException(
