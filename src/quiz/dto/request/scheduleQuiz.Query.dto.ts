@@ -1,6 +1,6 @@
 import { plainToClass, Transform, Type } from "class-transformer";
 import { IsNumber, IsOptional, ValidateNested } from "class-validator";
-import { QuizContextDTO } from "./quiz-context.dto";
+import { QuizContextDTO } from "./quizContext.dto";
 
 export class ScheduleQuizQueryDTO {
 	@Type(() => Number)

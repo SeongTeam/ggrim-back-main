@@ -17,17 +17,17 @@ import { getRandomElement, getRandomNumber } from "../utils/random";
 import { isArrayEmpty, isNotFalsy } from "../utils/validator";
 import { QUIZ_TYPE_CONFIG } from "./const";
 import { SearchQuizDTO } from "./dto/request/SearchQuiz.dto";
-import { CreateQuizDTO } from "./dto/request/create-quiz.dto";
-import { QuizReactionType } from "./dto/request/quiz-reaction.dto";
+import { CreateQuizDTO } from "./dto/request/createQuiz.dto";
+import { QuizReactionType } from "./dto/request/quizReaction.dto";
 import { QuizDTO } from "./dto/request/quiz.dto";
-import { UpdateQuizDTO } from "./dto/request/update-quiz.dto";
-import { QuizDislike } from "./entities/quiz-dislike.entity";
-import { QuizLike } from "./entities/quiz-like.entity";
+import { UpdateQuizDTO } from "./dto/request/updateQuiz.dto";
+import { QuizDislike } from "./entities/quizDislike.entity";
+import { QuizLike } from "./entities/quizLike.entity";
 import { Quiz } from "./entities/quiz.entity";
-import { QuizSubmission } from "./interface/quiz-Submission";
-import { QuizReactionCount } from "./interface/reaction-count";
-import { RelatedPaintingIds, RelatedPaintings } from "./interface/related-paintings.interface";
-import { ShortQuiz } from "./interface/short-quiz";
+import { QuizSubmission } from "./interface/quizSubmission";
+import { QuizReactionCount } from "./interface/reactionCount";
+import { RelatedPaintingIds, RelatedPaintings } from "./interface/relatedPaintingsInterface";
+import { ShortQuiz } from "./interface/shortQuiz";
 import { QuizCategory } from "./type";
 
 @Injectable()

@@ -1,7 +1,7 @@
 import { randomInt } from "node:crypto";
-import { QuizContext } from "../../interface/quiz-context";
-import { QuizStatus } from "../../interface/quiz-status";
-import { ShortQuiz } from "../../interface/short-quiz";
+import { QuizContext } from "../../interface/quizContext";
+import { QuizStatus } from "../../interface/quizStatus";
+import { ShortQuiz } from "../../interface/shortQuiz";
 
 export class ResponseQuizDTO {
 	shortQuiz!: ShortQuiz;

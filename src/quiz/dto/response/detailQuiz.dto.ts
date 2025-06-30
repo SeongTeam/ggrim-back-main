@@ -2,8 +2,8 @@ import { OmitType } from "@nestjs/mapped-types";
 import { plainToInstance } from "class-transformer";
 import { ShortUser } from "../../../user/interface/shortUser";
 import { Quiz } from "../../entities/quiz.entity";
-import { QuizReactionCount } from "../../interface/reaction-count";
-import { QuizReactionType } from "../request/quiz-reaction.dto";
+import { QuizReactionCount } from "../../interface/reactionCount";
+import { QuizReactionType } from "../request/quizReaction.dto";
 
 export class DetailQuizDTO {
 	quiz!: ShowQuiz;

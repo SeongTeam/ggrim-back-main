@@ -1,5 +1,5 @@
 import { Painting } from "../../painting/entities/painting.entity";
-import { CreateQuizDTO } from "../dto/request/create-quiz.dto";
+import { CreateQuizDTO } from "../dto/request/createQuiz.dto";
 
 export interface RelatedPaintingIds
 	extends Pick<

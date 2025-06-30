@@ -1,4 +1,4 @@
-import { QuizContext } from "./quiz-context";
+import { QuizContext } from "./quizContext";
 
 export interface QuizStatus {
 	context: QuizContext;
