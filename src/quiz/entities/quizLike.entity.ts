@@ -1,4 +1,3 @@
-import { IsUUID } from "class-validator";
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
 import { CustomBaseEntity } from "../../db/entity/customBase.entity";
 import { User } from "../../user/entity/user.entity";
@@ -10,7 +9,6 @@ import { Quiz } from "./quiz.entity";
 @Unique(["user_id", "quiz_id"])
 export class QuizLike extends CustomBaseEntity {
 	@PrimaryGeneratedColumn("uuid")
-	@IsUUID()
 	id!: string;
 
 	@ManyToOne(() => User)
@@ -18,7 +16,6 @@ export class QuizLike extends CustomBaseEntity {
 	user!: User;
 
 	@Column()
-	@IsUUID()
 	user_id!: string;
 
 	@ManyToOne(() => Quiz)
@@ -26,6 +23,5 @@ export class QuizLike extends CustomBaseEntity {
 	quiz!: Quiz;
 
 	@Column()
-	@IsUUID()
 	quiz_id!: string;
 }
