@@ -47,7 +47,7 @@ import { CATEGORY_VALUES } from "./const";
 import { SearchQuizDTO } from "./dto/request/SearchQuiz.dto";
 import { CreateQuizDTO } from "./dto/request/createQuiz.dto";
 import { GenerateQuizQueryDTO } from "./dto/request/generateQuizQuery.dto";
-import { DetailQuizDTO } from "./dto/response/detailQuiz.dto";
+import { DetailQuizResponse } from "./dto/response/detailQuizResponse";
 import { ResponseQuizDTO } from "./dto/response/responseSchedule-quiz.dto";
 import { QuizContextDTO } from "./dto/request/quizContext.dto";
 import { QuizReactionDTO, QuizReactionType } from "./dto/request/quizReaction.dto";
@@ -322,7 +322,7 @@ export class QuizController
 		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
 		@ParsedRequest() req: CrudRequest,
 		@Query("user-id") userId: string | undefined,
-	): Promise<DetailQuizDTO> {
+	): Promise<DetailQuizResponse> {
 		let quiz = await this.service.getOne(req);
 
 		if (isS3Access) {
@@ -339,7 +339,7 @@ export class QuizController
 			: undefined;
 
 		// responseDTO 정의하기
-		return new DetailQuizDTO(quiz, reactionCount, userReaction);
+		return new DetailQuizResponse(quiz, reactionCount, userReaction);
 	}
 
 	@Put(":id")
