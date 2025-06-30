@@ -14,10 +14,9 @@ export class ScheduleQuizQueryDTO {
 	endIndex?: number;
 
 	//Quiz Context interface
-	@Transform(({ value }) => {
-		const plain = JSON.parse(value);
-		return value ? plainToClass(QuizContextDTO, plain) : null;
-	})
+	@Transform(({ value }: { value: string }) =>
+		value ? plainToClass(QuizContextDTO, JSON.parse(value)) : null,
+	)
 	@IsOptional()
 	@ValidateNested()
 	context?: QuizContextDTO;
