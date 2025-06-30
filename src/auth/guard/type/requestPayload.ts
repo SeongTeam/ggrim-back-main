@@ -1,7 +1,7 @@
 import { User } from "../../../user/entity/user.entity";
 import { JWTDecode } from "../../auth.service";
 
-export const ENUM_AUTH_CONTEXT_KEY = {
+export const AUTH_GUARD_PAYLOAD = {
 	USER: "AuthUserPayload",
 	SECURITY_TOKEN: "SecurityTokenPayload",
 	ACCESS_TOKEN: "AccessTokenPayload",

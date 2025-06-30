@@ -1,15 +1,15 @@
 import {
 	AccessTokenPayload,
 	AuthUserPayload,
-	ENUM_AUTH_CONTEXT_KEY,
+	AUTH_GUARD_PAYLOAD,
 	SecurityTokenPayload,
 	TempUserPayload,
 } from "./requestPayload";
 import { Request } from "express";
 
 export interface AuthenticatedRequest extends Request {
-	[ENUM_AUTH_CONTEXT_KEY.USER]?: AuthUserPayload; // 또는 any
-	[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN]?: SecurityTokenPayload; // 또는 any
-	[ENUM_AUTH_CONTEXT_KEY.ACCESS_TOKEN]?: AccessTokenPayload; // 또는 any
-	[ENUM_AUTH_CONTEXT_KEY.TEMP_USER]?: TempUserPayload; // 또는 any
+	[AUTH_GUARD_PAYLOAD.USER]?: AuthUserPayload; // 또는 any
+	[AUTH_GUARD_PAYLOAD.SECURITY_TOKEN]?: SecurityTokenPayload; // 또는 any
+	[AUTH_GUARD_PAYLOAD.ACCESS_TOKEN]?: AccessTokenPayload; // 또는 any
+	[AUTH_GUARD_PAYLOAD.TEMP_USER]?: TempUserPayload; // 또는 any
 }

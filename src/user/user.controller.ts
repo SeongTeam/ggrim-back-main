@@ -30,7 +30,7 @@ import { OwnerGuard } from "../auth/guard/authorization/owner.guard";
 import { RolesGuard } from "../auth/guard/authorization/roles.guard";
 import {
 	AuthUserPayload,
-	ENUM_AUTH_CONTEXT_KEY,
+	AUTH_GUARD_PAYLOAD,
 	SecurityTokenPayload,
 	TempUserPayload,
 } from "../auth/guard/type/requestPayload";
@@ -94,7 +94,7 @@ export class UserController implements CrudController<User> {
 		@Request() request: any,
 		@Body() dto: CreateUserDTO,
 	) {
-		const tempUserPayload: TempUserPayload = request[ENUM_AUTH_CONTEXT_KEY.TEMP_USER];
+		const tempUserPayload: TempUserPayload = request[AUTH_GUARD_PAYLOAD.TEMP_USER];
 		const { oneTimeTokenID, email } = tempUserPayload;
 		const { username } = dto;
 		const sameUsers = await this.service.find({ where: [{ email }, { username }] });
@@ -145,14 +145,14 @@ export class UserController implements CrudController<User> {
 		if (!isEmail(email)) {
 			throw new HttpException(`${email} is not valid`, HttpStatus.BAD_REQUEST);
 		}
-		const authUserPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER];
 		const { user } = authUserPayload;
 
 		const encryptedPW = await this.authService.hash(dto.password);
 		await this.service.updateUser(qr, user.id, { password: encryptedPW });
 
 		const SecurityTokenGuardResult: SecurityTokenPayload =
-			request[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN];
+			request[AUTH_GUARD_PAYLOAD.SECURITY_TOKEN];
 		await this.authService.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
 
 		return;
@@ -177,7 +177,7 @@ export class UserController implements CrudController<User> {
 			throw new HttpException(`${email} is not valid`, HttpStatus.BAD_REQUEST);
 		}
 		const { username } = dto;
-		const authUserPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER];
 		const { user } = authUserPayload;
 		const sameUserName = await this.service.findOne({ where: { username } });
 
@@ -202,7 +202,7 @@ export class UserController implements CrudController<User> {
 		if (!isEmail(email)) {
 			throw new HttpException(`${email} is not valid`, HttpStatus.BAD_REQUEST);
 		}
-		const authUserPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER];
 		const { user } = authUserPayload;
 
 		await this.service.updateUser(qr, user.id, dto);
@@ -226,13 +226,13 @@ export class UserController implements CrudController<User> {
 		if (!isEmail(email)) {
 			throw new HttpException(`${email} is not valid`, HttpStatus.BAD_REQUEST);
 		}
-		const authUserPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER];
 		const { user } = authUserPayload;
 
 		await this.service.softDeleteUser(qr, user.id);
 
 		const SecurityTokenGuardResult: SecurityTokenPayload =
-			request[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN];
+			request[AUTH_GUARD_PAYLOAD.SECURITY_TOKEN];
 		await this.authService.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
 	}
 
@@ -252,7 +252,7 @@ export class UserController implements CrudController<User> {
 		@Request() request: any,
 		@Param("email") email: string,
 	) {
-		const authUserPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER];
 		const { user: deletedUser } = authUserPayload;
 		if (isEmpty(deletedUser.deleted_date)) {
 			throw new ServiceException(
@@ -264,7 +264,7 @@ export class UserController implements CrudController<User> {
 
 		await this.service.recoverUser(qr, deletedUser.id);
 
-		const securityToken: SecurityTokenPayload = request[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN];
+		const securityToken: SecurityTokenPayload = request[AUTH_GUARD_PAYLOAD.SECURITY_TOKEN];
 		await this.authService.markOneTimeJWT(qr, securityToken.oneTimeTokenID);
 	}
 }

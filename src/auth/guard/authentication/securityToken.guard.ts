@@ -20,7 +20,7 @@ import { OneTimeTokenPurpose } from "../../entity/oneTimeToken.entity";
 import {
 	AccessTokenPayload,
 	AuthUserPayload,
-	ENUM_AUTH_CONTEXT_KEY,
+	AUTH_GUARD_PAYLOAD,
 	SecurityTokenPayload,
 } from "../type/requestPayload";
 
@@ -121,18 +121,18 @@ export class SecurityTokenGuard implements CanActivate {
 			oneTimeToken: securityToken,
 			oneTimeTokenID: securityTokenID,
 		};
-		req[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN] = result;
+		req[AUTH_GUARD_PAYLOAD.SECURITY_TOKEN] = result;
 
 		const tokenResult: AccessTokenPayload = {
 			userId: user.id,
 			decodedToken: decoded,
 		};
-		req[ENUM_AUTH_CONTEXT_KEY.ACCESS_TOKEN] = tokenResult;
+		req[AUTH_GUARD_PAYLOAD.ACCESS_TOKEN] = tokenResult;
 
 		const userResult: AuthUserPayload = {
 			user,
 		};
-		req[ENUM_AUTH_CONTEXT_KEY.USER] = userResult;
+		req[AUTH_GUARD_PAYLOAD.USER] = userResult;
 
 		return true;
 	}

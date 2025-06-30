@@ -35,7 +35,7 @@ import { ArtistService } from "../artist/artist.service";
 import { CheckOwner } from "../auth/metadata/owner";
 import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
 import { OwnerGuard } from "../auth/guard/authorization/owner.guard";
-import { AuthUserPayload, ENUM_AUTH_CONTEXT_KEY } from "../auth/guard/type/requestPayload";
+import { AuthUserPayload, AUTH_GUARD_PAYLOAD } from "../auth/guard/type/requestPayload";
 import { S3Service } from "../aws/s3.service";
 import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner.decorator";
 import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
@@ -187,7 +187,7 @@ export class QuizController
 		@Param("id") id: string,
 		@Body() dto: QuizReactionDTO,
 	): Promise<void> {
-		const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER];
 		const { user } = userPayload;
 		const quiz = await qr.manager.findOne(Quiz, { where: { id } });
 		if (!quiz) {
@@ -220,7 +220,7 @@ export class QuizController
 		@Request() request: any,
 		@Param("id") id: string,
 	): Promise<void> {
-		const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER];
 		const { user } = userPayload;
 		const quiz = await qr.manager.findOne(Quiz, { where: { id } });
 		if (!quiz) {
@@ -311,7 +311,7 @@ export class QuizController
 
 		@Body() dto: CreateQuizDTO,
 	) {
-		const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER];
 
 		return this.service.createQuiz(qr, dto, userPayload.user);
 	}
@@ -357,7 +357,7 @@ export class QuizController
 		@Param("id", ParseUUIDPipe) id: string,
 		@Body() dto: UpdateQuizDTO,
 	) {
-		const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER];
 		return this.service.updateQuiz(qr, id, dto, userPayload.user);
 	}
 

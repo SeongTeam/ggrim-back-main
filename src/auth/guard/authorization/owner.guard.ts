@@ -3,7 +3,7 @@ import { ModuleRef, Reflector } from "@nestjs/core";
 import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
 import { ADMIN_ACCESS_KEY } from "../../metadata/adminAccess";
 import { CHECK_OWNER_KEY, CheckOwnerOption } from "../../metadata/owner";
-import { AuthUserPayload, ENUM_AUTH_CONTEXT_KEY } from "../type/requestPayload";
+import { AuthUserPayload, AUTH_GUARD_PAYLOAD } from "../type/requestPayload";
 
 // TODO: OwnerGuard 기능 개선
 // - [x] User Role = admin 일때, 통과시키기
@@ -22,14 +22,14 @@ export class OwnerGuard implements CanActivate {
 
 		const isAdminAccess: any = this.reflector.get<any>(ADMIN_ACCESS_KEY, context.getHandler());
 		const request = context.switchToHttp().getRequest();
-		const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER];
 		const { user } = userPayload;
 
 		if (!userPayload) {
 			throw new ServiceException(
 				"SERVICE_RUN_ERROR",
 				"INTERNAL_SERVER_ERROR",
-				`${ENUM_AUTH_CONTEXT_KEY.USER} field should exist`,
+				`${AUTH_GUARD_PAYLOAD.USER} field should exist`,
 			);
 		}
 

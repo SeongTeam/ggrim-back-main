@@ -10,7 +10,7 @@ import { plainToClass } from "class-transformer";
 import { UserService } from "../../../user/user.service";
 import { AuthService } from "../../auth.service";
 import { BasicTokenGuardDTO } from "../dto/basicAuthGuard.dto";
-import { AuthUserPayload, ENUM_AUTH_CONTEXT_KEY } from "../type/requestPayload";
+import { AuthUserPayload, AUTH_GUARD_PAYLOAD } from "../type/requestPayload";
 
 @Injectable()
 export class BasicGuard implements CanActivate {
@@ -56,7 +56,7 @@ export class BasicGuard implements CanActivate {
 		const result: AuthUserPayload = {
 			user,
 		};
-		req[ENUM_AUTH_CONTEXT_KEY.USER] = result;
+		req[AUTH_GUARD_PAYLOAD.USER] = result;
 
 		return true;
 	}

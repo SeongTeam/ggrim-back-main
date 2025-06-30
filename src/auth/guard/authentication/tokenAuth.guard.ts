@@ -8,7 +8,7 @@ import {
 } from "@nestjs/common";
 import { UserService } from "../../../user/user.service";
 import { AuthService, JWTDecode } from "../../auth.service";
-import { AccessTokenPayload, AuthUserPayload, ENUM_AUTH_CONTEXT_KEY } from "../type/requestPayload";
+import { AccessTokenPayload, AuthUserPayload, AUTH_GUARD_PAYLOAD } from "../type/requestPayload";
 
 const ENUM_HEADER_FIELD = {
 	AUTHORIZATION: "authorization",
@@ -53,12 +53,12 @@ export class TokenAuthGuard implements CanActivate {
 			userId: user.id,
 			decodedToken: decoded,
 		};
-		req[ENUM_AUTH_CONTEXT_KEY.ACCESS_TOKEN] = result;
+		req[AUTH_GUARD_PAYLOAD.ACCESS_TOKEN] = result;
 
 		const userResult: AuthUserPayload = {
 			user,
 		};
-		req[ENUM_AUTH_CONTEXT_KEY.USER] = userResult;
+		req[AUTH_GUARD_PAYLOAD.USER] = userResult;
 
 		return true;
 	}

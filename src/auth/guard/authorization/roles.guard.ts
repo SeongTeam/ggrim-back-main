@@ -3,7 +3,7 @@ import { Reflector } from "@nestjs/core";
 import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
 import { ROLES_KEY } from "../../../user/decorator/role";
 import { UserRole } from "../../../user/entity/user.entity";
-import { AuthUserPayload, ENUM_AUTH_CONTEXT_KEY } from "../type/requestPayload";
+import { AuthUserPayload, AUTH_GUARD_PAYLOAD } from "../type/requestPayload";
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -11,14 +11,14 @@ export class RolesGuard implements CanActivate {
 
 	canActivate(context: ExecutionContext): boolean {
 		const req = context.switchToHttp().getRequest();
-		const userInfo: AuthUserPayload = req[ENUM_AUTH_CONTEXT_KEY.USER];
+		const userInfo: AuthUserPayload = req[AUTH_GUARD_PAYLOAD.USER];
 		const { user } = userInfo;
 
 		if (!userInfo) {
 			throw new ServiceException(
 				"SERVICE_RUN_ERROR",
 				"INTERNAL_SERVER_ERROR",
-				`${ENUM_AUTH_CONTEXT_KEY.USER} field should exist`,
+				`${AUTH_GUARD_PAYLOAD.USER} field should exist`,
 			);
 		}
 

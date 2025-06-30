@@ -43,7 +43,7 @@ import { SecurityTokenGuard } from "./guard/authentication/securityToken.guard";
 import { OwnerGuard } from "./guard/authorization/owner.guard";
 import {
 	AuthUserPayload,
-	ENUM_AUTH_CONTEXT_KEY,
+	AUTH_GUARD_PAYLOAD,
 	SecurityTokenPayload,
 } from "./guard/type/requestPayload";
 import { AuthenticatedRequest } from "./guard/type/AuthRequest";
@@ -65,7 +65,7 @@ export class AuthController {
 	@Post("sign-in")
 	@UseGuards(BasicGuard)
 	signin(@Req() request: AuthenticatedRequest) {
-		const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER]!;
+		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = userPayload;
 		const { email, role, username } = user;
 
@@ -205,7 +205,7 @@ export class AuthController {
 		@Body() dto: CreateOneTimeTokenDTO,
 	): Promise<OneTimeToken> {
 		const { purpose } = dto;
-		const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER]!;
+		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const user = userPayload.user;
 		const { email } = user;
 		const securityToken = await this.createOneTimeToken(qr, email, purpose, user);
@@ -269,9 +269,9 @@ export class AuthController {
 		@Body() dto: CreateOneTimeTokenDTO,
 	): Promise<OneTimeToken> {
 		const { purpose } = dto;
-		const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER]!;
+		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const securityTokenPayload: SecurityTokenPayload =
-			request[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN]!;
+			request[AUTH_GUARD_PAYLOAD.SECURITY_TOKEN]!;
 		const { user } = userPayload;
 
 		await this.service.markOneTimeJWT(qr, securityTokenPayload.oneTimeTokenID);
@@ -301,7 +301,7 @@ export class AuthController {
 		@Req() request: AuthenticatedRequest,
 	) {
 		const SecurityTokenGuardResult: SecurityTokenPayload =
-			request[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN]!;
+			request[AUTH_GUARD_PAYLOAD.SECURITY_TOKEN]!;
 		await this.service.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
 
 		//do next task.
