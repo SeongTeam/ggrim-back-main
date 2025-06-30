@@ -94,13 +94,6 @@ export class AuthController {
 		return response;
 	}
 
-	@Post("test")
-	@UseGuards(TokenAuthGuard)
-	async testTokenAuthGuard(@Request() request: any) {
-		const result = request[ENUM_AUTH_CONTEXT_KEY.ACCESS_TOKEN];
-		return "authResult";
-	}
-
 	// TODO: 인증 로직 개선
 	// - [x] 로직 직접 테스트하기
 	// - [x]  emailModule 사용하여 이메일 인증 로직 추가하기
