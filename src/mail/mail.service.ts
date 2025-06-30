@@ -9,8 +9,8 @@ import {
 	ENV_SMTP_ID,
 	ENV_SMTP_PW,
 	NODE_ENV,
-} from "../_common/const/env-keys.const";
-import { ServiceException } from "../_common/filter/exception/service/service-exception";
+} from "../_common/const/envKeys.const";
+import { ServiceException } from "../_common/filter/exception/service/serviceException";
 
 export const ENUM_MAIL_SUBJECT = {
 	EMAIL_VERIFICATION: "Email verification",

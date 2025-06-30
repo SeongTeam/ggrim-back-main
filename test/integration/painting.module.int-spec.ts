@@ -1,5 +1,5 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { CreatePaintingDTO } from "../../src/painting/dto/request/create-painting.dto";
+import { CreatePaintingDTO } from "../../src/painting/dto/request/createPainting.dto";
 import { PaintingModule } from "../../src/painting/painting.module";
 import { PaintingService } from "../../src/painting/painting.service";
 import { TestModule } from "../_shared/test.module";

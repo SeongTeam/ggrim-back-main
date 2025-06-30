@@ -23,18 +23,18 @@ import {
 	AWS_BUCKET,
 	AWS_BUCKET_ARTWORK,
 	AWS_INIT_FILE_KEY_PREFIX,
-} from "../_common/const/env-keys.const";
-import { ServiceException } from "../_common/filter/exception/service/service-exception";
+} from "../_common/const/envKeys.const";
+import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { S3Service } from "../aws/s3.service";
-import { DBQueryRunner } from "../db/query-runner/decorator/query-runner.decorator";
-import { QueryRunnerInterceptor } from "../db/query-runner/query-runner.interceptor";
+import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner.decorator";
+import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
 import { getLatestMonday } from "../utils/date";
-import { CreatePaintingDTO } from "./dto/request/create-painting.dto";
-import { GetByIdsQueryDTO } from "./dto/request/get-by-ids.query.dto";
-import { ReplacePaintingDTO } from "./dto/request/replace-painting.dto";
-import { SearchPaintingDTO } from "./dto/request/search-painting.dto";
+import { CreatePaintingDTO } from "./dto/request/createPainting.dto";
+import { GetByIdsQueryDTO } from "./dto/request/getByIdsQuery.dto";
+import { ReplacePaintingDTO } from "./dto/request/replacePainting.dto";
+import { SearchPaintingDTO } from "./dto/request/searchPainting.dto";
 import { Painting } from "./entities/painting.entity";
-import { ShortPainting } from "./interface/short-painting";
+import { ShortPainting } from "./interface/shortPainting";
 import { PaintingService } from "./painting.service";
 
 @UsePipes(new ValidationPipe({ transform: true }))

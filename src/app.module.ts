@@ -6,9 +6,9 @@ import { ClsModule } from "nestjs-cls";
 import { DataSource } from "typeorm";
 import { LoggerModule } from "./Logger/logger.module";
 import { CommonModule } from "./_common/common.module";
-import { NODE_ENV } from "./_common/const/env-keys.const";
-import { RateLimitTestController } from "./_common/rate-limit/rate-limit-test.controller";
-import { RateLimitModule } from "./_common/rate-limit/rate-limit.module";
+import { NODE_ENV } from "./_common/const/envKeys.const";
+import { RateLimitTestController } from "./_common/rate-limit/rateLimitTest.controller";
+import { RateLimitModule } from "./_common/rate-limit/rateLimit.module";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { ArtistModule } from "./artist/artist.module";
@@ -21,7 +21,7 @@ import { SystemScheduleModule } from "./schedule/schedule.module";
 import { StyleModule } from "./style/style.module";
 import { TagModule } from "./tag/tag.modue";
 import { UserModule } from "./user/user.module";
-import { TypeORMConfig } from "./utils/typeorm.config";
+import { TypeORMConfig } from "./utils/typeormConfig";
 
 const ENV = process.env[NODE_ENV];
 

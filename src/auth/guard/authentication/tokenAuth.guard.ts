@@ -8,11 +8,7 @@ import {
 } from "@nestjs/common";
 import { UserService } from "../../../user/user.service";
 import { AuthService, JWTDecode } from "../../auth.service";
-import {
-	AccessTokenPayload,
-	AuthUserPayload,
-	ENUM_AUTH_CONTEXT_KEY,
-} from "../type/request-payload";
+import { AccessTokenPayload, AuthUserPayload, ENUM_AUTH_CONTEXT_KEY } from "../type/requestPayload";
 
 const ENUM_HEADER_FIELD = {
 	AUTHORIZATION: "authorization",

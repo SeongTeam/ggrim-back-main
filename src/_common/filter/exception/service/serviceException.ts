@@ -1,6 +1,6 @@
 import { HttpExceptionOptions, HttpStatus } from "@nestjs/common";
-import { BaseException, HttpStatusType } from "../base.exception";
-import { ServiceExceptionEnum } from "./service.exception.enum";
+import { BaseException, HttpStatusType } from "../baseException";
+import { ServiceExceptionEnum } from "./serviceExceptionEnum";
 
 type ServiceExceptionEnumType = keyof typeof ServiceExceptionEnum;
 

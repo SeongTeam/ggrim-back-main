@@ -29,16 +29,16 @@ import {
 	AWS_BUCKET,
 	AWS_BUCKET_ARTWORK,
 	AWS_INIT_FILE_KEY_PREFIX,
-} from "../_common/const/env-keys.const";
-import { ServiceException } from "../_common/filter/exception/service/service-exception";
+} from "../_common/const/envKeys.const";
+import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { ArtistService } from "../artist/artist.service";
 import { CheckOwner } from "../auth/decorator/owner";
-import { TokenAuthGuard } from "../auth/guard/authentication/token-auth.guard";
+import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
 import { OwnerGuard } from "../auth/guard/authorization/owner.guard";
-import { AuthUserPayload, ENUM_AUTH_CONTEXT_KEY } from "../auth/guard/type/request-payload";
+import { AuthUserPayload, ENUM_AUTH_CONTEXT_KEY } from "../auth/guard/type/requestPayload";
 import { S3Service } from "../aws/s3.service";
-import { DBQueryRunner } from "../db/query-runner/decorator/query-runner.decorator";
-import { QueryRunnerInterceptor } from "../db/query-runner/query-runner.interceptor";
+import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner.decorator";
+import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
 import { PaintingService } from "../painting/painting.service";
 import { StyleService } from "../style/style.service";
 import { TagService } from "../tag/tag.service";

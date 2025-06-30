@@ -1,8 +1,8 @@
 import { ArgumentsHost, Catch } from "@nestjs/common";
 import { CustomExceptionFilter } from "./custom.exception.filter";
-import { BaseException } from "./exception/base.exception";
-import { ServiceException } from "./exception/service/service-exception";
-import { ServiceExceptionEnum } from "./exception/service/service.exception.enum";
+import { BaseException } from "./exception/baseException";
+import { ServiceException } from "./exception/service/serviceException";
+import { ServiceExceptionEnum } from "./exception/service/serviceExceptionEnum";
 
 interface IExceptionInfo extends Pick<BaseException, "timestamp" | "path"> {
 	message: string | object;

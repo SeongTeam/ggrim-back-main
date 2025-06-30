@@ -1,9 +1,9 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
-import { DataBaseModule } from '../../src/db/db.module';
-import { TypeORMConfig } from '../../src/utils/typeorm.config';
-import { TestService } from './test.service';
+import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { DataSource } from "typeorm";
+import { DataBaseModule } from "../../src/db/db.module";
+import { TypeORMConfig } from "../../src/utils/typeormConfig";
+import { TestService } from "./test.service";
 
 /* TestModule
 ## Purpose:
@@ -17,14 +17,14 @@ import { TestService } from './test.service';
 */
 
 @Module({
-  imports: [
-    TypeOrmModule.forRootAsync({
-      useClass: TypeORMConfig,
-      dataSourceFactory: async (options) => new DataSource(options!).initialize(),
-    }),
-    DataBaseModule,
-  ],
-  providers: [TestService],
-  exports: [TestService],
+	imports: [
+		TypeOrmModule.forRootAsync({
+			useClass: TypeORMConfig,
+			dataSourceFactory: async (options) => new DataSource(options!).initialize(),
+		}),
+		DataBaseModule,
+	],
+	providers: [TestService],
+	exports: [TestService],
 })
 export class TestModule {}

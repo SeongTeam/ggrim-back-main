@@ -9,10 +9,10 @@ import {
 	PrimaryGeneratedColumn,
 } from "typeorm";
 import { Artist } from "../../artist/entities/artist.entity";
-import { CustomBaseEntity } from "../../db/entity/custom.base.entity";
+import { CustomBaseEntity } from "../../db/entity/customBase.entity";
 import { Style } from "../../style/entities/style.entity";
 import { Tag } from "../../tag/entities/tag.entity";
-import { WikiArtPainting } from "./wikiArt-painting.entity";
+import { WikiArtPainting } from "./wikiArtPainting.entity";
 
 @Entity()
 export class Painting extends CustomBaseEntity {

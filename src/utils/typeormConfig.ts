@@ -8,8 +8,8 @@ import {
 	ENV_DB_PASSWORD_KEY,
 	ENV_DB_PORT_KEY,
 	ENV_DB_USER_NAME_KEY,
-} from "../_common/const/env-keys.const";
-import { TypeORMCustomLogger } from "./typeorm.custom.logger";
+} from "../_common/const/envKeys.const";
+import { TypeORMCustomLogger } from "./typeormCustomLogger";
 @Injectable()
 export class TypeORMConfig implements TypeOrmOptionsFactory {
 	logPath: string = join("logs", "db", "ormlogs.log");

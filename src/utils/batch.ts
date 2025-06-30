@@ -1,5 +1,5 @@
 import { Logger } from "@nestjs/common";
-import { ServiceException } from "../_common/filter/exception/service/service-exception";
+import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { isArrayEmpty } from "./validator";
 
 type MethodType = "UPDATE" | "CREATE" | "DELETE";

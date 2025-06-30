@@ -2,8 +2,8 @@ import { TypeOrmCrudService } from "@dataui/crud-typeorm";
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { DeepPartial, QueryRunner, Repository } from "typeorm";
-import { ServiceException } from "../_common/filter/exception/service/service-exception";
-import { createTransactionQueryBuilder } from "../db/query-runner/query-Runner.lib";
+import { ServiceException } from "../_common/filter/exception/service/serviceException";
+import { createTransactionQueryBuilder } from "../db/query-runner/queryRunner.lib";
 import { User } from "./entity/user.entity";
 
 @Injectable()

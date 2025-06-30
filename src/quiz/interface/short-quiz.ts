@@ -2,7 +2,7 @@ import { Exclude } from "class-transformer";
 import { Artist } from "../../artist/entities/artist.entity";
 import { Style } from "../../style/entities/style.entity";
 import { Tag } from "../../tag/entities/tag.entity";
-import { ShortUser } from "../../user/interface/short-user";
+import { ShortUser } from "../../user/interface/shortUser";
 import { Quiz } from "../entities/quiz.entity";
 
 export class ShortQuiz

@@ -1,6 +1,6 @@
 import { IsEmail } from "class-validator";
-import { IsInArray } from "../../../utils/class-validator";
-import { OneTimeTokenPurpose, OneTimeTokenPurposeValues } from "../../entity/one-time-token.entity";
+import { IsInArray } from "../../../utils/classValidator";
+import { OneTimeTokenPurpose, OneTimeTokenPurposeValues } from "../../entity/oneTimeToken.entity";
 
 export class SendOneTimeTokenDTO {
 	@IsEmail()

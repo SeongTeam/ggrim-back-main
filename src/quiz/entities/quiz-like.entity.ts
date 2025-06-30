@@ -1,6 +1,6 @@
 import { IsUUID } from "class-validator";
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
-import { CustomBaseEntity } from "../../db/entity/custom.base.entity";
+import { CustomBaseEntity } from "../../db/entity/customBase.entity";
 import { User } from "../../user/entity/user.entity";
 import { Quiz } from "./quiz.entity";
 

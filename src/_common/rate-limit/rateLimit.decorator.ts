@@ -1,5 +1,5 @@
 import { SetMetadata } from "@nestjs/common";
-import { RATE_LIMIT_METADATA } from "../const/env-keys.const";
+import { RATE_LIMIT_METADATA } from "../const/envKeys.const";
 
 export interface RateLimitOptions {
 	ttl?: number; // in ms

@@ -1,8 +1,8 @@
 import { ExecutionContext, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { RATE_LIMIT_METADATA } from "../const/env-keys.const";
-import { ServiceException } from "../filter/exception/service/service-exception";
-import { RateLimitService } from "./rate-limit.service.js";
+import { RATE_LIMIT_METADATA } from "../const/envKeys.const";
+import { ServiceException } from "../filter/exception/service/serviceException";
+import { RateLimitService } from "./rateLimit.service.js";
 
 export interface RateLimitOptions {
 	ttl?: number;

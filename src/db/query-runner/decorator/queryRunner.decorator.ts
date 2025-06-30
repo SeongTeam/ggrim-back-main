@@ -1,6 +1,6 @@
 import { ExecutionContext, createParamDecorator } from "@nestjs/common";
 import { QueryRunner } from "typeorm";
-import { ServiceException } from "../../../_common/filter/exception/service/service-exception";
+import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
 
 export const DBQueryRunner = createParamDecorator(
 	(data, context: ExecutionContext): QueryRunner => {

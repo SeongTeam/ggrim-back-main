@@ -8,7 +8,7 @@ import {
 	PrimaryGeneratedColumn,
 } from "typeorm";
 import { Artist } from "../../artist/entities/artist.entity";
-import { CustomBaseEntity } from "../../db/entity/custom.base.entity";
+import { CustomBaseEntity } from "../../db/entity/customBase.entity";
 import { Painting } from "../../painting/entities/painting.entity";
 import { Style } from "../../style/entities/style.entity";
 import { Tag } from "../../tag/entities/tag.entity";

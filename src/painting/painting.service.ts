@@ -3,11 +3,11 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { existsSync } from "fs";
 import { Brackets, QueryRunner, Repository } from "typeorm";
 import { CONFIG_FILE_PATH } from "../_common/const/default.value";
-import { ServiceException } from "../_common/filter/exception/service/service-exception";
+import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { IPaginationResult } from "../_common/interface";
 import { ArtistService } from "../artist/artist.service";
 import { Artist } from "../artist/entities/artist.entity";
-import { createTransactionQueryBuilder } from "../db/query-runner/query-Runner.lib";
+import { createTransactionQueryBuilder } from "../db/query-runner/queryRunner.lib";
 import { Style } from "../style/entities/style.entity";
 import { StyleService } from "../style/style.service";
 import { Tag } from "../tag/entities/tag.entity";
@@ -15,12 +15,12 @@ import { TagService } from "../tag/tag.service";
 import { getLatestMonday } from "../utils/date";
 import { loadObjectFromJSON } from "../utils/json";
 import { isArrayEmpty, isFalsy, isNotFalsy } from "../utils/validator";
-import { CreatePaintingDTO } from "./dto/request/create-painting.dto";
-import { WeeklyArtWorkSet } from "./dto/response/weekly-art.dto";
-import { ReplacePaintingDTO } from "./dto/request/replace-painting.dto";
-import { SearchPaintingDTO } from "./dto/request/search-painting.dto";
+import { CreatePaintingDTO } from "./dto/request/createPainting.dto";
+import { WeeklyArtWorkSet } from "./dto/response/weeklyArt.dto";
+import { ReplacePaintingDTO } from "./dto/request/replacePainting.dto";
+import { SearchPaintingDTO } from "./dto/request/searchPainting.dto";
 import { Painting } from "./entities/painting.entity";
-import { ShortPainting } from "./interface/short-painting";
+import { ShortPainting } from "./interface/shortPainting";
 
 @Injectable()
 export class PaintingService {

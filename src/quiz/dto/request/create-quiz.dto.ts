@@ -1,5 +1,5 @@
 import { ArrayNotEmpty, IsArray, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
-import { IsInArray } from "../../../utils/class-validator";
+import { IsInArray } from "../../../utils/classValidator";
 import { TYPE_VALUES } from "../../const";
 import { QUIZ_TYPE } from "../../type";
 

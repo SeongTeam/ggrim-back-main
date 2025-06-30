@@ -2,10 +2,10 @@ import { TypeOrmCrudService } from "@dataui/crud-typeorm";
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { InsertResult, Repository } from "typeorm";
-import { ServiceException } from "../_common/filter/exception/service/service-exception";
+import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { Batch } from "../utils/batch";
 import { isArrayEmpty } from "../utils/validator";
-import { CreateTagDTO } from "./dto/request/create-tag.dto";
+import { CreateTagDTO } from "./dto/request/createTag.dto";
 import { Tag } from "./entities/tag.entity";
 
 interface UpdateRequest<T, R> {

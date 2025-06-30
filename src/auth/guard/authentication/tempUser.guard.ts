@@ -8,13 +8,13 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { isEmpty, isUUID } from "class-validator";
-import { ServiceException } from "../../../_common/filter/exception/service/service-exception";
+import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
 import { User } from "../../../user/entity/user.entity";
 import { UserService } from "../../../user/user.service";
 import { AuthService, JWTDecode } from "../../auth.service";
-import { PURPOSE_ONE_TIME_TOKEN_KEY } from "../../decorator/purpose-one-time-token";
-import { OneTimeTokenPurpose } from "../../entity/one-time-token.entity";
-import { ENUM_AUTH_CONTEXT_KEY, TempUserPayload } from "../type/request-payload";
+import { PURPOSE_ONE_TIME_TOKEN_KEY } from "../../decorator/purposeOneTimeToken";
+import { OneTimeTokenPurpose } from "../../entity/oneTimeToken.entity";
+import { ENUM_AUTH_CONTEXT_KEY, TempUserPayload } from "../type/requestPayload";
 
 const ENUM_ONE_TIME_TOKEN_HEADER = {
 	X_ONE_TIME_TOKEN_ID: `x-one-time-token-identifier`,

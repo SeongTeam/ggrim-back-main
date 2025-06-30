@@ -1,6 +1,6 @@
 import { Controller, Get, UseGuards } from "@nestjs/common";
-import { RateLimit } from "./rate-limit.decorator";
-import { RateLimitGuard } from "./rate-limit.guard";
+import { RateLimit } from "./rateLimit.decorator";
+import { RateLimitGuard } from "./rateLimit.guard";
 
 @Controller("test-rate-limit")
 @UseGuards(RateLimitGuard)

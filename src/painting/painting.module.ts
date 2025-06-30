@@ -7,7 +7,7 @@ import { StyleModule } from "../style/style.module";
 import { StyleService } from "../style/style.service";
 import { TagModule } from "../tag/tag.modue";
 import { Painting } from "./entities/painting.entity";
-import { WikiArtPainting } from "./entities/wikiArt-painting.entity";
+import { WikiArtPainting } from "./entities/wikiArtPainting.entity";
 import { PaintingController } from "./painting.controller";
 import { PaintingService } from "./painting.service";
 import { WikiArtPaintingService } from "./sub-service/wikiArt.painting.service";

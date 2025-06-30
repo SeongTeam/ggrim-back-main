@@ -1,4 +1,4 @@
-import { ServiceException } from "../_common/filter/exception/service/service-exception";
+import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { isNotFalsy } from "./validator";
 
 export function extractValues<T>(obj: T, key: keyof T): any[] {

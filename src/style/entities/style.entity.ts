@@ -1,5 +1,5 @@
 import { Column, Entity, ManyToMany, PrimaryGeneratedColumn, Unique } from "typeorm";
-import { CustomBaseEntity } from "../../db/entity/custom.base.entity";
+import { CustomBaseEntity } from "../../db/entity/customBase.entity";
 import { Painting } from "../../painting/entities/painting.entity";
 
 @Entity()

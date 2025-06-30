@@ -1,4 +1,4 @@
-import { IsInArray } from "../../../utils/class-validator";
+import { IsInArray } from "../../../utils/classValidator";
 import { UserRole } from "../../entity/user.entity";
 
 export class ReplaceRoleDTO {

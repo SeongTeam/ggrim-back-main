@@ -19,34 +19,34 @@ import { QueryRunner } from "typeorm";
 import {
 	ENV_EMAIL_TEST_ADDRESS,
 	FRONT_ROUTE_USER_EMAIL_VERIFICATION,
-} from "../_common/const/env-keys.const";
-import { ServiceException } from "../_common/filter/exception/service/service-exception";
-import { DBQueryRunner } from "../db/query-runner/decorator/query-runner.decorator";
-import { QueryRunnerInterceptor } from "../db/query-runner/query-runner.interceptor";
+} from "../_common/const/envKeys.const";
+import { ServiceException } from "../_common/filter/exception/service/serviceException";
+import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner.decorator";
+import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
 import { MailService } from "../mail/mail.service";
 import { User } from "../user/entity/user.entity";
 import { UserService } from "../user/user.service";
 import { isArrayEmpty } from "../utils/validator";
 import { AuthService } from "./auth.service";
 import { CheckOwner } from "./decorator/owner";
-import { PurposeOneTimeToken } from "./decorator/purpose-one-time-token";
-import { SecurityTokenGuardOptions } from "./decorator/security-token.guard.options";
-import { CreateOneTimeTokenDTO } from "./dto/request/create-one-time-token.dto";
-import { requestVerificationDTO } from "./dto/request/request-verification.dto";
-import { SignInResponse } from "./dto/response/sign-in.response.dto";
-import { SendOneTimeTokenDTO } from "./dto/request/send-one-time-token.dto";
+import { PurposeOneTimeToken } from "./decorator/purposeOneTimeToken";
+import { SecurityTokenGuardOptions } from "./decorator/securityTokenGuardOption";
+import { CreateOneTimeTokenDTO } from "./dto/request/createOneTimeToken.dto";
+import { requestVerificationDTO } from "./dto/request/requestVerification.dto";
+import { SignInResponse } from "./dto/response/signInResponse.dto";
+import { SendOneTimeTokenDTO } from "./dto/request/sendOneTimeToken.dto";
 import { VerifyDTO } from "./dto/request/verify.dto";
-import { OneTimeToken, OneTimeTokenPurpose } from "./entity/one-time-token.entity";
+import { OneTimeToken, OneTimeTokenPurpose } from "./entity/oneTimeToken.entity";
 import { Verification } from "./entity/verification.entity";
 import { BasicGuard } from "./guard/authentication/basic.guard";
-import { SecurityTokenGuard } from "./guard/authentication/security-token.guard";
-import { TokenAuthGuard } from "./guard/authentication/token-auth.guard";
+import { SecurityTokenGuard } from "./guard/authentication/securityToken.guard";
+import { TokenAuthGuard } from "./guard/authentication/tokenAuth.guard";
 import { OwnerGuard } from "./guard/authorization/owner.guard";
 import {
 	AuthUserPayload,
 	ENUM_AUTH_CONTEXT_KEY,
 	SecurityTokenPayload,
-} from "./guard/type/request-payload";
+} from "./guard/type/requestPayload";
 
 @Controller("auth")
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))

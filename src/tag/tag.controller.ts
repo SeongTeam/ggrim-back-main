@@ -1,11 +1,11 @@
 import { Crud, CrudController, CrudRequest, Override, ParsedRequest } from "@dataui/crud";
 import { Body, Controller, Post, Put, UseGuards, UsePipes, ValidationPipe } from "@nestjs/common";
-import { ServiceException } from "../_common/filter/exception/service/service-exception";
-import { TokenAuthGuard } from "../auth/guard/authentication/token-auth.guard";
+import { ServiceException } from "../_common/filter/exception/service/serviceException";
+import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
 import { RolesGuard } from "../auth/guard/authorization/roles.guard";
 import { Roles } from "../user/decorator/role";
-import { CreateTagDTO } from "./dto/request/create-tag.dto";
-import { ReplaceTagDTO } from "./dto/request/replace-tag.dto";
+import { CreateTagDTO } from "./dto/request/createTag.dto";
+import { ReplaceTagDTO } from "./dto/request/replaceTag.dto";
 import { Tag } from "./entities/tag.entity";
 import { TagService } from "./tag.service";
 const EXCLUDED_COLUMN = ["created_date", "updated_date", "deleted_date", "version"] as const;

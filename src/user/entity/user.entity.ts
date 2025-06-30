@@ -1,7 +1,7 @@
 import { Exclude } from "class-transformer";
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm";
-import { OneTimeToken } from "../../auth/entity/one-time-token.entity";
-import { CustomBaseEntity } from "../../db/entity/custom.base.entity";
+import { OneTimeToken } from "../../auth/entity/oneTimeToken.entity";
+import { CustomBaseEntity } from "../../db/entity/customBase.entity";
 import { Quiz } from "../../quiz/entities/quiz.entity";
 
 export type UserRole = "admin" | "user";

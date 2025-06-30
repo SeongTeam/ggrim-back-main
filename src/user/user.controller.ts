@@ -18,14 +18,14 @@ import {
 } from "@nestjs/common";
 import { isEmail, isEmpty, isNotEmpty } from "class-validator";
 import { QueryRunner } from "typeorm";
-import { ServiceException } from "../_common/filter/exception/service/service-exception";
+import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { AuthService } from "../auth/auth.service";
 import { CheckOwner } from "../auth/decorator/owner";
-import { PurposeOneTimeToken } from "../auth/decorator/purpose-one-time-token";
-import { SecurityTokenGuardOptions } from "../auth/decorator/security-token.guard.options";
-import { SecurityTokenGuard } from "../auth/guard/authentication/security-token.guard";
-import { TempUserGuard } from "../auth/guard/authentication/temp-user.guard";
-import { TokenAuthGuard } from "../auth/guard/authentication/token-auth.guard";
+import { PurposeOneTimeToken } from "../auth/decorator/purposeOneTimeToken";
+import { SecurityTokenGuardOptions } from "../auth/decorator/securityTokenGuardOption";
+import { SecurityTokenGuard } from "../auth/guard/authentication/securityToken.guard";
+import { TempUserGuard } from "../auth/guard/authentication/tempUser.guard";
+import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
 import { OwnerGuard } from "../auth/guard/authorization/owner.guard";
 import { RolesGuard } from "../auth/guard/authorization/roles.guard";
 import {
@@ -33,14 +33,14 @@ import {
 	ENUM_AUTH_CONTEXT_KEY,
 	SecurityTokenPayload,
 	TempUserPayload,
-} from "../auth/guard/type/request-payload";
-import { DBQueryRunner } from "../db/query-runner/decorator/query-runner.decorator";
-import { QueryRunnerInterceptor } from "../db/query-runner/query-runner.interceptor";
+} from "../auth/guard/type/requestPayload";
+import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner.decorator";
+import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
 import { Roles } from "./decorator/role";
-import { CreateUserDTO } from "./dto/request/create-user.dto";
-import { ReplacePassWordDTO } from "./dto/request/replace-pw.dto";
-import { ReplaceRoleDTO } from "./dto/request/replace-role.dto";
-import { ReplaceUsernameDTO } from "./dto/request/replace-username.dto";
+import { CreateUserDTO } from "./dto/request/createUser.dto";
+import { ReplacePassWordDTO } from "./dto/request/replacePw.dto";
+import { ReplaceRoleDTO } from "./dto/request/replaceRole.dto";
+import { ReplaceUsernameDTO } from "./dto/request/replaceUsername.dto";
 import { User } from "./entity/user.entity";
 import { UserService } from "./user.service";
 

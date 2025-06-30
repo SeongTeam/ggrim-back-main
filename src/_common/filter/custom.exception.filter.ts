@@ -2,7 +2,7 @@ import { ArgumentsHost, ExceptionFilter, HttpStatus, Inject } from "@nestjs/comm
 import { Request, Response } from "express";
 import { TypeORMError } from "typeorm";
 import { LoggerService } from "../../Logger/logger.service";
-import { BaseException } from "./exception/base.exception";
+import { BaseException } from "./exception/baseException";
 
 interface CauseInfo {
 	innerError: unknown;

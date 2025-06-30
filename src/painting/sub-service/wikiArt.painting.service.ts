@@ -2,9 +2,9 @@ import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { isArray } from "class-validator";
 import { Repository } from "typeorm";
-import { ServiceException } from "../../_common/filter/exception/service/service-exception";
+import { ServiceException } from "../../_common/filter/exception/service/serviceException";
 import { isNotFalsy, isStringArray } from "../../utils/validator";
-import { WikiArtPainting } from "../entities/wikiArt-painting.entity";
+import { WikiArtPainting } from "../entities/wikiArtPainting.entity";
 
 export type WikiArtPaintingColumnType = WikiArtPainting[keyof WikiArtPainting];
 @Injectable()

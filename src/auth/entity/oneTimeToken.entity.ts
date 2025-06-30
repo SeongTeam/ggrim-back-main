@@ -1,6 +1,6 @@
 import { Exclude } from "class-transformer";
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { CustomBaseEntity } from "../../db/entity/custom.base.entity";
+import { CustomBaseEntity } from "../../db/entity/customBase.entity";
 import { User } from "../../user/entity/user.entity";
 
 export const OneTimeTokenPurposeValues = {

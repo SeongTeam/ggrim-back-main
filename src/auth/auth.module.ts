@@ -5,12 +5,12 @@ import { MailModule } from "../mail/mail.module";
 import { UserModule } from "../user/user.module";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
-import { OneTimeToken } from "./entity/one-time-token.entity";
+import { OneTimeToken } from "./entity/oneTimeToken.entity";
 import { Verification } from "./entity/verification.entity";
 import { BasicGuard } from "./guard/authentication/basic.guard";
-import { SecurityTokenGuard } from "./guard/authentication/security-token.guard";
-import { TempUserGuard } from "./guard/authentication/temp-user.guard";
-import { TokenAuthGuard } from "./guard/authentication/token-auth.guard";
+import { SecurityTokenGuard } from "./guard/authentication/securityToken.guard";
+import { TempUserGuard } from "./guard/authentication/tempUser.guard";
+import { TokenAuthGuard } from "./guard/authentication/tokenAuth.guard";
 import { OwnerGuard } from "./guard/authorization/owner.guard";
 import { RolesGuard } from "./guard/authorization/roles.guard";
 

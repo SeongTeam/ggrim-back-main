@@ -12,11 +12,7 @@ import * as crypto from "crypto";
 
 import { InjectRepository } from "@nestjs/typeorm";
 import { isEmpty } from "class-validator";
-import {
-	ENV_HASH_ROUNDS_KEY,
-	ENV_JWT_SECRET_KEY,
-	NODE_ENV,
-} from "src/_common/const/env-keys.const";
+import { ENV_HASH_ROUNDS_KEY, ENV_JWT_SECRET_KEY, NODE_ENV } from "src/_common/const/envKeys.const";
 import {
 	DeepPartial,
 	FindManyOptions,
@@ -25,10 +21,10 @@ import {
 	QueryRunner,
 	Repository,
 } from "typeorm";
-import { ServiceException } from "../_common/filter/exception/service/service-exception";
-import { createTransactionQueryBuilder } from "../db/query-runner/query-Runner.lib";
+import { ServiceException } from "../_common/filter/exception/service/serviceException";
+import { createTransactionQueryBuilder } from "../db/query-runner/queryRunner.lib";
 import { User, UserRole } from "../user/entity/user.entity";
-import { OneTimeToken, OneTimeTokenPurpose } from "./entity/one-time-token.entity";
+import { OneTimeToken, OneTimeTokenPurpose } from "./entity/oneTimeToken.entity";
 import { Verification } from "./entity/verification.entity";
 
 export type TokenType = "REFRESH" | "ACCESS" | "ONE_TIME";
