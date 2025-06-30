@@ -9,7 +9,7 @@ import {
 import { UserService } from "../../../user/user.service";
 import { AuthService, JWTDecode } from "../../auth.service";
 import { AccessTokenPayload, AuthUserPayload, AUTH_GUARD_PAYLOAD } from "../type/requestPayload";
-import { AuthenticatedRequest } from "../type/AuthRequest";
+import { AuthGuardRequest } from "../type/AuthRequest";
 
 const ENUM_HEADER_FIELD = {
 	AUTHORIZATION: "authorization",
@@ -24,7 +24,7 @@ export class TokenAuthGuard implements CanActivate {
 	) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
-		const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
+		const req = context.switchToHttp().getRequest<AuthGuardRequest>();
 
 		const authHeader = req.headers[ENUM_HEADER_FIELD.AUTHORIZATION] as string;
 

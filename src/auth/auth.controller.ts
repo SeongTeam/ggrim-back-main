@@ -46,7 +46,7 @@ import {
 	AUTH_GUARD_PAYLOAD,
 	SecurityTokenPayload,
 } from "./guard/type/requestPayload";
-import { AuthenticatedRequest } from "./guard/type/AuthRequest";
+import { AuthGuardRequest } from "./guard/type/AuthRequest";
 
 @Controller("auth")
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -64,7 +64,7 @@ export class AuthController {
 
 	@Post("sign-in")
 	@UseGuards(BasicGuard)
-	signin(@Req() request: AuthenticatedRequest) {
+	signin(@Req() request: AuthGuardRequest) {
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = userPayload;
 		const { email, role, username } = user;
@@ -201,7 +201,7 @@ export class AuthController {
 	@UseInterceptors(QueryRunnerInterceptor)
 	async generateSecurityActionToken(
 		@DBQueryRunner() qr: QueryRunner,
-		@Req() request: AuthenticatedRequest,
+		@Req() request: AuthGuardRequest,
 		@Body() dto: CreateOneTimeTokenDTO,
 	): Promise<OneTimeToken> {
 		const { purpose } = dto;
@@ -265,7 +265,7 @@ export class AuthController {
 	@UseGuards(SecurityTokenGuard)
 	async generateSecurityTokenByEmailVerification(
 		@DBQueryRunner() qr: QueryRunner,
-		@Req() request: AuthenticatedRequest,
+		@Req() request: AuthGuardRequest,
 		@Body() dto: CreateOneTimeTokenDTO,
 	): Promise<OneTimeToken> {
 		const { purpose } = dto;
@@ -298,7 +298,7 @@ export class AuthController {
 	@UseInterceptors(QueryRunnerInterceptor)
 	async testSecurityTokenGuard(
 		@DBQueryRunner() qr: QueryRunner,
-		@Req() request: AuthenticatedRequest,
+		@Req() request: AuthGuardRequest,
 	) {
 		const SecurityTokenGuardResult: SecurityTokenPayload =
 			request[AUTH_GUARD_PAYLOAD.SECURITY_TOKEN]!;

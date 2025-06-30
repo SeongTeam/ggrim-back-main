@@ -7,7 +7,7 @@ import {
 } from "./requestPayload";
 import { Request } from "express";
 
-export interface AuthenticatedRequest extends Request {
+export interface AuthGuardRequest extends Request {
 	[AUTH_GUARD_PAYLOAD.USER]?: AuthUserPayload; // 또는 any
 	[AUTH_GUARD_PAYLOAD.SECURITY_TOKEN]?: SecurityTokenPayload; // 또는 any
 	[AUTH_GUARD_PAYLOAD.ACCESS_TOKEN]?: AccessTokenPayload; // 또는 any

@@ -23,7 +23,7 @@ import {
 	AUTH_GUARD_PAYLOAD,
 	SecurityTokenPayload,
 } from "../type/requestPayload";
-import { AuthenticatedRequest } from "../type/AuthRequest";
+import { AuthGuardRequest } from "../type/AuthRequest";
 
 const ENUM_SECURITY_TOKEN_HEADER = {
 	X_SECURITY_TOKEN_ID: `x-security-token-identifier`,
@@ -48,7 +48,7 @@ export class SecurityTokenGuard implements CanActivate {
 	) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
-		const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
+		const req = context.switchToHttp().getRequest<AuthGuardRequest>();
 
 		const securityToken = req.headers[ENUM_SECURITY_TOKEN_HEADER.X_SECURITY_TOKEN] as string;
 		const securityTokenID = req.headers[
