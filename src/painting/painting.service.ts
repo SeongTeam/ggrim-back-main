@@ -16,7 +16,7 @@ import { getLatestMonday } from "../utils/date";
 import { loadObjectFromJSON } from "../utils/json";
 import { isArrayEmpty, isFalsy, isNotFalsy } from "../utils/validator";
 import { CreatePaintingDTO } from "./dto/request/createPaintingDTO";
-import { WeeklyArtWorkSet } from "./interface/weeklyArt.dto";
+import { WeeklyArtWorkSet } from "./interface/weeklyArtWorkSet";
 import { ReplacePaintingDTO } from "./dto/request/replacePaintingDTO";
 import { SearchPaintingDTO } from "./dto/request/searchPaintingDTO";
 import { Painting } from "./entities/painting.entity";
