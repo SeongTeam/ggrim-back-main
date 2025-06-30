@@ -105,10 +105,10 @@ export class AuthService {
 
 	verifyToken(token: string): JWTDecode {
 		try {
-			const decoded = this.jwtService.verify(token, {
+			const decoded = this.jwtService.verify<JWTDecode>(token, {
 				secret: this.configService.get<string>(ENV_JWT_SECRET_KEY),
 			});
-			return decoded as JWTDecode;
+			return decoded;
 		} catch (e: unknown) {
 			if (e instanceof Error && e.name) {
 				throw new HttpException(e.name, HttpStatus["BAD_REQUEST"], { cause: e });
@@ -154,7 +154,7 @@ export class AuthService {
 				break;
 			}
 			default:
-				throw new Error(`Unknown token type: ${payload.type}`);
+				throw new Error(`Unknown token type: ${JSON.stringify(payload.type)}`);
 		}
 
 		const newToken: string = this.jwtService.sign(payload, {
@@ -250,7 +250,7 @@ export class AuthService {
 		dto: DeepPartial<Verification>,
 	): Promise<void> {
 		try {
-			const result = await createTransactionQueryBuilder(queryRunner, Verification)
+			await createTransactionQueryBuilder(queryRunner, Verification)
 				.update(Verification)
 				.set({
 					...dto,
@@ -433,7 +433,7 @@ export class AuthService {
 		// ];
 
 		try {
-			const result = await createTransactionQueryBuilder(queryRunner, OneTimeToken)
+			await createTransactionQueryBuilder(queryRunner, OneTimeToken)
 				.update(OneTimeToken)
 				.set({
 					...dto,
