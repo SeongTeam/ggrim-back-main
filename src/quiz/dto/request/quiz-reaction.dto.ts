@@ -1,5 +1,5 @@
 import { IsString } from "class-validator";
-import { IsInArray } from "../../utils/class-validator";
+import { IsInArray } from "../../../utils/class-validator";
 
 export const QuizReactionTypeValues = {
 	LIKE: "like",

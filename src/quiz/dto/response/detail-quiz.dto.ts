@@ -3,7 +3,7 @@ import { plainToInstance } from "class-transformer";
 import { ShortUser } from "../../../user/interface/short-user";
 import { Quiz } from "../../entities/quiz.entity";
 import { QuizReactionCount } from "../../interface/reaction-count";
-import { QuizReactionType } from "../quiz-reaction.dto";
+import { QuizReactionType } from "../request/quiz-reaction.dto";
 
 export class DetailQuizDTO {
 	quiz!: ShowQuiz;

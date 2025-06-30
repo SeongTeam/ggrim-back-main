@@ -10,8 +10,8 @@ import { Controller, UseGuards, UsePipes, ValidationPipe } from "@nestjs/common"
 import { TokenAuthGuard } from "../auth/guard/authentication/token-auth.guard";
 import { RolesGuard } from "../auth/guard/authorization/roles.guard";
 import { Roles } from "../user/decorator/role";
-import { CreateStyleDTO } from "./dto/create-style.dto";
-import { ReplaceStyleDTO } from "./dto/replace-style.dto";
+import { CreateStyleDTO } from "./dto/request/create-style.dto";
+import { ReplaceStyleDTO } from "./dto/request/replace-style.dto";
 import { Style } from "./entities/style.entity";
 import { StyleService } from "./style.service";
 const EXCLUDED_COLUMN = ["created_date", "updated_date", "deleted_date", "version"] as const;

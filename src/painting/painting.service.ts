@@ -15,10 +15,10 @@ import { TagService } from "../tag/tag.service";
 import { getLatestMonday } from "../utils/date";
 import { loadObjectFromJSON } from "../utils/json";
 import { isArrayEmpty, isFalsy, isNotFalsy } from "../utils/validator";
-import { CreatePaintingDTO } from "./dto/create-painting.dto";
-import { WeeklyArtWorkSet } from "./dto/output/weekly-art.dto";
-import { ReplacePaintingDTO } from "./dto/replace-painting.dto";
-import { SearchPaintingDTO } from "./dto/search-painting.dto";
+import { CreatePaintingDTO } from "./dto/request/create-painting.dto";
+import { WeeklyArtWorkSet } from "./dto/response/weekly-art.dto";
+import { ReplacePaintingDTO } from "./dto/request/replace-painting.dto";
+import { SearchPaintingDTO } from "./dto/request/search-painting.dto";
 import { Painting } from "./entities/painting.entity";
 import { ShortPainting } from "./interface/short-painting";
 

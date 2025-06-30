@@ -1,5 +1,5 @@
-import { Painting } from "../../painting/entities/painting.entity";
-import { QuizCategory } from "../type";
+import { Painting } from "../../../painting/entities/painting.entity";
+import { QuizCategory } from "../../type";
 
 export class QuizDTO {
 	distractorPaintings: Painting[];

@@ -5,7 +5,7 @@ import { InsertResult, Repository } from "typeorm";
 import { ServiceException } from "../_common/filter/exception/service/service-exception";
 import { Batch } from "../utils/batch";
 import { isArrayEmpty } from "../utils/validator";
-import { CreateTagDTO } from "./dto/create-tag.dto";
+import { CreateTagDTO } from "./dto/request/create-tag.dto";
 import { Tag } from "./entities/tag.entity";
 
 interface UpdateRequest<T, R> {

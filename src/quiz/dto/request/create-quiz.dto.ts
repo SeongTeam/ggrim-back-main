@@ -1,7 +1,7 @@
 import { ArrayNotEmpty, IsArray, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
-import { IsInArray } from "../../utils/class-validator";
-import { TYPE_VALUES } from "../const";
-import { QUIZ_TYPE } from "../type";
+import { IsInArray } from "../../../utils/class-validator";
+import { TYPE_VALUES } from "../../const";
+import { QUIZ_TYPE } from "../../type";
 
 export class CreateQuizDTO {
 	/*TODO
