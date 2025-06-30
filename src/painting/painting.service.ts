@@ -35,8 +35,6 @@ export class PaintingService {
 	// [ ] : returning() 메소드를 사용하여 생성 후 반환되는 열들의 값 명시하기
 	//  -> insertResult.generateMaps[0]은 직접삽입한 값은 포함되지 않기 때문에 returning() 적용필요.
 	async create(queryRunner: QueryRunner, dto: CreatePaintingDTO): Promise<Painting> {
-		let artist: Artist | undefined = undefined;
-
 		const query = createTransactionQueryBuilder(queryRunner, Painting)
 			.insert()
 			.into(Painting)
@@ -50,7 +48,7 @@ export class PaintingService {
 					height: dto.height,
 					completition_year: dto.completition_year,
 					image_s3_key: dto.image_s3_key,
-					artist,
+					artist: undefined,
 				},
 			]);
 
@@ -96,7 +94,7 @@ export class PaintingService {
 			.where("painting.id = :paintingId", { paintingId: painting.id });
 
 		Logger.debug(`[PaintingService][replace] ${query.getSql()}`);
-		const result = await query.execute();
+		await query.execute();
 
 		if (painting.artist && painting.artist.name !== dto.artistName) {
 			await this.setArtist(queryRunner, painting, dto.artistName);
@@ -140,7 +138,7 @@ export class PaintingService {
     */
 		// const selectColumns: (keyof Painting)[] = ['id', 'image_url', 'height', 'width'];
 		const paintingAlias = "p";
-		const queryBuilder = await this.repo.createQueryBuilder(paintingAlias);
+		const queryBuilder = this.repo.createQueryBuilder(paintingAlias);
 
 		queryBuilder.where(`p.searchTitle like '%' || :searchTitle|| '%'`, {
 			searchTitle: dto.title.trim().split(/\s+/).join("_").toUpperCase(),
@@ -159,7 +157,7 @@ export class PaintingService {
 		}
 
 		if (!isArrayEmpty(dto.tags)) {
-			const subQueryFilterByTag = await this.repo
+			const subQueryFilterByTag = this.repo
 				.createQueryBuilder()
 				.subQuery()
 				.select("painting_tags.paintingId")
@@ -181,7 +179,7 @@ export class PaintingService {
 		}
 
 		if (!isArrayEmpty(dto.styles)) {
-			const subQueryFilterByStyle = await this.repo
+			const subQueryFilterByStyle = this.repo
 				.createQueryBuilder()
 				.subQuery()
 				.select("painting_styles.paintingId")
@@ -332,9 +330,9 @@ export class PaintingService {
 		return map;
 	}
 
-	async validateColumnValue(column: keyof Painting, value: any) {
+	async validateColumnValue(column: keyof Painting, value: string) {
 		if (column === "artist") {
-			this.artistService.validateName(value);
+			await this.artistService.validateName(value);
 		}
 	}
 

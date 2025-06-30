@@ -141,18 +141,6 @@ export class PaintingController {
 
 		return ret;
 	}
-
-	@Get("values/:columnName")
-	async getColumnValues(@Param("columnName") columnName: string) {
-		/*TODO
-    - columnName 검증 pipe 데코레이터 구현 필요
-      - PaintingTable 내에 존재하는 column 이름인지 확인 필요
-    */
-		const map = await this.service.getColumnValueMap(columnName as keyof Painting);
-
-		return [...map.values()];
-	}
-
 	@Post()
 	@UseInterceptors(QueryRunnerInterceptor)
 	async createPainting(

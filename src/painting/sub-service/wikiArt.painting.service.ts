@@ -31,11 +31,11 @@ export class WikiArtPaintingService {
 	}
 
 	private async loadColumnValues(columnName: keyof WikiArtPainting) {
-		const rows = await this.repo.query(`SELECT DISTINCT "${columnName}"
+		const rows = (await this.repo.query(`SELECT DISTINCT "${columnName}"
         FROM ${this.TABLE_NAME}
-        ORDER BY "${columnName}" ASC`);
+        ORDER BY "${columnName}" ASC`)) as Pick<WikiArtPainting, typeof columnName>[];
 
-		return rows as Pick<WikiArtPainting, typeof columnName>[];
+		return rows;
 	}
 
 	private async saveArrayColumnValues(columnName: keyof WikiArtPainting) {
