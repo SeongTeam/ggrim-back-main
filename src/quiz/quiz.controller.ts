@@ -32,7 +32,7 @@ import {
 } from "../_common/const/envKeys.const";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { ArtistService } from "../artist/artist.service";
-import { CheckOwner } from "../auth/decorator/owner";
+import { CheckOwner } from "../auth/metadata/owner";
 import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
 import { OwnerGuard } from "../auth/guard/authorization/owner.guard";
 import { AuthUserPayload, ENUM_AUTH_CONTEXT_KEY } from "../auth/guard/type/requestPayload";

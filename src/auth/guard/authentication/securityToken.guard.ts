@@ -11,11 +11,11 @@ import { isEmpty, isUUID } from "class-validator";
 import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
 import { UserService } from "../../../user/user.service";
 import { AuthService, JWTDecode } from "../../auth.service";
-import { PURPOSE_ONE_TIME_TOKEN_KEY } from "../../decorator/purposeOneTimeToken";
+import { PURPOSE_ONE_TIME_TOKEN_KEY } from "../../metadata/purposeOneTimeToken";
 import {
 	SECURITY_TOKEN_GUARD_OPTIONS,
 	SecurityTokenGuardOptions,
-} from "../../decorator/securityTokenGuardOption";
+} from "../../metadata/securityTokenGuardOption";
 import { OneTimeTokenPurpose } from "../../entity/oneTimeToken.entity";
 import {
 	AccessTokenPayload,

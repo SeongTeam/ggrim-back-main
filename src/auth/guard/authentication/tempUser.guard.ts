@@ -12,7 +12,7 @@ import { ServiceException } from "../../../_common/filter/exception/service/serv
 import { User } from "../../../user/entity/user.entity";
 import { UserService } from "../../../user/user.service";
 import { AuthService, JWTDecode } from "../../auth.service";
-import { PURPOSE_ONE_TIME_TOKEN_KEY } from "../../decorator/purposeOneTimeToken";
+import { PURPOSE_ONE_TIME_TOKEN_KEY } from "../../metadata/purposeOneTimeToken";
 import { OneTimeTokenPurpose } from "../../entity/oneTimeToken.entity";
 import { ENUM_AUTH_CONTEXT_KEY, TempUserPayload } from "../type/requestPayload";
 

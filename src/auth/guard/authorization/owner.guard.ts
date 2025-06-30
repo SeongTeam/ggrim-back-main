@@ -1,8 +1,8 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { ModuleRef, Reflector } from "@nestjs/core";
 import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
-import { ADMIN_ACCESS_KEY } from "../../decorator/adminAccess";
-import { CHECK_OWNER_KEY, CheckOwnerOption } from "../../decorator/owner";
+import { ADMIN_ACCESS_KEY } from "../../metadata/adminAccess";
+import { CHECK_OWNER_KEY, CheckOwnerOption } from "../../metadata/owner";
 import { AuthUserPayload, ENUM_AUTH_CONTEXT_KEY } from "../type/requestPayload";
 
 // TODO: OwnerGuard 기능 개선
