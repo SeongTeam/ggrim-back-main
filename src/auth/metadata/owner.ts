@@ -3,8 +3,10 @@ import { SetMetadata } from "@nestjs/common";
 
 export const CHECK_OWNER_KEY = "checkOwner";
 
+type ServiceClassType = new (...args: any[]) => any;
+
 export interface CheckOwnerOption {
-	serviceClass: any;
+	serviceClass: ServiceClassType;
 	idParam: string;
 	ownerField: string;
 	serviceMethod: string;

@@ -3,7 +3,8 @@ import { ModuleRef, Reflector } from "@nestjs/core";
 import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
 import { ADMIN_ACCESS_KEY } from "../../metadata/adminAccess";
 import { CHECK_OWNER_KEY, CheckOwnerOption } from "../../metadata/owner";
-import { AuthUserPayload, AUTH_GUARD_PAYLOAD } from "../type/requestPayload";
+import { AUTH_GUARD_PAYLOAD } from "../type/requestPayload";
+import { AuthGuardRequest } from "../type/AuthRequest";
 
 // TODO: OwnerGuard 기능 개선
 // - [x] User Role = admin 일때, 통과시키기
@@ -20,10 +21,9 @@ export class OwnerGuard implements CanActivate {
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const options = this.reflector.get<CheckOwnerOption>(CHECK_OWNER_KEY, context.getHandler());
 
-		const isAdminAccess: any = this.reflector.get<any>(ADMIN_ACCESS_KEY, context.getHandler());
-		const request = context.switchToHttp().getRequest();
-		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER];
-		const { user } = userPayload;
+		const isAdminAccess = this.reflector.get<boolean>(ADMIN_ACCESS_KEY, context.getHandler());
+		const request = context.switchToHttp().getRequest<AuthGuardRequest>();
+		const userPayload = request[AUTH_GUARD_PAYLOAD.USER];
 
 		if (!userPayload) {
 			throw new ServiceException(
@@ -32,6 +32,7 @@ export class OwnerGuard implements CanActivate {
 				`${AUTH_GUARD_PAYLOAD.USER} field should exist`,
 			);
 		}
+		const { user } = userPayload;
 
 		if (isAdminAccess && user.role === "admin") {
 			return true;
@@ -48,9 +49,10 @@ export class OwnerGuard implements CanActivate {
 		const { serviceClass, idParam, ownerField, serviceMethod } = options;
 
 		const resourceId = request.params[idParam];
-
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const serviceInstance = this.moduleRef.get(serviceClass, { strict: false });
 
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 		if (!serviceInstance || typeof serviceInstance[serviceMethod] !== "function") {
 			throw new ServiceException(
 				`SERVICE_RUN_ERROR`,
@@ -59,6 +61,7 @@ export class OwnerGuard implements CanActivate {
 			);
 		}
 
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
 		const resource = await serviceInstance[serviceMethod](resourceId);
 		if (!resource) {
 			throw new ServiceException(
@@ -68,6 +71,7 @@ export class OwnerGuard implements CanActivate {
 			);
 		}
 
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 		if (resource[ownerField] !== user.id) {
 			throw new ServiceException(
 				`ENTITY_NOT_FOUND`,
