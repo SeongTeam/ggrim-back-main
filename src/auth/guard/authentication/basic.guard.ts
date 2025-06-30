@@ -11,6 +11,7 @@ import { UserService } from "../../../user/user.service";
 import { AuthService } from "../../auth.service";
 import { BasicTokenGuardDTO } from "../dto/basicAuthGuard.dto";
 import { AuthUserPayload, AUTH_GUARD_PAYLOAD } from "../type/requestPayload";
+import { AuthenticatedRequest } from "../type/AuthRequest";
 
 @Injectable()
 export class BasicGuard implements CanActivate {
@@ -20,7 +21,7 @@ export class BasicGuard implements CanActivate {
 	) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
-		const req = context.switchToHttp().getRequest();
+		const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
 
 		const header = req.headers["authorization"];
 

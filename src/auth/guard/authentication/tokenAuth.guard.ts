@@ -9,6 +9,7 @@ import {
 import { UserService } from "../../../user/user.service";
 import { AuthService, JWTDecode } from "../../auth.service";
 import { AccessTokenPayload, AuthUserPayload, AUTH_GUARD_PAYLOAD } from "../type/requestPayload";
+import { AuthenticatedRequest } from "../type/AuthRequest";
 
 const ENUM_HEADER_FIELD = {
 	AUTHORIZATION: "authorization",
@@ -23,9 +24,9 @@ export class TokenAuthGuard implements CanActivate {
 	) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
-		const req = context.switchToHttp().getRequest();
+		const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
 
-		const authHeader = req.headers[ENUM_HEADER_FIELD.AUTHORIZATION];
+		const authHeader = req.headers[ENUM_HEADER_FIELD.AUTHORIZATION] as string;
 
 		if (!authHeader || !authHeader.startsWith("Bearer ")) {
 			throw new UnauthorizedException("Missing or invalid Authorization Bearer header");
@@ -33,7 +34,7 @@ export class TokenAuthGuard implements CanActivate {
 
 		const token = this.authService.extractAuthorizationField(authHeader, "Bearer");
 
-		const decoded: JWTDecode = await this.authService.verifyToken(token);
+		const decoded: JWTDecode = this.authService.verifyToken(token);
 		const email = decoded.email;
 
 		const user = await this.userService.findOne({ where: { email } });

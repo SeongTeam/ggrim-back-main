@@ -23,6 +23,7 @@ import {
 	AUTH_GUARD_PAYLOAD,
 	SecurityTokenPayload,
 } from "../type/requestPayload";
+import { AuthenticatedRequest } from "../type/AuthRequest";
 
 const ENUM_SECURITY_TOKEN_HEADER = {
 	X_SECURITY_TOKEN_ID: `x-security-token-identifier`,
@@ -47,11 +48,12 @@ export class SecurityTokenGuard implements CanActivate {
 	) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
-		const req = context.switchToHttp().getRequest();
-		const header = req.headers;
+		const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
 
-		const securityToken = req.headers[ENUM_SECURITY_TOKEN_HEADER.X_SECURITY_TOKEN];
-		const securityTokenID = req.headers[ENUM_SECURITY_TOKEN_HEADER.X_SECURITY_TOKEN_ID];
+		const securityToken = req.headers[ENUM_SECURITY_TOKEN_HEADER.X_SECURITY_TOKEN] as string;
+		const securityTokenID = req.headers[
+			ENUM_SECURITY_TOKEN_HEADER.X_SECURITY_TOKEN_ID
+		] as string;
 		const handlerPurpose = this.reflector.get<OneTimeTokenPurpose>(
 			PURPOSE_ONE_TIME_TOKEN_KEY,
 			context.getHandler(),
@@ -68,7 +70,7 @@ export class SecurityTokenGuard implements CanActivate {
 			throw new UnauthorizedException(`Missing or invalid security token header`);
 		}
 
-		const decoded: JWTDecode = await this.authService.verifyToken(securityToken);
+		const decoded: JWTDecode = this.authService.verifyToken(securityToken);
 		const { email, purpose, type } = decoded;
 
 		const user = await this.userService.findOne({ where: { email }, withDeleted });
@@ -113,7 +115,7 @@ export class SecurityTokenGuard implements CanActivate {
 		}
 		if (entity.used_date) {
 			throw new UnauthorizedException(
-				`invalid securityToken. it is already used. ${entity.used_date}`,
+				`invalid securityToken. it is already used. ${entity.used_date.getDate()}`,
 			);
 		}
 

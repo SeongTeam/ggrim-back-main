@@ -15,6 +15,7 @@ import { AuthService, JWTDecode } from "../../auth.service";
 import { PURPOSE_ONE_TIME_TOKEN_KEY } from "../../metadata/purposeOneTimeToken";
 import { OneTimeTokenPurpose } from "../../entity/oneTimeToken.entity";
 import { AUTH_GUARD_PAYLOAD, TempUserPayload } from "../type/requestPayload";
+import { AuthenticatedRequest } from "../type/AuthRequest";
 
 const ENUM_ONE_TIME_TOKEN_HEADER = {
 	X_ONE_TIME_TOKEN_ID: `x-one-time-token-identifier`,
@@ -34,10 +35,12 @@ export class TempUserGuard implements CanActivate {
 	) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
-		const req = context.switchToHttp().getRequest();
+		const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
 
-		const oneTimeToken = req.headers[ENUM_ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN];
-		const oneTimeTokenID = req.headers[ENUM_ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID];
+		const oneTimeToken = req.headers[ENUM_ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN] as string;
+		const oneTimeTokenID = req.headers[
+			ENUM_ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID
+		] as string;
 		const handlerPurpose = this.reflector.get<OneTimeTokenPurpose>(
 			PURPOSE_ONE_TIME_TOKEN_KEY,
 			context.getHandler(),
@@ -47,7 +50,7 @@ export class TempUserGuard implements CanActivate {
 			throw new UnauthorizedException(`Missing or invalid security token header`);
 		}
 
-		const decoded: JWTDecode = await this.authService.verifyToken(oneTimeToken);
+		const decoded: JWTDecode = this.authService.verifyToken(oneTimeToken);
 		const { email, purpose, type } = decoded;
 		const user: null | User = await this.userService.findUserByEmail(email);
 
@@ -97,7 +100,7 @@ export class TempUserGuard implements CanActivate {
 		}
 		if (entity.used_date) {
 			throw new UnauthorizedException(
-				`invalid oneTimeToken. it is already used. ${entity.used_date}`,
+				`invalid oneTimeToken. it is already used. ${entity.used_date.getDate()}`,
 			);
 		}
 
