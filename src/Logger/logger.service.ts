@@ -87,7 +87,7 @@ export class LoggerService {
 	}
 
 	private getFullContext(ctx: ILogContext) {
-		const reqInfo = this.clsService.get(LoggerService.KEY.traceReq) || ctx.traceId;
+		const reqInfo = this.clsService.get<string>(LoggerService.KEY.traceReq) || ctx.traceId;
 		return `${ctx.className} , req{${reqInfo}}`;
 	}
 }
