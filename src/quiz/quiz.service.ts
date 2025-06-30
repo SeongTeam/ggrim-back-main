@@ -26,7 +26,8 @@ import { QuizLike } from "./entities/quizLike.entity";
 import { Quiz } from "./entities/quiz.entity";
 import { QuizSubmission } from "./interface/quizSubmission";
 import { QuizReactionCount } from "./interface/reactionCount";
-import { RelatedPaintingIds, RelatedPaintings } from "./interface/relatedPaintingsInterface";
+import { RelatedPaintings } from "./interface/relatedPaintings";
+import { RelatedPaintingIds } from "./interface/relatedPaintingIds";
 import { ShortQuiz } from "./interface/shortQuiz";
 import { QuizCategory } from "./type";
 
