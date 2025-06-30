@@ -81,7 +81,7 @@ export class S3Service {
 		return url;
 	}
 
-	async getCloudFrontUrl(bucketName: string, s3Key: string): Promise<string> {
+	getCloudFrontUrl(bucketName: string, s3Key: string): string {
 		if (bucketName === process.env[AWS_BUCKET_ARTWORK]) {
 			const url = process.env[AWS_CLOUD_FRONT_URL] + "/" + s3Key;
 			return url;
