@@ -6,7 +6,7 @@ export const ENUM_AUTH_CONTEXT_KEY = {
 	SECURITY_TOKEN: "SecurityTokenPayload",
 	ACCESS_TOKEN: "AccessTokenPayload",
 	TEMP_USER: "TempUser",
-};
+} as const;
 
 export interface AuthUserPayload {
 	user: User;

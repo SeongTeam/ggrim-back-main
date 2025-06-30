@@ -7,7 +7,7 @@ import {
 	Param,
 	ParseUUIDPipe,
 	Post,
-	Request,
+	Req,
 	UseGuards,
 	UseInterceptors,
 	UsePipes,
@@ -40,13 +40,13 @@ import { OneTimeToken, OneTimeTokenPurpose } from "./entity/oneTimeToken.entity"
 import { Verification } from "./entity/verification.entity";
 import { BasicGuard } from "./guard/authentication/basic.guard";
 import { SecurityTokenGuard } from "./guard/authentication/securityToken.guard";
-import { TokenAuthGuard } from "./guard/authentication/tokenAuth.guard";
 import { OwnerGuard } from "./guard/authorization/owner.guard";
 import {
 	AuthUserPayload,
 	ENUM_AUTH_CONTEXT_KEY,
 	SecurityTokenPayload,
 } from "./guard/type/requestPayload";
+import { AuthenticatedRequest } from "./guard/type/AuthRequest";
 
 @Controller("auth")
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -64,8 +64,8 @@ export class AuthController {
 
 	@Post("sign-in")
 	@UseGuards(BasicGuard)
-	async signin(@Request() request: any) {
-		const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+	signin(@Req() request: AuthenticatedRequest) {
+		const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER]!;
 		const { user } = userPayload;
 		const { email, role, username } = user;
 
@@ -201,14 +201,14 @@ export class AuthController {
 	@UseInterceptors(QueryRunnerInterceptor)
 	async generateSecurityActionToken(
 		@DBQueryRunner() qr: QueryRunner,
-		@Request() request: any,
+		@Req() request: AuthenticatedRequest,
 		@Body() dto: CreateOneTimeTokenDTO,
 	): Promise<OneTimeToken> {
 		const { purpose } = dto;
-		const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+		const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER]!;
 		const user = userPayload.user;
 		const { email } = user;
-		const securityToken = await this.createOneTimeToken(qr, email, purpose, user!);
+		const securityToken = await this.createOneTimeToken(qr, email, purpose, user);
 
 		return securityToken;
 	}
@@ -265,19 +265,19 @@ export class AuthController {
 	@UseGuards(SecurityTokenGuard)
 	async generateSecurityTokenByEmailVerification(
 		@DBQueryRunner() qr: QueryRunner,
-		@Request() request: any,
+		@Req() request: AuthenticatedRequest,
 		@Body() dto: CreateOneTimeTokenDTO,
 	): Promise<OneTimeToken> {
 		const { purpose } = dto;
-		const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER];
+		const userPayload: AuthUserPayload = request[ENUM_AUTH_CONTEXT_KEY.USER]!;
 		const securityTokenPayload: SecurityTokenPayload =
-			request[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN];
+			request[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN]!;
 		const { user } = userPayload;
 
 		await this.service.markOneTimeJWT(qr, securityTokenPayload.oneTimeTokenID);
 
 		const { email } = user;
-		const securityToken = await this.createOneTimeToken(qr, email, purpose, user!);
+		const securityToken = await this.createOneTimeToken(qr, email, purpose, user);
 
 		return securityToken;
 	}
@@ -296,9 +296,12 @@ export class AuthController {
 	@PurposeOneTimeToken("delete-account")
 	@UseGuards(SecurityTokenGuard)
 	@UseInterceptors(QueryRunnerInterceptor)
-	async testSecurityTokenGuard(@DBQueryRunner() qr: QueryRunner, @Request() request: any) {
+	async testSecurityTokenGuard(
+		@DBQueryRunner() qr: QueryRunner,
+		@Req() request: AuthenticatedRequest,
+	) {
 		const SecurityTokenGuardResult: SecurityTokenPayload =
-			request[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN];
+			request[ENUM_AUTH_CONTEXT_KEY.SECURITY_TOKEN]!;
 		await this.service.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
 
 		//do next task.
@@ -315,9 +318,7 @@ export class AuthController {
 	})
 	@UseGuards(BasicGuard, OwnerGuard)
 	async getOneTimeToken(@Param("id", ParseUUIDPipe) id: string): Promise<OneTimeToken | null> {
-		const findOne = await this.service.findOneTimeToken({
-			where: { id },
-		});
+		const findOne = await this.service.findOneTimeToken({ where: { id } });
 
 		return findOne;
 	}
