@@ -41,6 +41,7 @@ export const winstonLogger = WinstonModule.createLogger({
 		winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
 		winston.format.printf(
 			(info) =>
+				// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
 				`[${info.label}] ${info.timestamp} ${info.level} [${info.context}] ${info.message}`,
 		),
 	),

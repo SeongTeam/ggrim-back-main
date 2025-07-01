@@ -1,4 +1,4 @@
-import { AbstractLogger, LogLevel, LogMessage, QueryRunner } from "typeorm";
+import { AbstractLogger, LogLevel, LogMessage } from "typeorm";
 import * as winston from "winston";
 import "winston-daily-rotate-file";
 
@@ -14,7 +14,7 @@ export class TypeORMCustomLogger extends AbstractLogger {
 	protected writeLog(
 		level: LogLevel,
 		logMessage: string | number | LogMessage | (string | number | LogMessage)[],
-		queryRunner?: QueryRunner | undefined,
+		//queryRunner?: QueryRunner | undefined,
 	): void {
 		const messages = this.prepareLogMessages(logMessage, {
 			highlightSql: false,
@@ -23,7 +23,7 @@ export class TypeORMCustomLogger extends AbstractLogger {
 
 		const strings: string[] = [];
 
-		for (let message of messages) {
+		for (const message of messages) {
 			switch (message.type ?? level) {
 				case "log":
 					strings.push(`[LOG]: ${message.message}`);
@@ -86,7 +86,8 @@ function createLogger() {
 		level: "info", // 로그 레벨 설정
 		format: winston.format.combine(
 			winston.format.timestamp(),
-			winston.format.printf(({ timestamp, level, message }) => {
+			winston.format.printf(({ timestamp, message }) => {
+				// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
 				return `[${timestamp}] ${message}`;
 			}),
 		),

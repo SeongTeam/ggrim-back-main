@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
 	ValidationArguments,
 	ValidationOptions,
@@ -22,7 +23,7 @@ export class IsInArrayConstraint implements ValidatorConstraintInterface {
 }
 
 export function IsInArray(validValues: readonly any[], validationOptions?: ValidationOptions) {
-	return function (object: Object, propertyName: string) {
+	return function (object: object, propertyName: string) {
 		registerDecorator({
 			name: "isInArray",
 			target: object.constructor,
