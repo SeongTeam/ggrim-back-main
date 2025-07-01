@@ -31,7 +31,7 @@ export class QuizScheduleService {
 	constructor(@Inject(forwardRef(() => LoggerService)) private readonly logger: LoggerService) {
 		Logger.log("construct class", QuizScheduleService.name);
 		this._contextHashMap = new Map<string, ContextHashNode>();
-		this._scheduler = new Array(this.SCHEDULER_SIZE).fill(this.SCHEDULER_EMPTY);
+		this._scheduler = new Array<string>(this.SCHEDULER_SIZE).fill(this.SCHEDULER_EMPTY);
 		this._schedulerIdx = 0;
 		this.mutex = withTimeout(
 			new Mutex(),
@@ -259,7 +259,7 @@ export class QuizScheduleService {
 			this.logger.log(`requestAddContext().finish\n`, {
 				className: QuizScheduleService.name,
 			});
-			await this.mutex.release();
+			this.mutex.release();
 		}
 	}
 
@@ -452,7 +452,7 @@ export class QuizScheduleService {
 			},
 		);
 
-		await this.mutex.release();
+		this.mutex.release();
 	}
 
 	private transformHashKey(context: QuizContext): QuizContextID {
@@ -467,7 +467,7 @@ export class QuizScheduleService {
 	}
 
 	private async optimize(): Promise<void> {
-		const count = await this.getScheduleCount();
+		const count = this.getScheduleCount();
 		if (count === this.SCHEDULER_SIZE) {
 			this.logger.log(`[${QuizScheduleService.name}] delete low priority context`, {
 				className: QuizScheduleService.name,

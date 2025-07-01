@@ -43,10 +43,8 @@ import { PaintingService } from "../painting/painting.service";
 import { StyleService } from "../style/style.service";
 import { TagService } from "../tag/tag.service";
 import { getLatestMonday } from "../utils/date";
-import { CATEGORY_VALUES } from "./const";
 import { SearchQuizDTO } from "./dto/request/SearchQuizDTO";
 import { CreateQuizDTO } from "./dto/request/createQuizDTO";
-import { GenerateQuizQueryDTO } from "./dto/request/generateQuizQueryDTO";
 import { DetailQuizResponse } from "./dto/response/detailQuizResponse";
 import { QuizResponse } from "./dto/response/quizResponse";
 import { QuizContextDTO } from "./dto/request/quizContextDTO";
@@ -62,7 +60,7 @@ import { QuizContext } from "./interface/quizContext";
 import { ShortQuiz } from "./interface/shortQuiz";
 import { QuizScheduleService } from "./quizSchedule.service";
 import { QuizService } from "./quiz.service";
-import { QuizCategory } from "./type";
+import { AuthGuardRequest } from "../auth/guard/type/AuthRequest";
 
 @Crud({
 	model: {
@@ -183,11 +181,11 @@ export class QuizController
 	@UseInterceptors(QueryRunnerInterceptor)
 	async createQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
-		@Request() request: any,
+		@Request() request: AuthGuardRequest,
 		@Param("id") id: string,
 		@Body() dto: QuizReactionDTO,
 	): Promise<void> {
-		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER];
+		const userPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = userPayload;
 		const quiz = await qr.manager.findOne(Quiz, { where: { id } });
 		if (!quiz) {
@@ -217,10 +215,10 @@ export class QuizController
 	@UseInterceptors(QueryRunnerInterceptor)
 	async deleteQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
-		@Request() request: any,
+		@Request() request: AuthGuardRequest,
 		@Param("id") id: string,
 	): Promise<void> {
-		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER];
+		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = userPayload;
 		const quiz = await qr.manager.findOne(Quiz, { where: { id } });
 		if (!quiz) {
@@ -234,25 +232,6 @@ export class QuizController
 		await this.service.removeReaction(qr, user, quiz);
 	}
 
-	@Get("category/:key")
-	async getQuizTags(@Param("key") key: string) {
-		if (!CATEGORY_VALUES.includes(key as QuizCategory)) {
-			throw new ServiceException(
-				"BASE",
-				"BAD_REQUEST",
-				`${key} is not allowed.
-      allowed category : ${JSON.stringify(CATEGORY_VALUES)}`,
-			);
-		}
-		const map = await this.service.getCategoryValueMap(key as QuizCategory);
-		return [...map.values()];
-	}
-
-	@Get("random")
-	async generateNew(@Query() dto: GenerateQuizQueryDTO) {
-		return this.service.generateQuizByValue(dto.category, dto.keyword);
-	}
-
 	@Get("schedule")
 	async getScheduledQuiz(@Query() dto: ScheduleQuizQueryDTO): Promise<QuizResponse> {
 		Logger.log(`context : `, dto.context);
@@ -262,7 +241,7 @@ export class QuizController
 		for (attempt = 0; attempt < MAX_RETRY; attempt++) {
 			const context: QuizContext = await this.extractContext(dto);
 
-			const searchDTO: SearchQuizDTO = await this.buildSearchDTO(context);
+			const searchDTO: SearchQuizDTO = this.buildSearchDTO(context);
 
 			const pagination = await this.service.searchQuiz(
 				searchDTO,
@@ -292,7 +271,7 @@ export class QuizController
 	// ? 질문: context 삽입 결과를 요청자에게 알려줄 필요가있는가? 성공할 수도 실패할 수 도 있는데.
 	@Post("schedule")
 	async addQuizContext(@Body() dto: QuizContextDTO) {
-		this.validateQuizContextDTO(dto);
+		await this.validateQuizContextDTO(dto);
 
 		return this.scheduleService.requestAddContext([dto]);
 	}
@@ -307,11 +286,11 @@ export class QuizController
 	@UseInterceptors(QueryRunnerInterceptor)
 	async create(
 		@DBQueryRunner() qr: QueryRunner,
-		@Request() request: any,
+		@Request() request: AuthGuardRequest,
 
 		@Body() dto: CreateQuizDTO,
 	) {
-		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER];
+		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 
 		return this.service.createQuiz(qr, dto, userPayload.user);
 	}
@@ -329,7 +308,7 @@ export class QuizController
 			quiz = await this.replaceImageSrcToS3(quiz);
 		}
 
-		const [_, reactionCount] = await Promise.all([
+		const [, reactionCount] = await Promise.all([
 			this.service.increaseView(id),
 			this.service.getQuizReactionCounts(id),
 		]);
@@ -353,12 +332,11 @@ export class QuizController
 	@UseInterceptors(QueryRunnerInterceptor)
 	async update(
 		@DBQueryRunner() qr: QueryRunner,
-		@Request() request: any,
+		@Request() request: AuthGuardRequest,
 		@Param("id", ParseUUIDPipe) id: string,
 		@Body() dto: UpdateQuizDTO,
 	) {
-		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER];
-		return this.service.updateQuiz(qr, id, dto, userPayload.user);
+		return await this.service.updateQuiz(qr, id, dto);
 	}
 
 	@Delete(":id")
@@ -435,7 +413,7 @@ export class QuizController
 				page: 0,
 			};
 		});
-		this.scheduleService.initialize(fixedContexts);
+		await this.scheduleService.initialize(fixedContexts);
 		Logger.log(`[onApplicationBootstrap] done`, QuizController.name);
 	}
 
@@ -465,7 +443,7 @@ export class QuizController
 		const { context, currentIndex, endIndex } = dto;
 		if (context && currentIndex && endIndex) {
 			if (currentIndex !== endIndex) {
-				this.validateQuizContextDTO(context);
+				await this.validateQuizContextDTO(context);
 				return context;
 			}
 		}

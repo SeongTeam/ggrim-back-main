@@ -12,14 +12,11 @@ import { PaintingService } from "../painting/painting.service";
 import { Style } from "../style/entities/style.entity";
 import { Tag } from "../tag/entities/tag.entity";
 import { User } from "../user/entity/user.entity";
-import { extractValuesFromArray, updateProperty } from "../utils/object";
-import { getRandomElement, getRandomNumber } from "../utils/random";
+import { updateProperty } from "../utils/object";
 import { isArrayEmpty, isNotFalsy } from "../utils/validator";
-import { QUIZ_TYPE_CONFIG } from "./const";
 import { SearchQuizDTO } from "./dto/request/SearchQuizDTO";
 import { CreateQuizDTO } from "./dto/request/createQuizDTO";
 import { QuizReactionType } from "./dto/request/quizReactionDTO";
-import { QuizDTO } from "./dto/request/quizDTO";
 import { UpdateQuizDTO } from "./dto/request/updateQuizDTO";
 import { QuizDislike } from "./entities/quizDislike.entity";
 import { QuizLike } from "./entities/quizLike.entity";
@@ -29,7 +26,6 @@ import { QuizReactionCount } from "./interface/reactionCount";
 import { RelatedPaintings } from "./interface/relatedPaintings";
 import { RelatedPaintingIds } from "./interface/relatedPaintingIds";
 import { ShortQuiz } from "./interface/shortQuiz";
-import { QuizCategory } from "./type";
 
 @Injectable()
 export class QuizService extends TypeOrmCrudService<Quiz> {
@@ -44,133 +40,6 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		@InjectRepository(QuizLike) private readonly likeRepo: Repository<QuizLike>,
 	) {
 		super(repo);
-	}
-
-	async getCategoryValueMap(category: QuizCategory): Promise<Map<string, any>> {
-		return await this.paintingService.getColumnValueMap(category);
-	}
-
-	async getRandomCategoryValue(category: QuizCategory): Promise<any> {
-		const map: Map<string, any> = await this.getCategoryValueMap(category);
-		const keys = [...map.keys()];
-		const selectedKey = getRandomElement(keys);
-
-		if (!selectedKey) {
-			throw new ServiceException(
-				"ENTITY_NOT_FOUND",
-				"INTERNAL_SERVER_ERROR",
-				`category : ${category}\n` + `maps : ${JSON.stringify(map)}`,
-			);
-		}
-
-		return map.get(selectedKey);
-	}
-
-	extractCategoryValues(paintings: Painting[], category: QuizCategory): any[] {
-		const values = extractValuesFromArray(paintings, category);
-		const set = new Set<any>();
-
-		if (category == "artist") {
-			const artists = values as Artist[];
-			artists.forEach((artist) => set.add(artist.name));
-
-			return [...set];
-		}
-
-		return [...set];
-	}
-
-	async generateQuizByValue(
-		category: QuizCategory,
-		selectedCategoryValue: any,
-	): Promise<QuizDTO> {
-		await this.paintingService.validateColumnValue(category, selectedCategoryValue);
-		const categoryMap = await this.getCategoryValueMap(category);
-
-		const commonCategoryValue = selectedCategoryValue;
-
-		const distractorPaintings = await this.selectDistractorPaintings(
-			category,
-			commonCategoryValue,
-			QUIZ_TYPE_CONFIG.ONE_CHOICE.COUNT.DISTRACTOR,
-		);
-
-		const answerCategoryValues = this.getAnswerCategoryValues(
-			category,
-			distractorPaintings,
-			categoryMap,
-		);
-
-		const answerPaintings = await this.getAnswerPaintings(
-			category,
-			answerCategoryValues,
-			getRandomNumber(0, answerCategoryValues.length - 1),
-		);
-
-		const answerIdx = getRandomNumber(0, answerPaintings.length - 1);
-		const answer = answerPaintings[answerIdx];
-		const distractor = [...distractorPaintings];
-
-		const ret = new QuizDTO(distractor, [answer], category, commonCategoryValue);
-		this.validateQuizDto(ret, category, QUIZ_TYPE_CONFIG.ONE_CHOICE.COUNT.DISTRACTOR);
-
-		return ret;
-	}
-
-	getAnswerCategoryValues(
-		category: QuizCategory,
-		distractorPaintings: Painting[],
-		categoryMap: Map<string, any>,
-	): any[] {
-		const distractorCategoryValues = this.extractCategoryValues(distractorPaintings, category);
-		const answerCategoryValues: any[] = [];
-		categoryMap.forEach((value, key) => {
-			if (!distractorCategoryValues.includes(value)) {
-				answerCategoryValues.push(value);
-			}
-		});
-
-		return answerCategoryValues;
-	}
-
-	validateQuizDto(quizDTO: QuizDTO, category: QuizCategory, distractorCount: number) {
-		const distractor = quizDTO.distractorPaintings;
-		const answer = quizDTO.answerPaintings;
-
-		if (distractor.length != distractorCount) {
-			throw new ServiceException(
-				"SERVICE_RUN_ERROR",
-				"INTERNAL_SERVER_ERROR",
-				`distractor : ${distractor.length}`,
-			);
-		}
-
-		if (answer.length != QUIZ_TYPE_CONFIG.ONE_CHOICE.COUNT.ANSWER) {
-			throw new ServiceException(
-				"SERVICE_RUN_ERROR",
-				"INTERNAL_SERVER_ERROR",
-				`answer : ${answer.length}`,
-			);
-		}
-
-		const distractorFields = this.extractCategoryValues(distractor, category);
-
-		const answerFields = this.extractCategoryValues(answer, category);
-
-		const isNoCommonValues = answerFields.every(
-			(answerField) => !distractorFields.includes(answerField),
-		);
-
-		if (!isNoCommonValues) {
-			throw new ServiceException(
-				"SERVICE_RUN_ERROR",
-				"INTERNAL_SERVER_ERROR",
-				`answer has fields of distractor\n` +
-					`distractorFields : ${JSON.stringify(distractorFields, null, 2)}\n` +
-					`answerFields : ${JSON.stringify(answerFields, null, 2)}\n` +
-					`category : ${category}`,
-			);
-		}
 	}
 
 	async createQuiz(queryRunner: QueryRunner, dto: CreateQuizDTO, owner: User) {
@@ -191,7 +60,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		return this.insertQuiz(queryRunner, newQuiz);
 	}
 
-	async updateQuiz(queryRunner: QueryRunner, id: string, dto: UpdateQuizDTO, owner: User) {
+	async updateQuiz(queryRunner: QueryRunner, id: string, dto: UpdateQuizDTO) {
 		const quiz = await this.repo.findOneByOrFail({ id });
 		if (!isNotFalsy(quiz)) {
 			throw new ServiceException(
@@ -214,43 +83,6 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		return this.insertQuiz(queryRunner, quiz);
 	}
 
-	private async selectDistractorPaintings(
-		category: QuizCategory,
-		commonValue: any,
-		count: number,
-	): Promise<Painting[]> {
-		let paintings: Painting[] = [];
-
-		if ((category = "artist")) {
-			/*TODO
-      - 동명이인 작가는 어떻게 처리할 것인가? */
-			paintings = await this.paintingService.getPaintingsByArtist(commonValue);
-		}
-
-		const map = new Map<number, Painting>();
-		if (paintings.length > count) {
-			while (map.size != count) {
-				const idx = getRandomNumber(0, paintings.length - 1);
-				if (map.has(idx)) {
-					continue;
-				}
-				map.set(idx, paintings[idx]);
-			}
-			return [...map.values()];
-		}
-
-		if (paintings.length < count) {
-			throw new ServiceException(
-				"ENTITY_NOT_FOUND",
-				"BAD_REQUEST",
-				`Not enough Paintings.\n` +
-					`${JSON.stringify({ category, commonValue, count, paintings }, null, 2)}`,
-			);
-		}
-
-		return paintings;
-	}
-
 	async searchQuiz(
 		dto: SearchQuizDTO,
 		page: number,
@@ -265,10 +97,10 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		const { tags, styles, artists } = dto;
 
 		const quizAlias = "q";
-		const queryBuilder = await this.repo.createQueryBuilder("q").select();
+		const queryBuilder = this.repo.createQueryBuilder("q").select();
 
 		if (!isArrayEmpty(tags)) {
-			const subQueryFilterByTags = await this.repo
+			const subQueryFilterByTags = this.repo
 				.createQueryBuilder()
 				.subQuery()
 				.select("quiz_tags.quizId")
@@ -291,7 +123,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		}
 
 		if (!isArrayEmpty(styles)) {
-			const subQueryFilterByStyles = await this.repo
+			const subQueryFilterByStyles = this.repo
 				.createQueryBuilder()
 				.subQuery()
 				.select("quiz_styles.quizId")
@@ -313,7 +145,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		}
 
 		if (!isArrayEmpty(artists)) {
-			const subQueryFilterByArtists = await this.repo
+			const subQueryFilterByArtists = this.repo
 				.createQueryBuilder()
 				.subQuery()
 				.select("quiz_artists.quizId")
@@ -363,7 +195,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 
 	async softDeleteQuiz(queryRunner: QueryRunner, id: string): Promise<void> {
 		try {
-			const result = await createTransactionQueryBuilder(queryRunner, Quiz)
+			await createTransactionQueryBuilder(queryRunner, Quiz)
 				.softDelete()
 				.where("id = :id", { id })
 				.execute();
@@ -532,7 +364,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 	async likeQuiz(queryRunner: QueryRunner, user: User, quiz: Quiz): Promise<QuizLike> {
 		const manager = queryRunner.manager;
 
-		const [_, existing] = await Promise.all([
+		const [, existing] = await Promise.all([
 			manager.delete(QuizDislike, { user, quiz }),
 			manager.findOne(QuizLike, {
 				where: { user_id: user.id, quiz_id: quiz.id },
@@ -550,7 +382,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 	async dislikeQuiz(queryRunner: QueryRunner, user: User, quiz: Quiz): Promise<QuizDislike> {
 		const manager = queryRunner.manager;
 
-		const [_, existing] = await Promise.all([
+		const [, existing] = await Promise.all([
 			manager.delete(QuizLike, { user, quiz }),
 			manager.findOne(QuizDislike, {
 				where: { user_id: user.id, quiz_id: quiz.id },
@@ -569,7 +401,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		const manager = queryRunner.manager;
 		const promiseDislike = manager.delete(QuizDislike, { user, quiz });
 		const promiseLike = manager.delete(QuizLike, { user, quiz });
-		const [dislike, like] = await Promise.all([promiseDislike, promiseLike]);
+		await Promise.all([promiseDislike, promiseLike]);
 		return;
 	}
 
@@ -580,32 +412,6 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		const [likeCount, dislikeCount] = await Promise.all([promiseLike, promiseDislike]);
 
 		return { likeCount, dislikeCount };
-	}
-
-	private async getAnswerPaintings(
-		category: QuizCategory,
-		answerCategoryValues: any[],
-		valueIdx: number,
-	): Promise<Painting[]> {
-		let answerPaintings: Painting[] = [];
-
-		if (!(valueIdx > 0 && answerCategoryValues.length - 1 > valueIdx)) {
-			throw new ServiceException(
-				"SERVICE_RUN_ERROR",
-				"INTERNAL_SERVER_ERROR",
-				`valueIdx is out of range.\n` +
-					`${JSON.stringify({ category, length: answerCategoryValues.length - 1, valueIdx })}`,
-			);
-		}
-
-		const categoryValue = answerCategoryValues[valueIdx];
-
-		if (category === "artist") {
-			const artist = categoryValue;
-			answerPaintings = await this.paintingService.getPaintingsByArtist(artist);
-		}
-
-		return answerPaintings;
 	}
 
 	private async insertQuiz(queryRunner: QueryRunner, quiz: Quiz): Promise<Quiz> {
