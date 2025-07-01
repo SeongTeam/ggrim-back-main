@@ -21,6 +21,7 @@
     "strictFunctionTypes" : true,
     "noImplicitReturns" : true,
     "strict": true,
+    "typeRoots": ["./node_modules/@types","./src/types",]
     
   }
 }
