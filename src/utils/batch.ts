@@ -59,7 +59,9 @@ export class Batch<DTO, Entity> {
 
 			if (this.queue.length >= this.config.queueLimit) {
 				this.clearBatchTimer();
-				this.executeBatch();
+				this.executeBatch().catch((err) => {
+					throw err;
+				});
 				return;
 			}
 
@@ -67,7 +69,9 @@ export class Batch<DTO, Entity> {
 				// setTimeOut 타이머를 관리하여, 이미 설정된 타이머가 있으면 새로 설정하지 말기.
 				this.batchTimer = setTimeout(() => {
 					this.clearBatchTimer();
-					this.executeBatch();
+					this.executeBatch().catch((err) => {
+						throw err;
+					});
 				}, this.config.batchIntervalMs);
 			}
 			return;
