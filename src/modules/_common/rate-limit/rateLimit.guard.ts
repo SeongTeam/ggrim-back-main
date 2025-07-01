@@ -17,7 +17,7 @@ export class RateLimitGuard {
 		private readonly rateLimitService: RateLimitService,
 	) {}
 
-	async canActivate(context: ExecutionContext): Promise<boolean> {
+	canActivate(context: ExecutionContext): boolean {
 		const request = context.switchToHttp().getRequest<Request>();
 
 		// Skip OPTIONS requests
@@ -36,22 +36,23 @@ export class RateLimitGuard {
 		const options = this.reflector.get<RateLimitOptions>(RATE_LIMIT_METADATA, handler) || {};
 
 		// Apply decorator options if they exist, otherwise use service defaults
-		const result = await this.rateLimitService
-			.checkRateLimit(this.getClientIp(request), request.path, options)
-			.then(({ allowed, remaining, reset }) => {
-				// Set rate limit headers
-				const response = context.switchToHttp().getResponse<Response>();
-				response.setHeader("X-RateLimit-Allowed", `${allowed}`);
-				response.setHeader("X-RateLimit-Remaining", remaining);
-				response.setHeader("X-RateLimit-Reset", Math.ceil(reset / 1000)); // Convert to seconds
-				return allowed;
-			});
+		const { allowed, remaining, reset } = this.rateLimitService.checkRateLimit(
+			this.getClientIp(request),
+			request.path,
+			options,
+		);
 
-		if (!result) {
+		// Set rate limit headers
+		const response = context.switchToHttp().getResponse<Response>();
+		response.setHeader("X-RateLimit-Allowed", `${allowed}`);
+		response.setHeader("X-RateLimit-Remaining", remaining);
+		response.setHeader("X-RateLimit-Reset", Math.ceil(reset / 1000)); // Convert to seconds
+
+		if (!allowed) {
 			throw new ServiceException("BASE", "TOO_MANY_REQUESTS", "exceed rate limit");
 		}
 
-		return result;
+		return allowed;
 	}
 
 	private getClientIp(request: Request): string {
