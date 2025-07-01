@@ -7,6 +7,7 @@ import { PaintingService } from "./painting.service";
 
 describe("PaintingController", () => {
 	let controller: PaintingController;
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let service: PaintingService;
 	let paintingRepository: MockRepository<Painting> = new MockRepository<Painting>();
 
