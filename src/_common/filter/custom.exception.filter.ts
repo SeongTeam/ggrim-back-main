@@ -1,11 +1,10 @@
 import { ArgumentsHost, ExceptionFilter, HttpStatus, Inject } from "@nestjs/common";
-import { Request, Response } from "express";
-import { TypeORMError } from "typeorm";
+import { Response } from "express";
 import { LoggerService } from "../../logger/logger.service";
 import { BaseException } from "./exception/baseException";
 
 interface CauseInfo {
-	innerError: unknown;
+	msg: string;
 	stack: string;
 }
 
@@ -28,20 +27,23 @@ export class CustomExceptionFilter implements ExceptionFilter {
 		this.className = className;
 	}
 
-	catch(exception: any, host: ArgumentsHost): void {
+	catch(exception: BaseException, host: ArgumentsHost): void {
 		if (host.getType() == "http") {
 			const ctx = host.switchToHttp();
-			const req = ctx.getRequest<Request>();
 			const res = ctx.getResponse<Response>();
 
-			this.handleHttpException(req, res, exception);
+			this.handleHttpException(res, exception);
 			return;
 		}
 
-		this.logger.error(`unsupported host type[${host.getType()}] access`, exception.stack, {
-			className: this.className,
-			traceId: exception.traceId,
-		});
+		this.logger.error(
+			`unsupported host type[${host.getType()}] access\n`,
+			exception.stack || "",
+			{
+				className: this.className,
+				traceId: exception.traceId,
+			},
+		);
 	}
 
 	private logBaseException(exception: BaseException) {
@@ -51,8 +53,8 @@ export class CustomExceptionFilter implements ExceptionFilter {
 			message: exception.getResponse(),
 			cause: this.getCauseInfo(exception),
 		};
-
-		if (exception.getStatus() >= HttpStatus.INTERNAL_SERVER_ERROR) {
+		const SERVER_ERROR: number = HttpStatus.INTERNAL_SERVER_ERROR;
+		if (exception.getStatus() >= SERVER_ERROR) {
 			this.logger.error(JSON.stringify(info, null, 2), exception.stack || "", {
 				className: this.className,
 				traceId: exception.traceId,
@@ -65,65 +67,33 @@ export class CustomExceptionFilter implements ExceptionFilter {
 		}
 	}
 
-	private logUnknownException(e: any) {
-		const info: ExceptionInfo = {
-			timestamp: e.timeStamp,
-			path: e.path,
-			message: e,
-			cause: this.getCauseInfo(e),
-		};
+	// notifySeriousError(msg: string) {
+	// 	//심각한 에러 발생시 알려주는 용도?
+	// }
 
-		this.logger.error(
-			`Unknown Exception ${e.name} occurs ` + `${JSON.stringify(info, null, 2)}`,
-			e.stack,
-			{
-				className: this.className,
-				traceId: e.traceId,
-			},
-		);
-	}
-
-	notifySeriousError(msg: string) {
-		//심각한 에러 발생시 알려주는 용도?
-	}
-
-	getCauseInfo(e: any) {
+	getCauseInfo(e: BaseException) {
 		const innerError = e.cause;
 		if (!innerError) {
 			return;
 		}
-
 		const ret: CauseInfo = {
-			innerError: innerError,
-			stack: innerError.stack,
+			msg: JSON.stringify(innerError),
+			stack: "",
 		};
+
+		if (innerError instanceof Error) {
+			ret.msg = JSON.stringify({ name: innerError.name, message: innerError.message });
+			ret.stack = innerError.stack || "";
+		}
 
 		return ret;
 	}
 
-	handleHttpException(request: Request, response: Response, exception: any) {
-		exception.timestamp = new Date().toLocaleTimeString("kr");
-		exception.path = request.url;
-
-		if (exception instanceof BaseException) {
-			this.logBaseException(exception);
-			response.status(exception.getStatus()).json({
-				errorCode: exception.errorCode,
-				statusCode: exception.getStatus(),
-				timeStamp: exception.timestamp,
-				path: exception.path,
-				message: exception.message,
-			});
-
-			return;
-		}
-
-		if (exception instanceof TypeORMError) {
-		}
-
-		this.logUnknownException(exception);
-		response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-			statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+	handleHttpException(response: Response, exception: BaseException) {
+		this.logBaseException(exception);
+		response.status(exception.getStatus()).json({
+			errorCode: exception.errorCode,
+			statusCode: exception.getStatus(),
 			timeStamp: exception.timestamp,
 			path: exception.path,
 			message: exception.message,

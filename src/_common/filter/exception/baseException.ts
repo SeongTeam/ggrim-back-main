@@ -18,7 +18,7 @@ export class BaseException extends HttpException implements BaseExceptionInterfa
 		response: Record<string, any> | string,
 		options?: HttpExceptionOptions,
 	) {
-		let responseBody = typeof response === "string" ? { message: response } : response;
+		const responseBody = typeof response === "string" ? { message: response } : response;
 		super(responseBody, status, options);
 		this.errorCode = errorCode;
 	}
