@@ -8,17 +8,6 @@ import { isArrayEmpty } from "../utils/validator";
 import { CreateTagDTO } from "./dto/request/createTagDTO";
 import { Tag } from "./entities/tag.entity";
 
-interface UpdateRequest<T, R> {
-	httpMethod: string;
-	dto: T;
-	handler: PromiseHandler<R>;
-}
-
-interface PromiseHandler<R> {
-	resolve: (result: R) => void;
-	reject: (exception: ServiceException) => void;
-}
-
 @Injectable()
 export class TagService extends TypeOrmCrudService<Tag> {
 	/*TODO 
@@ -29,7 +18,9 @@ export class TagService extends TypeOrmCrudService<Tag> {
 		queueLimit: 40,
 		batchIntervalMs: 4000,
 		generateDtoToID: (dto) => `name:${dto.name}`,
-		processBatch: this.processCreateBatch.bind(this),
+		processBatch: this.processCreateBatch.bind(this) as (
+			dtoToResultMap: Map<CreateTagDTO, Tag | ServiceException>,
+		) => Promise<void>,
 	});
 	constructor(@InjectRepository(Tag) readonly repo: Repository<Tag>) {
 		super(repo);
@@ -107,7 +98,15 @@ export class TagService extends TypeOrmCrudService<Tag> {
 				dtoToResultMap.set(keyDto, tag);
 			}
 		} catch (error) {
-			Logger.error(`[processCreateBatch] ${JSON.stringify(error!)}`);
+			if (error instanceof Error) {
+				Logger.error(
+					`[processCreateBatch] error occur` +
+						`message : ${error.message}` +
+						`stack : ${error.stack || ""}`,
+				);
+			} else {
+				Logger.error(`[processCreateBatch] ${JSON.stringify(error)}`);
+			}
 			uniqueDTOs.forEach((dto) => {
 				const serviceException = new ServiceException(
 					"SERVICE_RUN_ERROR",
