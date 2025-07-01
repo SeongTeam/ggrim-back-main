@@ -25,6 +25,7 @@ export class TraceInterceptor implements NestInterceptor {
 					//       className: this.className,
 					//     });
 
+					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 					err.traceId = traceId;
 					throw err;
 				}),
