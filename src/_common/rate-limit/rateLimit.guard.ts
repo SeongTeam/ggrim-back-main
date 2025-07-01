@@ -3,6 +3,7 @@ import { Reflector } from "@nestjs/core";
 import { RATE_LIMIT_METADATA } from "../const/envKeys.const";
 import { ServiceException } from "../filter/exception/service/serviceException";
 import { RateLimitService } from "./rateLimit.service.js";
+import { Request, Response } from "express";
 
 export interface RateLimitOptions {
 	ttl?: number;
@@ -17,7 +18,7 @@ export class RateLimitGuard {
 	) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
-		const request = context.switchToHttp().getRequest();
+		const request = context.switchToHttp().getRequest<Request>();
 
 		// Skip OPTIONS requests
 		if (request.method === "OPTIONS") {
@@ -25,10 +26,10 @@ export class RateLimitGuard {
 		}
 
 		// Skip if we've already processed this request
-		if (request._rateLimitChecked) {
+		if (request.isRateLimitChecked) {
 			return true;
 		}
-		request._rateLimitChecked = true;
+		request.isRateLimitChecked = true;
 
 		const handler = context.getHandler();
 
@@ -39,8 +40,8 @@ export class RateLimitGuard {
 			.checkRateLimit(this.getClientIp(request), request.path, options)
 			.then(({ allowed, remaining, reset }) => {
 				// Set rate limit headers
-				const response = context.switchToHttp().getResponse();
-				response.setHeader("X-RateLimit-Allowed", allowed);
+				const response = context.switchToHttp().getResponse<Response>();
+				response.setHeader("X-RateLimit-Allowed", `${allowed}`);
 				response.setHeader("X-RateLimit-Remaining", remaining);
 				response.setHeader("X-RateLimit-Reset", Math.ceil(reset / 1000)); // Convert to seconds
 				return allowed;
@@ -53,9 +54,9 @@ export class RateLimitGuard {
 		return result;
 	}
 
-	private getClientIp(request: any): string {
+	private getClientIp(request: Request): string {
 		// Check for proxy headers
-		const xForwardedFor = request.headers["x-forwarded-for"];
+		const xForwardedFor = request.headers["x-forwarded-for"] as string;
 		if (!xForwardedFor) {
 			throw new ServiceException(
 				"BASE",
