@@ -296,40 +296,6 @@ export class PaintingService {
 		return true;
 	}
 
-	async getColumnValueMap(column: keyof Painting): Promise<Map<string, any>> {
-		const map = new Map<string, any>();
-
-		if (column === "artist") {
-			const artists = await this.artistService.getArtistsHavingPainting();
-
-			artists.forEach((artist) => {
-				if (!map.has(artist.id)) {
-					map.set(artist.id, artist.name);
-				}
-			});
-		}
-
-		if (column === "tags") {
-			const tags = await this.tagService.getTagsRelatedToPainting();
-			tags.forEach((tag) => {
-				if (!map.has(tag.id)) {
-					map.set(tag.id, tag.name);
-				}
-			});
-		}
-
-		if (column === "styles") {
-			const styles = await this.styleService.getStylesRelatedToPainting();
-			styles.forEach((style) => {
-				if (!map.has(style.id)) {
-					map.set(style.id, style.name);
-				}
-			});
-		}
-
-		return map;
-	}
-
 	async validateColumnValue(column: keyof Painting, value: string) {
 		if (column === "artist") {
 			await this.artistService.validateName(value);
