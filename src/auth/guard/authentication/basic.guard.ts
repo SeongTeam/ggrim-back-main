@@ -10,8 +10,8 @@ import { plainToClass } from "class-transformer";
 import { UserService } from "../../../user/user.service";
 import { AuthService } from "../../auth.service";
 import { BasicTokenGuardDTO } from "../dto/basicAuthGuard.dto";
-import { AuthUserPayload, AUTH_GUARD_PAYLOAD } from "../type/requestPayload";
-import { AuthGuardRequest } from "../type/AuthRequest";
+import { AuthUserPayload, AUTH_GUARD_PAYLOAD } from "../types/requestPayload";
+import { AuthGuardRequest } from "../types/AuthRequest";
 
 @Injectable()
 export class BasicGuard implements CanActivate {

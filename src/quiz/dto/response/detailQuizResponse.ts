@@ -1,5 +1,5 @@
 import { Quiz } from "../../entities/quiz.entity";
-import { QuizReactionCount } from "../../interface/reactionCount";
+import { QuizReactionCount } from "../../types/reactionCount";
 import { QuizReactionType } from "../request/quizReactionDTO";
 import { ShowQuizResponse } from "./showQuizResponse.dto";
 

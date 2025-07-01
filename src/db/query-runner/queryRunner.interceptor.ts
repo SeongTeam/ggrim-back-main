@@ -2,7 +2,7 @@ import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } fr
 import { Observable, catchError, from, mergeMap } from "rxjs";
 import { DataSource, QueryRunner } from "typeorm";
 import { ServiceException } from "../../_common/filter/exception/service/serviceException";
-import { QueryRunnerRequest } from "./interface/queryRunnerRequest";
+import { QueryRunnerRequest } from "./types/queryRunnerRequest";
 
 @Injectable()
 export class QueryRunnerInterceptor implements NestInterceptor {

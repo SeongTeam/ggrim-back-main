@@ -22,8 +22,8 @@ import {
 	AuthUserPayload,
 	AUTH_GUARD_PAYLOAD,
 	SecurityTokenPayload,
-} from "../type/requestPayload";
-import { AuthGuardRequest } from "../type/AuthRequest";
+} from "../types/requestPayload";
+import { AuthGuardRequest } from "../types/AuthRequest";
 
 const ENUM_SECURITY_TOKEN_HEADER = {
 	X_SECURITY_TOKEN_ID: `x-security-token-identifier`,

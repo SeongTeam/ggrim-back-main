@@ -4,7 +4,7 @@ import { existsSync } from "fs";
 import { Brackets, QueryRunner, Repository } from "typeorm";
 import { CONFIG_FILE_PATH } from "../_common/const/default.value";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
-import { IPaginationResult } from "../_common/interface";
+import { IPaginationResult } from "../_common/types";
 import { ArtistService } from "../artist/artist.service";
 import { Artist } from "../artist/entities/artist.entity";
 import { createTransactionQueryBuilder } from "../db/query-runner/queryRunner.lib";
@@ -16,11 +16,11 @@ import { getLatestMonday } from "../utils/date";
 import { loadObjectFromJSON } from "../utils/json";
 import { isArrayEmpty, isFalsy, isNotFalsy } from "../utils/validator";
 import { CreatePaintingDTO } from "./dto/request/createPaintingDTO";
-import { WeeklyArtWorkSet } from "./interface/weeklyArtWorkSet";
+import { WeeklyArtWorkSet } from "./types/weeklyArtWorkSet";
 import { ReplacePaintingDTO } from "./dto/request/replacePaintingDTO";
 import { SearchPaintingDTO } from "./dto/request/searchPaintingDTO";
 import { Painting } from "./entities/painting.entity";
-import { ShortPainting } from "./interface/shortPainting";
+import { ShortPainting } from "./types/shortPainting";
 
 @Injectable()
 export class PaintingService {

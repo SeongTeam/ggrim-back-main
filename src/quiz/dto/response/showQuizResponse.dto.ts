@@ -1,6 +1,6 @@
 import { OmitType } from "@nestjs/mapped-types";
 import { plainToInstance } from "class-transformer";
-import { ShortUser } from "../../../user/interface/shortUser";
+import { ShortUser } from "../../../user/types/shortUser";
 import { Quiz } from "../../entities/quiz.entity";
 
 export class ShowQuizResponse extends OmitType(Quiz, ["owner"] as const) {

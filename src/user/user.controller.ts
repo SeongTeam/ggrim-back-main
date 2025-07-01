@@ -33,7 +33,7 @@ import {
 	AUTH_GUARD_PAYLOAD,
 	SecurityTokenPayload,
 	TempUserPayload,
-} from "../auth/guard/type/requestPayload";
+} from "../auth/guard/types/requestPayload";
 import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner.decorator";
 import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
 import { Roles } from "./decorator/role";
@@ -43,7 +43,7 @@ import { ReplaceRoleDTO } from "./dto/request/replaceRoleDTO";
 import { ReplaceUsernameDTO } from "./dto/request/replaceUsernameDTO";
 import { User } from "./entity/user.entity";
 import { UserService } from "./user.service";
-import { AuthGuardRequest } from "../auth/guard/type/AuthRequest";
+import { AuthGuardRequest } from "../auth/guard/types/AuthRequest";
 
 @Crud({
 	model: {

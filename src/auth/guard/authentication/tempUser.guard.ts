@@ -14,8 +14,8 @@ import { UserService } from "../../../user/user.service";
 import { AuthService, JWTDecode } from "../../auth.service";
 import { PURPOSE_ONE_TIME_TOKEN_KEY } from "../../metadata/purposeOneTimeToken";
 import { OneTimeTokenPurpose } from "../../entity/oneTimeToken.entity";
-import { AUTH_GUARD_PAYLOAD, TempUserPayload } from "../type/requestPayload";
-import { AuthGuardRequest } from "../type/AuthRequest";
+import { AUTH_GUARD_PAYLOAD, TempUserPayload } from "../types/requestPayload";
+import { AuthGuardRequest } from "../types/AuthRequest";
 
 const ENUM_ONE_TIME_TOKEN_HEADER = {
 	X_ONE_TIME_TOKEN_ID: `x-one-time-token-identifier`,

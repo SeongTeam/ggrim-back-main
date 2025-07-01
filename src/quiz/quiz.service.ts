@@ -4,7 +4,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Mutex } from "async-mutex";
 import { FindManyOptions, QueryRunner, Repository } from "typeorm";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
-import { IPaginationResult } from "../_common/interface";
+import { IPaginationResult } from "../_common/types";
 import { Artist } from "../artist/entities/artist.entity";
 import { createTransactionQueryBuilder } from "../db/query-runner/queryRunner.lib";
 import { Painting } from "../painting/entities/painting.entity";
@@ -21,11 +21,11 @@ import { UpdateQuizDTO } from "./dto/request/updateQuizDTO";
 import { QuizDislike } from "./entities/quizDislike.entity";
 import { QuizLike } from "./entities/quizLike.entity";
 import { Quiz } from "./entities/quiz.entity";
-import { QuizSubmission } from "./interface/quizSubmission";
-import { QuizReactionCount } from "./interface/reactionCount";
-import { RelatedPaintings } from "./interface/relatedPaintings";
-import { RelatedPaintingIds } from "./interface/relatedPaintingIds";
-import { ShortQuiz } from "./interface/shortQuiz";
+import { QuizSubmission } from "./types/quizSubmission";
+import { QuizReactionCount } from "./types/reactionCount";
+import { RelatedPaintings } from "./types/relatedPaintings";
+import { RelatedPaintingIds } from "./types/relatedPaintingIds";
+import { ShortQuiz } from "./types/shortQuiz";
 
 @Injectable()
 export class QuizService extends TypeOrmCrudService<Quiz> {

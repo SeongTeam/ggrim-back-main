@@ -3,8 +3,8 @@ import { ModuleRef, Reflector } from "@nestjs/core";
 import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
 import { ADMIN_ACCESS_KEY } from "../../metadata/adminAccess";
 import { CHECK_OWNER_KEY, CheckOwnerOption } from "../../metadata/owner";
-import { AUTH_GUARD_PAYLOAD } from "../type/requestPayload";
-import { AuthGuardRequest } from "../type/AuthRequest";
+import { AUTH_GUARD_PAYLOAD } from "../types/requestPayload";
+import { AuthGuardRequest } from "../types/AuthRequest";
 
 // TODO: OwnerGuard 기능 개선
 // - [x] User Role = admin 일때, 통과시키기

@@ -35,7 +35,7 @@ import { ArtistService } from "../artist/artist.service";
 import { CheckOwner } from "../auth/metadata/owner";
 import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
 import { OwnerGuard } from "../auth/guard/authorization/owner.guard";
-import { AuthUserPayload, AUTH_GUARD_PAYLOAD } from "../auth/guard/type/requestPayload";
+import { AuthUserPayload, AUTH_GUARD_PAYLOAD } from "../auth/guard/types/requestPayload";
 import { S3Service } from "../aws/s3.service";
 import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner.decorator";
 import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
@@ -56,11 +56,11 @@ import { UpdateQuizDTO } from "./dto/request/updateQuizDTO";
 import { QuizDislike } from "./entities/quizDislike.entity";
 import { QuizLike } from "./entities/quizLike.entity";
 import { Quiz } from "./entities/quiz.entity";
-import { QuizContext } from "./interface/quizContext";
-import { ShortQuiz } from "./interface/shortQuiz";
+import { QuizContext } from "./types/quizContext";
+import { ShortQuiz } from "./types/shortQuiz";
 import { QuizScheduleService } from "./quizSchedule.service";
 import { QuizService } from "./quiz.service";
-import { AuthGuardRequest } from "../auth/guard/type/AuthRequest";
+import { AuthGuardRequest } from "../auth/guard/types/AuthRequest";
 
 @Crud({
 	model: {

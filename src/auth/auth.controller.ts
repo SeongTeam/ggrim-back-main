@@ -45,8 +45,8 @@ import {
 	AuthUserPayload,
 	AUTH_GUARD_PAYLOAD,
 	SecurityTokenPayload,
-} from "./guard/type/requestPayload";
-import { AuthGuardRequest } from "./guard/type/AuthRequest";
+} from "./guard/types/requestPayload";
+import { AuthGuardRequest } from "./guard/types/AuthRequest";
 
 @Controller("auth")
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))

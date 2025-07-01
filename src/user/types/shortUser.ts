@@ -1,4 +1,4 @@
-import { User, UserRole, UserState } from "../../user/entity/user.entity";
+import { User, UserRole, UserState } from "../entity/user.entity";
 
 export class ShortUser implements Pick<User, "username" | "active" | "id" | "role"> {
 	constructor(user: User) {

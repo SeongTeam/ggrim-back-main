@@ -34,7 +34,7 @@ import { GetByIdsQueryDTO } from "./dto/request/getByIdsQueryDTO";
 import { ReplacePaintingDTO } from "./dto/request/replacePaintingDTO";
 import { SearchPaintingDTO } from "./dto/request/searchPaintingDTO";
 import { Painting } from "./entities/painting.entity";
-import { ShortPainting } from "./interface/shortPainting";
+import { ShortPainting } from "./types/shortPainting";
 import { PaintingService } from "./painting.service";
 
 @UsePipes(new ValidationPipe({ transform: true }))
