@@ -18,7 +18,7 @@ export class UserService extends TypeOrmCrudService<User> {
 
 	async updateUser(queryRunner: QueryRunner, id: string, dto: DeepPartial<User>): Promise<void> {
 		try {
-			const result = await createTransactionQueryBuilder(queryRunner, User)
+			await createTransactionQueryBuilder(queryRunner, User)
 				.update()
 				.set({
 					...dto,
@@ -73,7 +73,7 @@ export class UserService extends TypeOrmCrudService<User> {
 
 	async softDeleteUser(queryRunner: QueryRunner, id: string): Promise<void> {
 		try {
-			const result = await createTransactionQueryBuilder(queryRunner, User)
+			await createTransactionQueryBuilder(queryRunner, User)
 				.softDelete()
 				.where("id = :id", { id })
 				.execute();
@@ -90,7 +90,7 @@ export class UserService extends TypeOrmCrudService<User> {
 
 	async recoverUser(queryRunner: QueryRunner, id: string): Promise<void> {
 		try {
-			const result = await createTransactionQueryBuilder(queryRunner, User)
+			await createTransactionQueryBuilder(queryRunner, User)
 				.restore()
 				.where("id = :id", { id })
 				.execute();
