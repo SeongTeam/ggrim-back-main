@@ -1,9 +1,9 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { DatabaseService, IEntity } from "../../src/db/db.service";
+import { DatabaseService, IEntity } from "../../src/modules/db/db.service";
 
 import * as fs from "fs";
 import * as Path from "path";
-import { ServiceException } from "../../src/_common/filter/exception/service/serviceException";
+import { ServiceException } from "../../src/modules/_common/filter/exception/service/serviceException";
 
 @Injectable()
 export class TestService {

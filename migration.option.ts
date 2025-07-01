@@ -7,7 +7,7 @@ import {
 	ENV_DB_PASSWORD_KEY,
 	ENV_DB_PORT_KEY,
 	ENV_DB_USER_NAME_KEY,
-} from "./src/_common/const/envKeys.const";
+} from "./src/modules/_common/const/envKeys.const";
 
 const envName = ".env.migration";
 config({ path: resolve(__dirname, envName) });

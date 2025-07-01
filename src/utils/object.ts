@@ -1,4 +1,4 @@
-import { ServiceException } from "../_common/filter/exception/service/serviceException";
+import { ServiceException } from "../modules/_common/filter/exception/service/serviceException";
 import { isNotFalsy } from "./validator";
 
 export function extractValues<T, K extends keyof T, R = T[K] extends Array<infer U> ? U : T[K]>(

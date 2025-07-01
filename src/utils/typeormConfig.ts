@@ -8,7 +8,7 @@ import {
 	ENV_DB_PASSWORD_KEY,
 	ENV_DB_PORT_KEY,
 	ENV_DB_USER_NAME_KEY,
-} from "../_common/const/envKeys.const";
+} from "../modules/_common/const/envKeys.const";
 import { TypeORMCustomLogger } from "./typeormCustomLogger";
 @Injectable()
 export class TypeORMConfig implements TypeOrmOptionsFactory {
