@@ -262,11 +262,29 @@ export class QuizScheduleService {
 			this.mutex.release();
 		}
 	}
-
+	//TODO: startOptimization() 개선하기
+	// - [ ] 해당 함수 실행시키는 실행자 선정하기
+	// - [ ] Non-Error 익셉션 처리 로직 추가하기
+	// - [ ] 실패 횟수를 측정하여, 주기적 실패 에러 핸들링 로직 추가하기
 	startOptimization(interval = this.OPTIMIZE_INTERVAL_MS) {
 		if (this.optimizerTimer) return;
 		this.optimizerTimer = setInterval(() => {
-			this.optimize();
+			this.optimize().catch((e: unknown) => {
+				if (e instanceof Error) {
+					this.logger.error(
+						`fail startOptimization() : ${e.message}\n` + `system is unsafe`,
+						e.stack || "",
+						{
+							className: QuizScheduleService.name,
+						},
+					);
+				} else {
+					this.logger.error(`Non-error occur.\n${JSON.stringify(e)}`, "", {
+						className: QuizScheduleService.name,
+					});
+					throw e;
+				}
+			});
 		}, interval);
 	}
 
