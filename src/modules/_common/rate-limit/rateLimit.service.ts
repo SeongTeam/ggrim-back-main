@@ -12,6 +12,10 @@ interface RateLimitEntry {
 	resetTime: number;
 }
 
+//TODO RateLimit 로직 개선하기
+// - [ ] 공유 저장소인 store 필드의 race condition 고랴하기
+// - [ ] cleanUp 로직의 최대 실행 시간을 보장하여, 성능 보존하기
+
 @Injectable()
 export class RateLimitService {
 	private readonly store: Map<string, RateLimitEntry> = new Map();
@@ -41,11 +45,11 @@ export class RateLimitService {
 	}
 
 	// Check rate limit with custom options
-	async checkRateLimit(
+	checkRateLimit(
 		ip: string,
 		path: string,
 		options: { ttl?: number; limit?: number },
-	): Promise<{ allowed: boolean; remaining: number; reset: number }> {
+	): { allowed: boolean; remaining: number; reset: number } {
 		if (!this.ENABLED) {
 			return { allowed: true, remaining: Number.MAX_SAFE_INTEGER, reset: 0 };
 		}
@@ -61,12 +65,12 @@ export class RateLimitService {
 	}
 
 	// find rate limit info
-	private async recordRequest(
+	private recordRequest(
 		ip: string,
 		path: string,
 		ttl: number,
 		limit: number,
-	): Promise<{ allowed: boolean; remaining: number; reset: number }> {
+	): { allowed: boolean; remaining: number; reset: number } {
 		const now = Date.now();
 		const key = this.getKey(ip, path);
 		let entry = this.store.get(key);
