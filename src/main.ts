@@ -19,6 +19,8 @@ async function bootstrap() {
 
 	await app.listen(3000);
 }
+
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 bootstrap();
 
 export function setNestApp<T extends INestApplication>(app: T): void {
