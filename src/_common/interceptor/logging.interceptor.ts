@@ -1,10 +1,17 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nestjs/common";
+import {
+	CallHandler,
+	ExecutionContext,
+	HttpStatus,
+	Injectable,
+	NestInterceptor,
+} from "@nestjs/common";
 import { ModuleRef } from "@nestjs/core";
 import { Request, Response } from "express";
 import { Observable } from "rxjs";
-import { tap } from "rxjs/operators";
+import { catchError, tap } from "rxjs/operators";
 import { LoggerService } from "../../logger/logger.service";
 import { NODE_ENV } from "../const/envKeys.const";
+import { BaseException } from "../filter/exception/baseException";
 
 interface HttpInfo {
 	request: Request;
@@ -28,14 +35,13 @@ export class HttpLoggingInterceptor implements NestInterceptor {
 		}
 
 		return call$.handle().pipe(
-			tap({
-				next: (val: any): void => {
-					const info = this.logNext(val, context);
-					this.logDebug(info);
-				},
-				error: (err: any): void => {
-					this.logError(err, context);
-				},
+			tap((val: any): void => {
+				const info = this.logNext(val, context);
+				this.logDebug(info);
+			}),
+			catchError((err) => {
+				this.logError(err, context);
+				throw err;
 			}),
 		);
 	}
@@ -57,12 +63,14 @@ export class HttpLoggingInterceptor implements NestInterceptor {
 			},
 		);
 
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		return { request, response, body: val } as HttpInfo;
 	}
-	logDebug(v: HttpInfo) {
+	logDebug(info: HttpInfo) {
 		//For Debuging
-		const { body } = v.request;
-		const email = this.getUserAuthInfo(v.request);
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+		const { body } = info.request;
+		const email = this.getUserAuthInfo(info.request);
 
 		this.logger.debug(
 			`----Develop log---\n` +
@@ -70,24 +78,26 @@ export class HttpLoggingInterceptor implements NestInterceptor {
 				`[REQUEST] \n` +
 				`Body: ${JSON.stringify(body, null, 2)}\n` +
 				`[RESPONSE]\n` +
-				`body :${JSON.stringify(v.body, null, 2)}`,
+				`body :${JSON.stringify(info.body, null, 2)}`,
 			{
 				className: this.className,
 			},
 		);
 	}
 
-	logError(error: any, ctx: ExecutionContext) {
+	logError(error: unknown, ctx: ExecutionContext) {
 		const request = ctx.switchToHttp().getRequest<Request>();
 
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const { method, originalUrl: url, params, query, body, headers, ip } = request;
-		const handlerkey = ctx.getHandler().name;
+		const handlerKey = ctx.getHandler().name;
 		const email = this.getUserAuthInfo(request);
 
-		const httpStatus = error.status;
+		const httpStatus: number =
+			error instanceof BaseException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
 		const format =
-			`accessing ${handlerkey} handler\n` +
+			`accessing ${handlerKey} handler\n` +
 			`${method}::${url} from ${ip}\n` +
 			`Status : ${httpStatus} \n` +
 			`User: ${email} \n` +
@@ -105,7 +115,7 @@ export class HttpLoggingInterceptor implements NestInterceptor {
 				className: this.className,
 			});
 		} else {
-			this.logger.error(format, error.stack, {
+			this.logger.logUnknownError(format, error, {
 				className: this.className,
 			});
 		}
@@ -115,18 +125,18 @@ export class HttpLoggingInterceptor implements NestInterceptor {
 		/*TODO
     - Add logic extract user identifier info from request to debug problem where request has problem.
     */
-		let ret = "userinfo";
+		const ret = "userinfo";
 
-		// const rawToken = req.get('authorization');
-		// if (rawToken == undefined) {
-		//   return ret;
-		// }
+		const rawToken = req.get("authorization");
+		if (rawToken == undefined) {
+			return ret;
+		}
 
-		// const [type, token] = rawToken.split(' ');
+		const [type] = rawToken.split(" ");
 
-		// if (type != 'bearer') {
-		//   return ret;
-		// }
+		if (type != "bearer") {
+			return ret;
+		}
 
 		return ret;
 	}
