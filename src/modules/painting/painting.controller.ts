@@ -155,7 +155,12 @@ export class PaintingController {
          - async 함수 내에서 에러가 발생한다면, await를 하지 않는 경우, try-catch문으로 에러를 캐치할수 없다.
          - 방법1) prettier를 사용하여 promise를 처리하도록 규칙을 강제한다.
       */
-			throw error;
+			throw new ServiceException(
+				"ENTITY_CREATE_FAILED",
+				"INTERNAL_SERVER_ERROR",
+				"need to check internal logic",
+				{ cause: error },
+			);
 		}
 	}
 
