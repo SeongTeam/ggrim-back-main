@@ -18,7 +18,7 @@ import { TempUserPayload } from "../types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "../const";
 import { Request } from "express";
 
-const ENUM_ONE_TIME_TOKEN_HEADER = {
+const ONE_TIME_TOKEN_HEADER = {
 	X_ONE_TIME_TOKEN_ID: `x-one-time-token-identifier`,
 	X_ONE_TIME_TOKEN: "x-one-time-token-value",
 };
@@ -38,10 +38,8 @@ export class TempUserGuard implements CanActivate {
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const req = context.switchToHttp().getRequest<Request>();
 
-		const oneTimeToken = req.headers[ENUM_ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN] as string;
-		const oneTimeTokenID = req.headers[
-			ENUM_ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID
-		] as string;
+		const oneTimeToken = req.headers[ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN] as string;
+		const oneTimeTokenID = req.headers[ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID] as string;
 		const handlerPurpose = this.reflector.get<OneTimeTokenPurpose>(
 			PURPOSE_ONE_TIME_TOKEN_KEY,
 			context.getHandler(),
@@ -83,7 +81,7 @@ export class TempUserGuard implements CanActivate {
 		// check whether token is forged or not .
 		if (!(oneTimeTokenID && isUUID(oneTimeTokenID))) {
 			throw new UnauthorizedException(
-				`Missing or invalid ${ENUM_ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID} header field`,
+				`Missing or invalid ${ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID} header field`,
 			);
 		}
 

@@ -14,17 +14,17 @@ import {
 } from "../_common/const/envKeys.const";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 
-export const ENUM_MAIL_SUBJECT = {
+export const MAIL_SUBJECT = {
 	EMAIL_VERIFICATION: "Email verification",
 	UPDATE_FORGOTTEN_PW: "Update Forgotten password",
 	RECOVER_ACCOUNT: "Recover Account",
 } as const;
 
-export type MailSubjectType = (typeof ENUM_MAIL_SUBJECT)[keyof typeof ENUM_MAIL_SUBJECT];
+export type MailSubjectType = (typeof MAIL_SUBJECT)[keyof typeof MAIL_SUBJECT];
 
 @Injectable()
 export class MailService {
-	private ENUM_TEMPLATE = {
+	private TEMPLATE = {
 		EMAIL_VERIFY: "email-verify",
 		FORGET_PASSWORD: "forget-password",
 		REPORT: "report",
@@ -53,12 +53,12 @@ export class MailService {
 		});
 	}
 	async sendVerificationPinCode(to: string, pinCode: string) {
-		const html = this.getTemplate(this.ENUM_TEMPLATE.EMAIL_VERIFY, { pinCode });
+		const html = this.getTemplate(this.TEMPLATE.EMAIL_VERIFY, { pinCode });
 		try {
 			const result = await this.transporter
 				.sendMail({
 					to,
-					subject: ENUM_MAIL_SUBJECT.EMAIL_VERIFICATION,
+					subject: MAIL_SUBJECT.EMAIL_VERIFICATION,
 					html,
 					from: this.configService.get(ENV_SMTP_FROM_EMAIL),
 				})
@@ -83,7 +83,7 @@ export class MailService {
 
 	//
 	async sendSecurityTokenLink(to: string, subject: MailSubjectType, link: string) {
-		const html = this.getTemplate(this.ENUM_TEMPLATE.FORGET_PASSWORD, { link, subject });
+		const html = this.getTemplate(this.TEMPLATE.FORGET_PASSWORD, { link, subject });
 		try {
 			const result = await this.transporter
 				.sendMail({

@@ -35,7 +35,7 @@ export type TokenType = "REFRESH" | "ACCESS" | "ONE_TIME";
 export type StandardTokenPurpose = "access" | "refresh";
 export type JwtPurpose = OneTimeTokenPurpose | StandardTokenPurpose;
 
-export const ENUM_JWT_ERROR_NAME = {
+export const JWT_ERROR_NAME = {
 	TOKEN_EXPIRED: "TokenExpiredError",
 	TOKEN_INVALID: "JsonWebTokenError",
 	NOT_BEFORE: "NotBeforeError",

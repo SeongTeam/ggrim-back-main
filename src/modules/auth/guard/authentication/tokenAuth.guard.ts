@@ -12,7 +12,7 @@ import { AccessTokenPayload, AuthUserPayload } from "../types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "../const";
 import { Request } from "express";
 
-const ENUM_HEADER_FIELD = {
+const HEADER_FIELD = {
 	AUTHORIZATION: "authorization",
 	X_REFRESH_TOKEN: "x-refresh-token",
 };
@@ -27,7 +27,7 @@ export class TokenAuthGuard implements CanActivate {
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const req = context.switchToHttp().getRequest<Request>();
 
-		const authHeader = req.headers[ENUM_HEADER_FIELD.AUTHORIZATION] as string;
+		const authHeader = req.headers[HEADER_FIELD.AUTHORIZATION] as string;
 
 		if (!authHeader || !authHeader.startsWith("Bearer ")) {
 			throw new UnauthorizedException("Missing or invalid Authorization Bearer header");
