@@ -4,11 +4,7 @@ import { RATE_LIMIT_METADATA } from "../const/envKeys.const";
 import { ServiceException } from "../filter/exception/service/serviceException";
 import { RateLimitService } from "./rateLimit.service.js";
 import { Request, Response } from "express";
-
-export interface RateLimitOptions {
-	ttl?: number;
-	limit?: number;
-}
+import { RateLimitOptions } from "./types/RateLimitOptions";
 
 @Injectable()
 export class RateLimitGuard {

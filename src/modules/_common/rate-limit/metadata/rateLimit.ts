@@ -1,10 +1,6 @@
 import { SetMetadata } from "@nestjs/common";
-import { RATE_LIMIT_METADATA } from "../const/envKeys.const";
-
-export interface RateLimitOptions {
-	ttl?: number; // in ms
-	limit?: number; // number of requests
-}
+import { RATE_LIMIT_METADATA } from "../../const/envKeys.const";
+import { RateLimitOptions } from "../types/RateLimitOptions";
 
 /**
  * RateLimit decorator for applying rate limiting to controller methods
