@@ -82,13 +82,7 @@ export class AuthController {
 		});
 		//TODO : 로그인 기록 남기기
 
-		const response: SignInResponse = {
-			accessToken,
-			refreshToken,
-			user,
-		};
-
-		return response;
+		return new SignInResponse(accessToken, refreshToken, user);
 	}
 
 	// TODO: 인증 로직 개선
