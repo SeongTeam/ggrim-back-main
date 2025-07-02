@@ -27,40 +27,16 @@ import {
 } from "typeorm";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { createTransactionQueryBuilder } from "../db/query-runner/queryRunner.lib";
-import { User, UserRole } from "../user/entity/user.entity";
+import { User } from "../user/entity/user.entity";
 import { OneTimeToken, OneTimeTokenPurpose } from "./entity/oneTimeToken.entity";
 import { Verification } from "./entity/verification.entity";
-
-export type TokenType = "REFRESH" | "ACCESS" | "ONE_TIME";
-export type StandardTokenPurpose = "access" | "refresh";
-export type JwtPurpose = OneTimeTokenPurpose | StandardTokenPurpose;
+import { AUTHORIZATION_TYPE, BaseJWTPayload, JWTDecode, JWTPayload } from "./types/jwt";
 
 export const JWT_ERROR_NAME = {
 	TOKEN_EXPIRED: "TokenExpiredError",
 	TOKEN_INVALID: "JsonWebTokenError",
 	NOT_BEFORE: "NotBeforeError",
 };
-
-// ref : https://github.com/auth0/node-jsonwebtoken?tab=readme-ov-file#jwtsignpayload-secretorprivatekey-options-callback
-export interface JWTDecode extends JWTPayload {
-	iat: number; // second unit representing expired
-	exp: number; // second unit representing expired
-	// nbf?: Date;
-	// aud? : object;
-	// iss? : object;
-}
-
-export interface BaseJWTPayload {
-	email: string;
-	type: TokenType;
-	purpose: JwtPurpose;
-}
-export interface JWTPayload extends BaseJWTPayload {
-	username: string;
-	role: UserRole;
-}
-
-export type AUTHORIZATION_TYPE = "Bearer" | "Basic";
 
 // TODO: JWT 로직 개선
 // - [ ] AccessToken 만료시간 줄이고 갱신 로직 추가하기
