@@ -41,11 +41,8 @@ import { Verification } from "./entity/verification.entity";
 import { BasicGuard } from "./guard/authentication/basic.guard";
 import { SecurityTokenGuard } from "./guard/authentication/securityToken.guard";
 import { OwnerGuard } from "./guard/authorization/owner.guard";
-import {
-	AuthUserPayload,
-	AUTH_GUARD_PAYLOAD,
-	SecurityTokenPayload,
-} from "./guard/types/requestPayload";
+import { AuthUserPayload, SecurityTokenPayload } from "./guard/types/requestPayload";
+import { AUTH_GUARD_PAYLOAD } from "./guard/const";
 import { AuthGuardRequest } from "./guard/types/AuthRequest";
 
 @Controller("auth")

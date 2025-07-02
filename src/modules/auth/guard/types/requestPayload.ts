@@ -1,12 +1,11 @@
 import { User } from "../../../user/entity/user.entity";
 import { JWTDecode } from "../../auth.service";
+import { AUTH_GUARD_PAYLOAD } from "../const";
 
-export const AUTH_GUARD_PAYLOAD = {
-	USER: "AuthUserPayload",
-	SECURITY_TOKEN: "SecurityTokenPayload",
-	ACCESS_TOKEN: "AccessTokenPayload",
-	TEMP_USER: "TempUser",
-} as const;
+export type AuthGuardPayLoadUser = typeof AUTH_GUARD_PAYLOAD.USER;
+export type AuthGuardPayloadSecurityToken = typeof AUTH_GUARD_PAYLOAD.SECURITY_TOKEN;
+export type AuthGuardPayLoadAccessToken = typeof AUTH_GUARD_PAYLOAD.ACCESS_TOKEN;
+export type AuthGuardPayLoadTempUser = typeof AUTH_GUARD_PAYLOAD.TEMP_USER;
 
 export interface AuthUserPayload {
 	user: User;

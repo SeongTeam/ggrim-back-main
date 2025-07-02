@@ -3,7 +3,7 @@ import { ModuleRef, Reflector } from "@nestjs/core";
 import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
 import { ADMIN_ACCESS_KEY } from "../../metadata/adminAccess";
 import { CHECK_OWNER_KEY, CheckOwnerOption } from "../../metadata/owner";
-import { AUTH_GUARD_PAYLOAD } from "../types/requestPayload";
+import { AUTH_GUARD_PAYLOAD } from "../const";
 import { AuthGuardRequest } from "../types/AuthRequest";
 
 // TODO: OwnerGuard 기능 개선

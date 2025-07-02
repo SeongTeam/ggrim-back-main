@@ -8,7 +8,8 @@ import {
 } from "@nestjs/common";
 import { UserService } from "../../../user/user.service";
 import { AuthService, JWTDecode } from "../../auth.service";
-import { AccessTokenPayload, AuthUserPayload, AUTH_GUARD_PAYLOAD } from "../types/requestPayload";
+import { AccessTokenPayload, AuthUserPayload } from "../types/requestPayload";
+import { AUTH_GUARD_PAYLOAD } from "../const";
 import { AuthGuardRequest } from "../types/AuthRequest";
 
 const ENUM_HEADER_FIELD = {

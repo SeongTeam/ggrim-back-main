@@ -1,10 +1,10 @@
 import {
 	AccessTokenPayload,
 	AuthUserPayload,
-	AUTH_GUARD_PAYLOAD,
 	SecurityTokenPayload,
 	TempUserPayload,
 } from "./requestPayload";
+import { AUTH_GUARD_PAYLOAD } from "../const";
 import { Request } from "express";
 
 export interface AuthGuardRequest extends Request {

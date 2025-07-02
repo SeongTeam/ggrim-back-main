@@ -30,10 +30,10 @@ import { OwnerGuard } from "../auth/guard/authorization/owner.guard";
 import { RolesGuard } from "../auth/guard/authorization/roles.guard";
 import {
 	AuthUserPayload,
-	AUTH_GUARD_PAYLOAD,
 	SecurityTokenPayload,
 	TempUserPayload,
 } from "../auth/guard/types/requestPayload";
+import { AUTH_GUARD_PAYLOAD } from "../auth/guard/const";
 import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner.decorator";
 import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
 import { Roles } from "./decorator/role";

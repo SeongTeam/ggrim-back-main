@@ -10,7 +10,8 @@ import { plainToClass } from "class-transformer";
 import { UserService } from "../../../user/user.service";
 import { AuthService } from "../../auth.service";
 import { BasicTokenGuardDTO } from "../dto/basicAuthGuard.dto";
-import { AuthUserPayload, AUTH_GUARD_PAYLOAD } from "../types/requestPayload";
+import { AuthUserPayload } from "../types/requestPayload";
+import { AUTH_GUARD_PAYLOAD } from "../const";
 import { AuthGuardRequest } from "../types/AuthRequest";
 
 @Injectable()

@@ -3,7 +3,7 @@ import { Reflector } from "@nestjs/core";
 import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
 import { ROLES_KEY } from "../../../user/decorator/role";
 import { UserRole } from "../../../user/entity/user.entity";
-import { AUTH_GUARD_PAYLOAD } from "../types/requestPayload";
+import { AUTH_GUARD_PAYLOAD } from "../const";
 import { AuthGuardRequest } from "../types/AuthRequest";
 
 @Injectable()

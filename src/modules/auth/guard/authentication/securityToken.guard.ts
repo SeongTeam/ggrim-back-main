@@ -17,12 +17,8 @@ import {
 	SecurityTokenGuardOptions,
 } from "../../metadata/securityTokenGuardOption";
 import { OneTimeTokenPurpose } from "../../entity/oneTimeToken.entity";
-import {
-	AccessTokenPayload,
-	AuthUserPayload,
-	AUTH_GUARD_PAYLOAD,
-	SecurityTokenPayload,
-} from "../types/requestPayload";
+import { AccessTokenPayload, AuthUserPayload, SecurityTokenPayload } from "../types/requestPayload";
+import { AUTH_GUARD_PAYLOAD } from "../const";
 import { AuthGuardRequest } from "../types/AuthRequest";
 
 const ENUM_SECURITY_TOKEN_HEADER = {
