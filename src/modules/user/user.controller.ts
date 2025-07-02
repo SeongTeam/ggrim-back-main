@@ -34,7 +34,7 @@ import {
 	TempUserPayload,
 } from "../auth/guard/types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "../auth/guard/const";
-import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner.decorator";
+import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner";
 import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
 import { Roles } from "./metadata/role";
 import { CreateUserDTO } from "./dto/request/createUserDTO";

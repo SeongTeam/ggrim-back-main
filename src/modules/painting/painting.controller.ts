@@ -25,7 +25,7 @@ import {
 } from "../_common/const/envKeys.const";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { S3Service } from "../aws/s3.service";
-import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner.decorator";
+import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner";
 import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
 import { getLatestMonday } from "../../utils/date";
 import { CreatePaintingDTO } from "./dto/request/createPaintingDTO";

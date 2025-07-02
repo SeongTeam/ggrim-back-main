@@ -21,7 +21,7 @@ import {
 	FRONT_ROUTE_USER_EMAIL_VERIFICATION,
 } from "../_common/const/envKeys.const";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
-import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner.decorator";
+import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner";
 import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
 import { MailService } from "../mail/mail.service";
 import { User } from "../user/entity/user.entity";

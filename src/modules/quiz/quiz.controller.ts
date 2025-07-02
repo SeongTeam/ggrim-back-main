@@ -38,7 +38,7 @@ import { OwnerGuard } from "../auth/guard/authorization/owner.guard";
 import { AuthUserPayload } from "../auth/guard/types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "../auth/guard/const";
 import { S3Service } from "../aws/s3.service";
-import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner.decorator";
+import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner";
 import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
 import { PaintingService } from "../painting/painting.service";
 import { StyleService } from "../style/style.service";
