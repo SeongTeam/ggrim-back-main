@@ -12,7 +12,7 @@ import { AuthService } from "../../auth.service";
 import { BasicTokenGuardDTO } from "../dto/basicAuthGuard.dto";
 import { AuthUserPayload } from "../types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "../const";
-import { AuthGuardRequest } from "../types/AuthRequest";
+import { Request } from "express";
 
 @Injectable()
 export class BasicGuard implements CanActivate {
@@ -22,7 +22,7 @@ export class BasicGuard implements CanActivate {
 	) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
-		const req = context.switchToHttp().getRequest<AuthGuardRequest>();
+		const req = context.switchToHttp().getRequest<Request>();
 
 		const header = req.headers["authorization"];
 

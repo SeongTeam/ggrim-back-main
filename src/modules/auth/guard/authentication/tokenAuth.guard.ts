@@ -10,7 +10,7 @@ import { UserService } from "../../../user/user.service";
 import { AuthService, JWTDecode } from "../../auth.service";
 import { AccessTokenPayload, AuthUserPayload } from "../types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "../const";
-import { AuthGuardRequest } from "../types/AuthRequest";
+import { Request } from "express";
 
 const ENUM_HEADER_FIELD = {
 	AUTHORIZATION: "authorization",
@@ -25,7 +25,7 @@ export class TokenAuthGuard implements CanActivate {
 	) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
-		const req = context.switchToHttp().getRequest<AuthGuardRequest>();
+		const req = context.switchToHttp().getRequest<Request>();
 
 		const authHeader = req.headers[ENUM_HEADER_FIELD.AUTHORIZATION] as string;
 

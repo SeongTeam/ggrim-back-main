@@ -10,7 +10,7 @@ import {
 	Param,
 	Patch,
 	Put,
-	Request,
+	Req,
 	UseGuards,
 	UseInterceptors,
 	UsePipes,
@@ -43,7 +43,7 @@ import { ReplaceRoleDTO } from "./dto/request/replaceRoleDTO";
 import { ReplaceUsernameDTO } from "./dto/request/replaceUsernameDTO";
 import { User } from "./entity/user.entity";
 import { UserService } from "./user.service";
-import { AuthGuardRequest } from "../auth/guard/types/AuthRequest";
+import { Request } from "express";
 
 @Crud({
 	model: {
@@ -92,7 +92,7 @@ export class UserController implements CrudController<User> {
 	@UseGuards(TempUserGuard)
 	async signUp(
 		@DBQueryRunner() qr: QueryRunner,
-		@Request() request: AuthGuardRequest,
+		@Req() request: Request,
 		@Body() dto: CreateUserDTO,
 	) {
 		const tempUserPayload: TempUserPayload = request[AUTH_GUARD_PAYLOAD.TEMP_USER]!;
@@ -139,7 +139,7 @@ export class UserController implements CrudController<User> {
 	@UseInterceptors(QueryRunnerInterceptor)
 	async replacePassword(
 		@DBQueryRunner() qr: QueryRunner,
-		@Request() request: AuthGuardRequest,
+		@Req() request: Request,
 		@Param("email") email: string,
 		@Body() dto: ReplacePassWordDTO,
 	) {
@@ -170,7 +170,7 @@ export class UserController implements CrudController<User> {
 	@UseGuards(TokenAuthGuard, OwnerGuard)
 	async replaceUsername(
 		@DBQueryRunner() qr: QueryRunner,
-		@Request() request: AuthGuardRequest,
+		@Req() request: Request,
 		@Param("email") email: string,
 		@Body() dto: ReplaceUsernameDTO,
 	) {
@@ -196,7 +196,7 @@ export class UserController implements CrudController<User> {
 	@UseGuards(TokenAuthGuard, RolesGuard)
 	async replaceRole(
 		@DBQueryRunner() qr: QueryRunner,
-		@Request() request: AuthGuardRequest,
+		@Req() request: Request,
 		@Param("email") email: string,
 		@Body() dto: ReplaceRoleDTO,
 	) {
@@ -221,7 +221,7 @@ export class UserController implements CrudController<User> {
 	@UseInterceptors(QueryRunnerInterceptor)
 	async deleteUser(
 		@DBQueryRunner() qr: QueryRunner,
-		@Request() request: AuthGuardRequest,
+		@Req() request: Request,
 		@Param("email") email: string,
 	) {
 		if (!isEmail(email)) {
@@ -250,7 +250,7 @@ export class UserController implements CrudController<User> {
 	@UseInterceptors(QueryRunnerInterceptor)
 	async recoverUser(
 		@DBQueryRunner() qr: QueryRunner,
-		@Request() request: AuthGuardRequest,
+		@Req() request: Request,
 		//@Param("email") email: string,
 	) {
 		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;

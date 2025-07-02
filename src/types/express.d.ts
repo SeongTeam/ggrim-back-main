@@ -1,8 +1,12 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Request } from "express";
+type RequestPayloadMap = {
+	AuthUserPayload: import("../modules/auth/guard/types/requestPayload").AuthUserPayload;
+	AccessTokenPayload: import("../modules/auth/guard/types/requestPayload").AccessTokenPayload;
+	SecurityTokenPayload: import("../modules/auth/guard/types/requestPayload").SecurityTokenPayload;
+	TempUser: import("../modules/auth/guard/types/requestPayload").TempUserPayload;
+};
 
-declare module "express-serve-static-core" {
-	interface Request {
+declare namespace Express {
+	interface Request extends Partial<RequestPayloadMap> {
 		isRateLimitChecked?: boolean;
 	}
 }

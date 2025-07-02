@@ -19,7 +19,7 @@ import {
 import { OneTimeTokenPurpose } from "../../entity/oneTimeToken.entity";
 import { AccessTokenPayload, AuthUserPayload, SecurityTokenPayload } from "../types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "../const";
-import { AuthGuardRequest } from "../types/AuthRequest";
+import { Request } from "express";
 
 const ENUM_SECURITY_TOKEN_HEADER = {
 	X_SECURITY_TOKEN_ID: `x-security-token-identifier`,
@@ -44,7 +44,7 @@ export class SecurityTokenGuard implements CanActivate {
 	) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
-		const req = context.switchToHttp().getRequest<AuthGuardRequest>();
+		const req = context.switchToHttp().getRequest<Request>();
 
 		const securityToken = req.headers[ENUM_SECURITY_TOKEN_HEADER.X_SECURITY_TOKEN] as string;
 		const securityTokenID = req.headers[

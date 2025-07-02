@@ -61,7 +61,7 @@ import { QuizContext } from "./types/quizContext";
 import { ShortQuiz } from "./types/shortQuiz";
 import { QuizScheduleService } from "./quizSchedule.service";
 import { QuizService } from "./quiz.service";
-import { AuthGuardRequest } from "../auth/guard/types/AuthRequest";
+import { Request } from "express";
 
 @Crud({
 	model: {
@@ -182,7 +182,7 @@ export class QuizController
 	@UseInterceptors(QueryRunnerInterceptor)
 	async createQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
-		@Request() request: AuthGuardRequest,
+		@Request() request: Request,
 		@Param("id") id: string,
 		@Body() dto: QuizReactionDTO,
 	): Promise<void> {
@@ -216,7 +216,7 @@ export class QuizController
 	@UseInterceptors(QueryRunnerInterceptor)
 	async deleteQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
-		@Request() request: AuthGuardRequest,
+		@Request() request: Request,
 		@Param("id") id: string,
 	): Promise<void> {
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
@@ -287,7 +287,7 @@ export class QuizController
 	@UseInterceptors(QueryRunnerInterceptor)
 	async create(
 		@DBQueryRunner() qr: QueryRunner,
-		@Request() request: AuthGuardRequest,
+		@Request() request: Request,
 
 		@Body() dto: CreateQuizDTO,
 	) {
@@ -333,7 +333,7 @@ export class QuizController
 	@UseInterceptors(QueryRunnerInterceptor)
 	async update(
 		@DBQueryRunner() qr: QueryRunner,
-		@Request() request: AuthGuardRequest,
+		@Request() request: Request,
 		@Param("id", ParseUUIDPipe) id: string,
 		@Body() dto: UpdateQuizDTO,
 	) {

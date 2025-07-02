@@ -4,7 +4,7 @@ import { ServiceException } from "../../../_common/filter/exception/service/serv
 import { ADMIN_ACCESS_KEY } from "../../metadata/adminAccess";
 import { CHECK_OWNER_KEY, CheckOwnerOption } from "../../metadata/owner";
 import { AUTH_GUARD_PAYLOAD } from "../const";
-import { AuthGuardRequest } from "../types/AuthRequest";
+import { Request } from "express";
 
 // TODO: OwnerGuard 기능 개선
 // - [x] User Role = admin 일때, 통과시키기
@@ -22,7 +22,7 @@ export class OwnerGuard implements CanActivate {
 		const options = this.reflector.get<CheckOwnerOption>(CHECK_OWNER_KEY, context.getHandler());
 
 		const isAdminAccess = this.reflector.get<boolean>(ADMIN_ACCESS_KEY, context.getHandler());
-		const request = context.switchToHttp().getRequest<AuthGuardRequest>();
+		const request = context.switchToHttp().getRequest<Request>();
 		const userPayload = request[AUTH_GUARD_PAYLOAD.USER];
 
 		if (!userPayload) {

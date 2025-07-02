@@ -43,7 +43,7 @@ import { SecurityTokenGuard } from "./guard/authentication/securityToken.guard";
 import { OwnerGuard } from "./guard/authorization/owner.guard";
 import { AuthUserPayload, SecurityTokenPayload } from "./guard/types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "./guard/const";
-import { AuthGuardRequest } from "./guard/types/AuthRequest";
+import { Request } from "express";
 
 @Controller("auth")
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -61,7 +61,7 @@ export class AuthController {
 
 	@Post("sign-in")
 	@UseGuards(BasicGuard)
-	signin(@Req() request: AuthGuardRequest) {
+	signin(@Req() request: Request) {
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = userPayload;
 		const { email, role, username } = user;
@@ -198,11 +198,11 @@ export class AuthController {
 	@UseInterceptors(QueryRunnerInterceptor)
 	async generateSecurityActionToken(
 		@DBQueryRunner() qr: QueryRunner,
-		@Req() request: AuthGuardRequest,
+		@Req() request: Request,
 		@Body() dto: CreateOneTimeTokenDTO,
 	): Promise<OneTimeToken> {
 		const { purpose } = dto;
-		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
+		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER] as AuthUserPayload;
 		const user = userPayload.user;
 		const { email } = user;
 		const securityToken = await this.createOneTimeToken(qr, email, purpose, user);
@@ -262,7 +262,7 @@ export class AuthController {
 	@UseGuards(SecurityTokenGuard)
 	async generateSecurityTokenByEmailVerification(
 		@DBQueryRunner() qr: QueryRunner,
-		@Req() request: AuthGuardRequest,
+		@Req() request: Request,
 		@Body() dto: CreateOneTimeTokenDTO,
 	): Promise<OneTimeToken> {
 		const { purpose } = dto;
@@ -293,10 +293,7 @@ export class AuthController {
 	@PurposeOneTimeToken("delete-account")
 	@UseGuards(SecurityTokenGuard)
 	@UseInterceptors(QueryRunnerInterceptor)
-	async testSecurityTokenGuard(
-		@DBQueryRunner() qr: QueryRunner,
-		@Req() request: AuthGuardRequest,
-	) {
+	async testSecurityTokenGuard(@DBQueryRunner() qr: QueryRunner, @Req() request: Request) {
 		const SecurityTokenGuardResult: SecurityTokenPayload =
 			request[AUTH_GUARD_PAYLOAD.SECURITY_TOKEN]!;
 		await this.service.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);

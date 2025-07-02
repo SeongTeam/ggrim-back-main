@@ -16,7 +16,7 @@ import { PURPOSE_ONE_TIME_TOKEN_KEY } from "../../metadata/purposeOneTimeToken";
 import { OneTimeTokenPurpose } from "../../entity/oneTimeToken.entity";
 import { TempUserPayload } from "../types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "../const";
-import { AuthGuardRequest } from "../types/AuthRequest";
+import { Request } from "express";
 
 const ENUM_ONE_TIME_TOKEN_HEADER = {
 	X_ONE_TIME_TOKEN_ID: `x-one-time-token-identifier`,
@@ -36,7 +36,7 @@ export class TempUserGuard implements CanActivate {
 	) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
-		const req = context.switchToHttp().getRequest<AuthGuardRequest>();
+		const req = context.switchToHttp().getRequest<Request>();
 
 		const oneTimeToken = req.headers[ENUM_ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN] as string;
 		const oneTimeTokenID = req.headers[

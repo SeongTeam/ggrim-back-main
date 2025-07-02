@@ -4,14 +4,14 @@ import { ServiceException } from "../../../_common/filter/exception/service/serv
 import { ROLES_KEY } from "../../../user/decorator/role";
 import { UserRole } from "../../../user/entity/user.entity";
 import { AUTH_GUARD_PAYLOAD } from "../const";
-import { AuthGuardRequest } from "../types/AuthRequest";
+import { Request } from "express";
 
 @Injectable()
 export class RolesGuard implements CanActivate {
 	constructor(private reflector: Reflector) {}
 
 	canActivate(context: ExecutionContext): boolean {
-		const req = context.switchToHttp().getRequest<AuthGuardRequest>();
+		const req = context.switchToHttp().getRequest<Request>();
 		const userInfo = req[AUTH_GUARD_PAYLOAD.USER];
 
 		if (!userInfo) {
