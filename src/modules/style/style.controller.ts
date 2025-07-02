@@ -9,7 +9,7 @@ import {
 import { Controller, UseGuards, UsePipes, ValidationPipe } from "@nestjs/common";
 import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
 import { RolesGuard } from "../auth/guard/authorization/roles.guard";
-import { Roles } from "../user/decorator/role";
+import { Roles } from "../user/metadata/role";
 import { CreateStyleDTO } from "./dto/request/createStyleDTO";
 import { ReplaceStyleDTO } from "./dto/request/replaceStyleDTO";
 import { Style } from "./entities/style.entity";

@@ -9,7 +9,7 @@ import {
 import { Controller, UseGuards } from "@nestjs/common";
 import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
 import { RolesGuard } from "../auth/guard/authorization/roles.guard";
-import { Roles } from "../user/decorator/role";
+import { Roles } from "../user/metadata/role";
 import { ArtistService } from "./artist.service";
 import { CreateArtistDTO } from "./dto/request/createArtistDTO";
 import { Artist } from "./entities/artist.entity";

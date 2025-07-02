@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Query, UseGuards } from "@nestjs/common";
 import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
 import { RolesGuard } from "../auth/guard/authorization/roles.guard";
-import { Roles } from "../user/decorator/role";
+import { Roles } from "../user/metadata/role";
 import { S3Service } from "./s3.service";
 
 @Controller("s3")

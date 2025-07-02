@@ -3,7 +3,7 @@ import { Body, Controller, Post, Put, UseGuards, UsePipes, ValidationPipe } from
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
 import { RolesGuard } from "../auth/guard/authorization/roles.guard";
-import { Roles } from "../user/decorator/role";
+import { Roles } from "../user/metadata/role";
 import { CreateTagDTO } from "./dto/request/createTagDTO";
 import { ReplaceTagDTO } from "./dto/request/replaceTagDTO";
 import { Tag } from "./entities/tag.entity";
