@@ -1,7 +1,176 @@
 
-## Code convention
 
-ref : https://github.com/basarat/typescript-book/blob/master/docs/styleguide/styleguide.md
+## Tech Stack
+
+### Nest.js (with express)
+
+- Advantage
+    1. 코드베이스 구조화 컨벤션 제공
+        - 익숙한 MVC 패턴을 적용하기 용이  
+    2. 다양한 nestjs 라이브러리 제공 
+- DisAdvantage
+    1. 기능 구현의 최저 비용이 높음
+        - 새로운 기능 구현시, Module, service 등의 클래스 구현 필수적이며, 높은 추상화 설계가 필요 
+    2. 프레임워크와 관련된 개념 및 라이브러리 학습 비용 높음.
+        - IoC, DI, Decorator 등의 개념 숙지 비용 필요
+        - Pipe Line 구축시 RxJs 라이브러리 등의 이해 필요.
+
+### Postgres DB
+- Advantage
+    1. 사용 무료
+    2. 사용 경험 있음 
+- DisAdvantage
+    1.
+
+### TypeORM
+- Advantage
+    1. nest.js와 호환성이 높음
+- DisAdvantage 
+    1. 공식 문서 설명 부족
+        - DB 동작에 대한 이해가 부족하다면, 리소스 낭비가 발생할 수 있음
+
+### Class-Validator & Class-transformer
+- Advantage
+    1. nest.js와 typeORM과 호환성이 높음
+    2. 다양한 Validate 라이브러리 제공
+- DisAdvantage
+    1. 
+
+
+## Structure
+
+### DB
+
+- (ERD Link)[https://www.erdcloud.com/d/NyQYfCikoSsYqgKTs]
+
+### src/modules
+
+- nest.js App 모듈과 서브 모듈의 집합이다.
+- 각 서브디렉토리는 서브 모듈의 집합이다.
+    - 단, `src/utils/`는 각 모듈에서 사용되는 라이브러리 집합이다.
+
+### src/types
+
+- 3rd party 라이브러리의 병합 타입 집합이다.
+
+### src/utils
+
+- util 모듈 집합이다.
+
+### test/
+
+- nest.js App 테스트 집합이다.
+
+### migration/
+
+- TypeORM migration 집합이다.
+
+## Convention
+
+### Project Structure
+
+### Code Convention
+
+1. Module 
+- 각각의 모듈은 별도의 파일로 관리한다.
+- 모듈은 `src/modules/<domain>/` 도메인 이름에 해당하는 폴더에 위치해야한다.
+- 폴더의 이름은 `kebab-case` 형식이다. 
+- 파일의 이름은 `<camelCase>.module.ts` 형식이다.
+- 클래스 이름은 `<PascalCase>Module` 형식이다.
+- 서브 모듈은 상위 모듈 폴더의 하위 폴더에 위치해야한다.
+- 서브 모듈 생성보다는 서비스 클래스 추가를 지향한다.
+    - 서브 모듈이 필요한 상황이라면, 서브 모듈을 추가한다.
+
+2. Controller
+- 각각의 컨트롤러는 별도의 파일로 관리한다.
+- 컨트롤러는 해당 컨트롤러의 `import` 모듈과 동일한 폴더 또는 그 하위 폴더에 위치해야한다.
+- 파일의 이름은 `<camelCase>.controller.ts` 형식이다.
+- 클래스 이름은 `<PascalCase>Controller` 형식이다.
+- 컨트롤러 클래스는 외부 모듈의 Controller 주입을 자제한다.
+- 컨트롤러 클래스의 `HTTP API` 메소드는 GET,POST와 상관없이 `url`를 기준으로 그룹화하며 정렬을 지향한다.
+    - 단, `HTTP API` 메소드의 마운트 순서를 바꾸기 위해서라면, 그룹화를 무시할 수 있다.
+- 컨트롤러의 `base url`은 컨트롤러의 이름을 `kebab-case`형식으로 설정해야한다. 
+
+3. Provider
+- 각각의 프로바이더는 별도의 파일로 관리한다.
+- 프로바이더는 해당 프로바이더의 `import` 모듈과 동일한 폴더 또는 그 하위 폴더에 위치해야한다.
+- 파일의 이름은 `<camelCase>.<provider>.ts` 형식이다.
+    - 예시 : `painting.service.ts` , `auth.exception.filter.ts` , `auth.interceptor.ts`;
+- 클래스 이름은 `<PascalCase><Provider>` 형식이다.
+    - 예시 : `PaintingService` , `AuthExceptionFilter` , `AuthInterceptor`;
+- Service
+    - DB entity 접근은 오직 `Service`만을 통해 진행한다.
+    - 외부 모듈의 컨트롤러, 프로바이더에서 재사용할 로직은 서비스에만 정의한다.
+- Guard
+    - Guard 로직은 true 만을 반환한다. 예외 상황시에는 Exception을 던진다.
+- Pipe
+    - 입력 DTO의 데이터 유효성 검사 및 형변환 로직만 정의한다.
+ 
+4. Entity
+- 각각의 엔티티는 별도의 파일로 관리한다.
+- 엔티티 파일은 헤당 엔티티를 관리하는 서비스 파일과 같은 폴더 내에서 `entity` 폴더 내에 정의한다.
+- 엔티티 파일 이름은 `<camelCase>.entity.ts` 형식이다.
+- 모든 엔티티 클래스는 `CustomBaseEntity` 클래스를 상속받는다.
+- 엔티티 클래스는 TypeORM 데코레이터 사용만을 지향한다.
+    - `class-validator` 또는 `class-transformer` 데코레이터는 사용은 DTO 클래스에서 사용한다.
+    - 엔티티 클래스내에서 안정성 및 보안성을 위해서 다른 데코레이터가 필요하다면 사용하도록한다.
+- 엔티티 클래스의 필드 중에서 DB 어트리뷰트로 직접 맵핑되는 필드는 `snake_case` 형식을 사용한다.
+    - 조인(관계) 필드는 `camelCase`형식을 지향한다.
+
+    >snake_case 형식을 선택한 이유는 엔티티 클래스 필드와 DB 테이블 어트리뷰트 간의 맵핑관계를 혼동하지 않기 위함이다.
+    >- 다만 DB 테이블에 직접적으로 맵핑되지 않는 클래스 필드는 TypeORM 내부로직임을 나타내기 위해서 기존 필드 관습인 camelCase를 선택하였다. 
+    
+- 엔티티 클래스에서 외래키 어트리뷰트와 맵핑되는 필드를 정의하여 `N : 1`과 `1 : 1` 조인(관계)사용을 명시한다.
+- 왜래키 어트리뷰트와 맵핑되는 필드의 이름은 `<table>_id` 형식을 지향한다.
+
+5. DTO
+- 각각의 DTO는 별도의 파일로 관리한다.
+- DTO 파일은 해당 DTO를 사용하는 컨트롤러 또는 프로바이더와 같은 폴더내에 있는 `dto` 폴더 내에 정의한다.
+    - 요청 DTO는 `<folder>/dto/request` 내에 정의한다. 
+    - 응답 DTO는 `<folder>/dto/response` 내에 정의한다.
+- DTO 파일 이름은 `<camelCase>.ts` 형식을 사용한다. 
+- DTO는 **클래스만을 사용한다.**
+- DTO 클래스 이름은 `<CamelCase>` 형식을 사용한다.
+    - 요청 DTO 클래스는 `<Name>DTO` 형식을 사용한다.
+    - 응답 DTO 클래스는 `<Name>Response` 형식을 사용한다.
+- DTO 클래스는 `class-validator`, `class-transformer` 등의 데코레이터를 사용한다.
+
+
+
+7. type & interface
+- 타입 선언시 `*.ts` 또는 `*.d.ts` 파일 내에 그룹화한다.
+- 타입 선언 파일은 `/src/modules/<domain>/types` 내에 위치시킨다.
+- 타입 선언시 `interface` 사용을 지향한다.
+- 별칭 타입 , 유니언 타입, 인터섹션 타입 선언시 `type` 사용을 지향한다.
+- 3rd 파티 라이브러리의 타입을 보강하는 경우, `src/types/<3rd-party>.d.ts` 파일에서 보강한다.
+
+6. metadata 
+- 각각의 메타데이터는 별도의 파일로 관리한다.
+- 메타데이터 파일은 관련된 `<domain>/metadata` 폴더에 위치한다.
+- 메타데이터 데코레이터 객체는 `PascalCase`를 사용한다.
+- 메타데이터 키는 상수로 관리한다. 
+
+8. decorator
+
+- 각각의 데코레이터는 별도의 파일로 관리한다.
+- 데코레이터 파일은 관련된 `<domain>/decorator` 폴더에 위치한다.
+- 데코레이터 객체는 `PascalCase`를 사용한다.
+
+9. constant 
+- 상수는 객체 리터럴 정의과 `as const` 키워드를 사용하여 정의한다.
+- 상수 이름은 `SCREAMING_SNAKE_CASE`를 사용한다.
+- 전역 상수의 위치는 문맥과 연광성에 맞는 파일에 위치시킨다.
+    - 일반적으로 `/src/modules/<domain>/const.ts`에 위치시킨다.
+
+
+8. 그외는 다음 규칙을 따른다.
+
+- `namespace` 사용을 자제한다.
+
+> namespace를 규칙없이 사용한다면, 모듈 파일의 가독성과 프로젝트의 구조성을 훼손할 수 있다고 판단하여 이러한 선택을 하였다.
+
+- `prettier`와 `eslint`를 따른다.
+
 
 
 ### method & function
@@ -29,7 +198,7 @@ Class UserController(private only service : UserService){
 }
 ``` 
 
-### HTTP API 
+### HTTP API Convention
 
 1. 의미를 바로 알아볼 수 있도록 작성하고, 소문자를 사용한다. 
 ❌ GET /users/writing ❌ GET /users/Post-Comments ⭕ GET /users/post-comments
@@ -126,73 +295,6 @@ async login(@Body() loginDto: LoginDto) {
 
 ref : https://awesome-nestjs.com/resources/boilerplate.html
 
-## App Function
-- need to know
-    - [ ]  : means that function is not tested(auto, manual) 
-    - [x]  : means that function is tested(auto, manual) 
-
-### DB
-- [x] Manage Painting Table
-    - [x] Manage Painting's Tag Table
-    - [x] Manage Painting's Style Table
-    - Detail
-        - Main Table which has relation to almost other tables
-        - only admin insert and update it ( it will be updated that other user either can do) 
-- [x] Manage Artist Table
-    - Detail
-        - only admin insert and update it ( it will be updated that other user either can do)
-
-### Painting Module
-- [x] get Paintings By Title and ArtistName and Tag and Styles
-    - [x] provide logic by HTTP Api
-- [x] get Paintings By Id list 
-- [x] create Painting 
-    - [x] provide logic by HTTP Api
-- [x] replace Painting
-    - [x] provide logic by HTTP Api
-- [x] delete Painting
-    - [x] provide logic by HTTP Api
-
-#### Tag Module
-- child module of Painting Module
-- HTTP Api is based on CRUD Lib
-    ref : https://gid-oss.github.io/dataui-nestjs-crud
-- [x] get Tag
-    - [x] provide logic by HTTP Api
-- [x] create Tag
-    - [x] provide logic by HTTP Api
-- [x] delete Tag
-    - [x] provide logic by HTTP Api
-- [x] replace Tag
-    - [x] provide logic by HTTP Api
-
-#### Style Module
-- child module of Painting Module
-- HTTP Api is based on CRUD Lib
-    ref : https://gid-oss.github.io/dataui-nestjs-crud
-- [x] get Style
-    - [x] provide logic by HTTP Api
-- [x] create Style
-    - [x] provide logic by HTTP Api
-- [x] delete Style
-    - [x] provide logic by HTTP Api
-- [x] replace Style
-    - [x] provide logic by HTTP Api
-
-### Quiz Module
-- [x] generate Random Quiz
-    - [x] provide logic by HTTP Api
-- [x] create Quiz
-    - [x] provide logic by HTTP Api
-- [x] update Quiz
-    - [x] provide logic by HTTP Api
-    - detail
-        - disable to update Quiz type. the other is able to be updated
-- [x] get one Quiz data by id
-    - [x] provide logic by HTTP Api
-    - detail
-        - use other filter option 
-            ref : https://gid-oss.github.io/dataui-nestjs-crud/controllers/#options 
 
 # Docker 
 
