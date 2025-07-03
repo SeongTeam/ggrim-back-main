@@ -7,10 +7,11 @@ import {
 	UnauthorizedException,
 } from "@nestjs/common";
 import { UserService } from "../../../user/user.service";
-import { AuthService, JWTDecode } from "../../auth.service";
+import { AuthService } from "../../auth.service";
 import { AccessTokenPayload, AuthUserPayload } from "../types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "../const";
 import { Request } from "express";
+import { JWTDecode } from "../../types/jwt";
 
 const HEADER_FIELD = {
 	AUTHORIZATION: "authorization",

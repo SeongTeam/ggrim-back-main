@@ -11,12 +11,13 @@ import { isEmpty, isUUID } from "class-validator";
 import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
 import { User } from "../../../user/entity/user.entity";
 import { UserService } from "../../../user/user.service";
-import { AuthService, JWTDecode } from "../../auth.service";
+import { AuthService } from "../../auth.service";
 import { PURPOSE_ONE_TIME_TOKEN_KEY } from "../../metadata/purposeOneTimeToken";
 import { OneTimeTokenPurpose } from "../../entity/oneTimeToken.entity";
 import { TempUserPayload } from "../types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "../const";
 import { Request } from "express";
+import { JWTDecode } from "../../types/jwt";
 
 const ONE_TIME_TOKEN_HEADER = {
 	X_ONE_TIME_TOKEN_ID: `x-one-time-token-identifier`,
