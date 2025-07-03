@@ -1,0 +1,1 @@
+export type QUIZ_TYPE = "ONE_CHOICE" | "MULTIPLE_CHOICE" | "TRUE_FALSE";
