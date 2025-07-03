@@ -1,5 +1,5 @@
 import { User } from "../../../user/entity/user.entity";
-import { JWTDecode } from "../../auth.service";
+import { JWTDecode } from "../../types/jwt";
 
 export interface AuthUserPayload {
 	user: User;
