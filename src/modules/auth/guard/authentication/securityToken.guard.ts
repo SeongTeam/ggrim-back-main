@@ -10,7 +10,7 @@ import { Reflector } from "@nestjs/core";
 import { isEmpty, isUUID } from "class-validator";
 import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
 import { UserService } from "../../../user/user.service";
-import { AuthService, JWTDecode } from "../../auth.service";
+import { AuthService } from "../../auth.service";
 import { PURPOSE_ONE_TIME_TOKEN_KEY } from "../../metadata/purposeOneTimeToken";
 import {
 	SECURITY_TOKEN_GUARD_OPTIONS,
@@ -20,6 +20,7 @@ import { OneTimeTokenPurpose } from "../../entity/oneTimeToken.entity";
 import { AccessTokenPayload, AuthUserPayload, SecurityTokenPayload } from "../types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "../const";
 import { Request } from "express";
+import { JWTDecode } from "../../types/jwt";
 
 const SECURITY_TOKEN_HEADER = {
 	X_SECURITY_TOKEN_ID: `x-security-token-identifier`,
