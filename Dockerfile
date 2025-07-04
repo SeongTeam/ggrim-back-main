@@ -29,7 +29,7 @@ WORKDIR /${WORK_DIR}
 # 필수 파일 복사
 COPY package.json package-lock.json run.sh ./
 COPY app-config/ ./app-config/
-COPY src/modules/mail/templates/ ./modules/src/mail/templates/
+COPY src/modules/mail/templates/ .src/modules/mail/templates/
 
 # Add entrypoint script and set permissions
 RUN chmod +x run.sh && \
