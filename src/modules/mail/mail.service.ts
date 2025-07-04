@@ -30,7 +30,7 @@ export class MailService {
 		REPORT: "report",
 	};
 
-	private TEMPLATE_PATH = "src/mail/templates";
+	private TEMPLATE_PATH = "src/modules/mail/templates";
 
 	private transporter: nodemailer.Transporter;
 
