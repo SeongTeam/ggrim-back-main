@@ -6,7 +6,7 @@ import { ClsModule } from "nestjs-cls";
 import { DataSource } from "typeorm";
 import { LoggerModule } from "./modules/logger/logger.module";
 import { CommonModule } from "./modules/_common/common.module";
-import { NODE_ENV } from "./modules/_common/const/envKeys.const";
+import { NODE_ENV } from "./modules/_common/const/envKeys";
 import { RateLimitTestController } from "./modules/_common/rate-limit/rateLimitTest.controller";
 import { RateLimitModule } from "./modules/_common/rate-limit/rateLimit.module";
 import { AppController } from "./app.controller";

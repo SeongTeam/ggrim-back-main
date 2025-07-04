@@ -10,7 +10,7 @@ import {
 	AWS_BUCKET_ARTWORK,
 	AWS_CLOUD_FRONT_URL,
 	AWS_REGION,
-} from "../_common/const/envKeys.const";
+} from "../_common/const/envKeys";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 
 @Injectable()

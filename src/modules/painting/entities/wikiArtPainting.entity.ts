@@ -1,5 +1,5 @@
 import { Column, Entity, OneToOne, PrimaryColumn } from "typeorm";
-import { TYPE_DEFAULT_VALUE } from "../../_common/const/default.value";
+import { TYPE_DEFAULT_VALUE } from "../../_common/const/defaultValue";
 import { Painting } from "./painting.entity";
 @Entity()
 export class WikiArtPainting {

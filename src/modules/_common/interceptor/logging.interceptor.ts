@@ -10,7 +10,7 @@ import { Request, Response } from "express";
 import { Observable } from "rxjs";
 import { catchError, tap } from "rxjs/operators";
 import { LoggerService } from "../../logger/logger.service";
-import { NODE_ENV } from "../const/envKeys.const";
+import { NODE_ENV } from "../const/envKeys";
 import { BaseException } from "../filter/exception/baseException";
 
 interface HttpInfo {

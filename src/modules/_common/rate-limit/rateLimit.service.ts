@@ -5,7 +5,7 @@ import {
 	RATE_LIMIT_DEFAULT_COUNT,
 	RATE_LIMIT_DEFAULT_TTL_MS,
 	RATE_LIMIT_ENABLED,
-} from "../const/envKeys.const";
+} from "../const/envKeys";
 
 interface RateLimitEntry {
 	count: number;

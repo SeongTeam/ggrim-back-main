@@ -1,6 +1,6 @@
 import { HttpStatus } from "@nestjs/common";
 import { HttpException, HttpExceptionOptions } from "@nestjs/common/exceptions";
-import { TYPE_DEFAULT_VALUE } from "../../const/default.value";
+import { TYPE_DEFAULT_VALUE } from "../../const/defaultValue";
 
 interface BaseExceptionInterface {
 	errorCode: number;
