@@ -14,8 +14,7 @@ import { UserService } from "../../../user/user.service";
 import { AuthService } from "../../auth.service";
 import { PURPOSE_ONE_TIME_TOKEN_KEY } from "../../metadata/purposeOneTimeToken";
 import { OneTimeTokenPurpose } from "../../entity/oneTimeToken.entity";
-import { TempUserPayload } from "../types/requestPayload";
-import { AUTH_GUARD_PAYLOAD } from "../const";
+import { AUTH_GUARD_PAYLOAD, ONE_TIME_TOKEN_HEADER } from "../const";
 import { Request } from "express";
 import { JWTDecode } from "../../types/jwt";
 
@@ -45,7 +44,31 @@ export class TempUserGuard implements CanActivate {
 			throw new UnauthorizedException(`Missing or invalid security token header`);
 		}
 
+		const decoded = this.decode(oneTimeToken);
+
+		await this.validate(decoded, oneTimeTokenID, handlerPurpose);
+
+		await this.verify(oneTimeToken, oneTimeTokenID);
+
+		req[AUTH_GUARD_PAYLOAD.TEMP_USER] = {
+			oneTimeToken,
+			oneTimeTokenID,
+			email: decoded.email,
+		};
+
+		return true;
+	}
+
+	private decode(oneTimeToken: string) {
 		const decoded: JWTDecode = this.authService.verifyToken(oneTimeToken);
+		return decoded;
+	}
+
+	private async validate(
+		decoded: JWTDecode,
+		oneTimeTokenID: string,
+		handlerPurpose: OneTimeTokenPurpose,
+	) {
 		const { email, purpose, type } = decoded;
 		const user: null | User = await this.userService.findUserByEmail(email);
 
@@ -80,7 +103,9 @@ export class TempUserGuard implements CanActivate {
 				`Missing or invalid ${ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID} header field`,
 			);
 		}
+	}
 
+	private async verify(oneTimeToken: string, oneTimeTokenID: string) {
 		const entity = await this.authService.findOneTimeToken({ where: { id: oneTimeTokenID } });
 		if (!entity) {
 			throw new UnauthorizedException(`invalid token ID. ${oneTimeTokenID}`);
@@ -98,14 +123,5 @@ export class TempUserGuard implements CanActivate {
 				`invalid oneTimeToken. it is already used. ${entity.used_date.getDate()}`,
 			);
 		}
-
-		const result: TempUserPayload = {
-			oneTimeToken,
-			oneTimeTokenID,
-			email,
-		};
-		req[AUTH_GUARD_PAYLOAD.TEMP_USER] = result;
-
-		return true;
 	}
 }
