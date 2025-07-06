@@ -31,6 +31,23 @@ export class TempUserGuard implements CanActivate {
 	) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
+		const { oneTimeToken, oneTimeTokenID, handlerPurpose, decoded, user } =
+			await this.extractData(context);
+		this.validate(decoded, handlerPurpose, user);
+
+		await this.verify(oneTimeToken, oneTimeTokenID);
+
+		const req = context.switchToHttp().getRequest<Request>();
+		req[AUTH_GUARD_PAYLOAD.TEMP_USER] = {
+			oneTimeToken,
+			oneTimeTokenID,
+			email: decoded.email,
+		};
+
+		return true;
+	}
+
+	async extractData(context: ExecutionContext) {
 		const req = context.switchToHttp().getRequest<Request>();
 
 		const oneTimeToken = req.headers[ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN] as string;
@@ -44,19 +61,25 @@ export class TempUserGuard implements CanActivate {
 			throw new UnauthorizedException(`Missing or invalid security token header`);
 		}
 
+		// check whether token is forged or not .
+		if (!(oneTimeTokenID && isUUID(oneTimeTokenID))) {
+			throw new UnauthorizedException(
+				`Missing or invalid ${ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID} header field`,
+			);
+		}
+
+		if (isEmpty(handlerPurpose)) {
+			throw new ServiceException(
+				"SERVICE_RUN_ERROR",
+				"INTERNAL_SERVER_ERROR",
+				`@PurposeOneTimeToken()  should be exist `,
+			);
+		}
+
 		const decoded = this.decode(oneTimeToken);
+		const user: null | User = await this.userService.findUserByEmail(decoded.email);
 
-		await this.validate(decoded, oneTimeTokenID, handlerPurpose);
-
-		await this.verify(oneTimeToken, oneTimeTokenID);
-
-		req[AUTH_GUARD_PAYLOAD.TEMP_USER] = {
-			oneTimeToken,
-			oneTimeTokenID,
-			email: decoded.email,
-		};
-
-		return true;
+		return { oneTimeToken, oneTimeTokenID, handlerPurpose, decoded, user };
 	}
 
 	private decode(oneTimeToken: string) {
@@ -64,13 +87,8 @@ export class TempUserGuard implements CanActivate {
 		return decoded;
 	}
 
-	private async validate(
-		decoded: JWTDecode,
-		oneTimeTokenID: string,
-		handlerPurpose: OneTimeTokenPurpose,
-	) {
+	private validate(decoded: JWTDecode, handlerPurpose: OneTimeTokenPurpose, user: User | null) {
 		const { email, purpose, type } = decoded;
-		const user: null | User = await this.userService.findUserByEmail(email);
 
 		// will delete logic for logical consistency
 		if (user) {
@@ -85,23 +103,8 @@ export class TempUserGuard implements CanActivate {
 			throw new UnauthorizedException(`Can't access Without one-time-token`);
 		}
 
-		if (isEmpty(handlerPurpose)) {
-			throw new ServiceException(
-				"SERVICE_RUN_ERROR",
-				"INTERNAL_SERVER_ERROR",
-				`@PurposeOneTimeToken()  should be exist `,
-			);
-		}
-
 		if (handlerPurpose !== purpose) {
 			throw new UnauthorizedException(`purpose is not proper to handler`);
-		}
-
-		// check whether token is forged or not .
-		if (!(oneTimeTokenID && isUUID(oneTimeTokenID))) {
-			throw new UnauthorizedException(
-				`Missing or invalid ${ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID} header field`,
-			);
 		}
 	}
 
