@@ -44,7 +44,7 @@ export class SecurityTokenGuard implements CanActivate {
 		const { securityToken, securityTokenID, handlerPurpose, decoded, user } =
 			await this.extractData(context);
 
-		this.validate(decoded, securityToken, handlerPurpose);
+		this.validate(decoded, handlerPurpose);
 		await this.verify(securityToken, securityTokenID);
 
 		const req = context.switchToHttp().getRequest<Request>();
@@ -81,6 +81,12 @@ export class SecurityTokenGuard implements CanActivate {
 			throw new UnauthorizedException(`Missing or invalid security token header`);
 		}
 
+		if (!(securityTokenID && isUUID(securityTokenID))) {
+			throw new UnauthorizedException(
+				`Missing or invalid ${ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID} header field`,
+			);
+		}
+
 		if (isEmpty(handlerPurpose)) {
 			throw new ServiceException(
 				"SERVICE_RUN_ERROR",
@@ -95,7 +101,7 @@ export class SecurityTokenGuard implements CanActivate {
 		return { securityToken, securityTokenID, handlerPurpose, decoded, user };
 	}
 
-	validate(decoded: JWTDecode, securityTokenID: string, handlerPurpose: OneTimeTokenPurpose) {
+	validate(decoded: JWTDecode, handlerPurpose: OneTimeTokenPurpose) {
 		const { purpose, type } = decoded;
 
 		if (type !== "ONE_TIME") {
@@ -104,13 +110,6 @@ export class SecurityTokenGuard implements CanActivate {
 
 		if (handlerPurpose !== purpose) {
 			throw new UnauthorizedException(`purpose is not proper to handler`);
-		}
-
-		// check whether token is forged or not .
-		if (!(securityTokenID && isUUID(securityTokenID))) {
-			throw new UnauthorizedException(
-				`Missing or invalid ${ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID} header field`,
-			);
 		}
 	}
 
