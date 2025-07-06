@@ -24,12 +24,8 @@ import {
 } from "@nestjs/common";
 import { QueryRunner } from "typeorm";
 import { LoggerService } from "../logger/logger.service";
-import { CONFIG_FILE_PATH } from "../_common/const/default.value";
-import {
-	AWS_BUCKET,
-	AWS_BUCKET_ARTWORK,
-	AWS_INIT_FILE_KEY_PREFIX,
-} from "../_common/const/envKeys.const";
+import { CONFIG_FILE_PATH } from "../_common/const/defaultValue";
+import { AWS_BUCKET, AWS_BUCKET_ARTWORK, AWS_INIT_FILE_KEY_PREFIX } from "../_common/const/envKeys";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { ArtistService } from "../artist/artist.service";
 import { CheckOwner } from "../auth/metadata/owner";

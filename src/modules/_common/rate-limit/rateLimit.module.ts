@@ -7,13 +7,7 @@ import { RateLimitService } from "./rateLimit.service.js";
 @Global()
 @Module({
 	imports: [ConfigModule, LoggerModule],
-	providers: [
-		RateLimitService,
-		{
-			provide: "APP_GUARD",
-			useClass: RateLimitGuard,
-		},
-	],
-	exports: [RateLimitService],
+	providers: [RateLimitService, RateLimitGuard],
+	exports: [RateLimitService, RateLimitGuard],
 })
 export class RateLimitModule {}

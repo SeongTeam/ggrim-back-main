@@ -11,7 +11,7 @@ import {
 	ENV_SMTP_ID,
 	ENV_SMTP_PW,
 	NODE_ENV,
-} from "../_common/const/envKeys.const";
+} from "../_common/const/envKeys";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 
 export const MAIL_SUBJECT = {
@@ -30,7 +30,7 @@ export class MailService {
 		REPORT: "report",
 	};
 
-	private TEMPLATE_PATH = "src/mail/templates";
+	private TEMPLATE_PATH = "src/modules/mail/templates";
 
 	private transporter: nodemailer.Transporter;
 

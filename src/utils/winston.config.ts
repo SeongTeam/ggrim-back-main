@@ -1,7 +1,7 @@
 import { utilities as nestWinstonModuleUtilities, WinstonModule } from "nest-winston";
 import * as winston from "winston";
 import * as winstonDaily from "winston-daily-rotate-file";
-import { APP_NAME_KEY, NODE_ENV } from "../modules/_common/const/envKeys.const";
+import { APP_NAME_KEY, NODE_ENV } from "../modules/_common/const/envKeys";
 
 //ref : https://pypystory.tistory.com/80
 

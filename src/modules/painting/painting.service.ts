@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { existsSync } from "fs";
 import { Brackets, QueryRunner, Repository } from "typeorm";
-import { CONFIG_FILE_PATH } from "../_common/const/default.value";
+import { CONFIG_FILE_PATH } from "../_common/const/defaultValue";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { IPaginationResult } from "../_common/types";
 import { ArtistService } from "../artist/artist.service";

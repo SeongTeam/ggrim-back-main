@@ -12,11 +12,7 @@ import * as crypto from "crypto";
 
 import { InjectRepository } from "@nestjs/typeorm";
 import { isEmpty } from "class-validator";
-import {
-	ENV_HASH_ROUNDS_KEY,
-	ENV_JWT_SECRET_KEY,
-	NODE_ENV,
-} from "src/modules/_common/const/envKeys.const";
+import { ENV_HASH_ROUNDS_KEY, ENV_JWT_SECRET_KEY, NODE_ENV } from "../_common/const/envKeys";
 import {
 	DeepPartial,
 	FindManyOptions,
