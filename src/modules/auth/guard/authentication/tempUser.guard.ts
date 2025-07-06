@@ -19,11 +19,6 @@ import { AUTH_GUARD_PAYLOAD } from "../const";
 import { Request } from "express";
 import { JWTDecode } from "../../types/jwt";
 
-const ONE_TIME_TOKEN_HEADER = {
-	X_ONE_TIME_TOKEN_ID: `x-one-time-token-identifier`,
-	X_ONE_TIME_TOKEN: "x-one-time-token-value",
-};
-
 //Guard doesn't check User Table.
 //Guard doesn't Update OneTimeToken Table.
 //It just validate OneTimeToken data from client

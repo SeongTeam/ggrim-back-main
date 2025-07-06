@@ -18,14 +18,9 @@ import {
 } from "../../metadata/securityTokenGuardOption";
 import { OneTimeTokenPurpose } from "../../entity/oneTimeToken.entity";
 import { AccessTokenPayload, AuthUserPayload, SecurityTokenPayload } from "../types/requestPayload";
-import { AUTH_GUARD_PAYLOAD } from "../const";
+import { AUTH_GUARD_PAYLOAD, ONE_TIME_TOKEN_HEADER } from "../const";
 import { Request } from "express";
 import { JWTDecode } from "../../types/jwt";
-
-const SECURITY_TOKEN_HEADER = {
-	X_SECURITY_TOKEN_ID: `x-security-token-identifier`,
-	X_SECURITY_TOKEN: "x-security-token-value",
-};
 
 //Guard does't Update OneTimeToken Table.
 //It just validate OneTimeToken for Security data from client
@@ -47,8 +42,8 @@ export class SecurityTokenGuard implements CanActivate {
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const req = context.switchToHttp().getRequest<Request>();
 
-		const securityToken = req.headers[SECURITY_TOKEN_HEADER.X_SECURITY_TOKEN] as string;
-		const securityTokenID = req.headers[SECURITY_TOKEN_HEADER.X_SECURITY_TOKEN_ID] as string;
+		const securityToken = req.headers[ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN] as string;
+		const securityTokenID = req.headers[ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID] as string;
 		const handlerPurpose = this.reflector.get<OneTimeTokenPurpose>(
 			PURPOSE_ONE_TIME_TOKEN_KEY,
 			context.getHandler(),
@@ -92,7 +87,7 @@ export class SecurityTokenGuard implements CanActivate {
 		// check whether token is forged or not .
 		if (!(securityTokenID && isUUID(securityTokenID))) {
 			throw new UnauthorizedException(
-				`Missing or invalid ${SECURITY_TOKEN_HEADER.X_SECURITY_TOKEN_ID} header field`,
+				`Missing or invalid ${ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID} header field`,
 			);
 		}
 
