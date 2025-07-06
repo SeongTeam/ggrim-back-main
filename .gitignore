@@ -2,6 +2,7 @@
 /dist
 /node_modules
 /build
+node_modules_bak/*
 
 # Logs
 logs
@@ -59,3 +60,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 /app-config/*
 !/app-config/artwork_of_week_default.json
 !/app-config/quiz_of_week_default.json
+
+docker-run.sh
