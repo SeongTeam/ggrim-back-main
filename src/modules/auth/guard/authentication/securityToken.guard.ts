@@ -21,6 +21,7 @@ import { AccessTokenPayload, AuthUserPayload, SecurityTokenPayload } from "../ty
 import { AUTH_GUARD_PAYLOAD, ONE_TIME_TOKEN_HEADER } from "../const";
 import { Request } from "express";
 import { JWTDecode } from "../../types/jwt";
+import { User } from "../../../user/entity/user.entity";
 
 //Guard does't Update OneTimeToken Table.
 //It just validate OneTimeToken for Security data from client
@@ -40,75 +41,13 @@ export class SecurityTokenGuard implements CanActivate {
 	) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
+		const { securityToken, securityTokenID, handlerPurpose, decoded, user } =
+			await this.extractData(context);
+
+		this.validate(decoded, securityToken, handlerPurpose);
+		await this.verify(securityToken, securityTokenID);
+
 		const req = context.switchToHttp().getRequest<Request>();
-
-		const securityToken = req.headers[ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN] as string;
-		const securityTokenID = req.headers[ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID] as string;
-		const handlerPurpose = this.reflector.get<OneTimeTokenPurpose>(
-			PURPOSE_ONE_TIME_TOKEN_KEY,
-			context.getHandler(),
-		);
-		const rawOptions: SecurityTokenGuardOptions | undefined =
-			this.reflector.get<SecurityTokenGuardOptions>(
-				SECURITY_TOKEN_GUARD_OPTIONS,
-				context.getHandler(),
-			);
-		const options = this.normalizeOptions(rawOptions);
-		const { withDeleted } = options;
-
-		if (isEmpty(securityToken)) {
-			throw new UnauthorizedException(`Missing or invalid security token header`);
-		}
-
-		const decoded: JWTDecode = this.authService.verifyToken(securityToken);
-		const { email, purpose, type } = decoded;
-
-		const user = await this.userService.findOne({ where: { email }, withDeleted });
-		if (!user) {
-			throw new UnauthorizedException(`${email} user is not existed`);
-		}
-
-		if (type !== "ONE_TIME") {
-			throw new UnauthorizedException(`Can't access Without one-time-token`);
-		}
-
-		if (isEmpty(handlerPurpose)) {
-			throw new ServiceException(
-				"SERVICE_RUN_ERROR",
-				"INTERNAL_SERVER_ERROR",
-				`@PurposeOneTimeToken()  should be exist `,
-			);
-		}
-
-		if (handlerPurpose !== purpose) {
-			throw new UnauthorizedException(`purpose is not proper to handler`);
-		}
-
-		// check whether token is forged or not .
-		if (!(securityTokenID && isUUID(securityTokenID))) {
-			throw new UnauthorizedException(
-				`Missing or invalid ${ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID} header field`,
-			);
-		}
-
-		const entity = await this.authService.findOneTimeToken({ where: { id: securityTokenID } });
-		if (!entity) {
-			throw new UnauthorizedException(`invalid token ID. ${securityTokenID}`);
-		}
-
-		const isHashMatched = await this.authService.isHashMatched(securityToken, entity.token);
-
-		if (!isHashMatched) {
-			throw new UnauthorizedException(
-				`invalid securityToken. it is not matched. ${securityToken}`,
-			);
-		}
-		if (entity.used_date) {
-			throw new UnauthorizedException(
-				`invalid securityToken. it is already used. ${entity.used_date.getDate()}`,
-			);
-		}
-
 		const result: SecurityTokenPayload = {
 			oneTimeToken: securityToken,
 			oneTimeTokenID: securityTokenID,
@@ -129,7 +68,78 @@ export class SecurityTokenGuard implements CanActivate {
 		return true;
 	}
 
-	normalizeOptions(options?: SecurityTokenGuardOptions): SecurityTokenGuardOptions {
+	async extractData(context: ExecutionContext) {
+		const req = context.switchToHttp().getRequest<Request>();
+		const securityToken = req.headers[ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN] as string;
+		const securityTokenID = req.headers[ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID] as string;
+		const handlerPurpose = this.reflector.get<OneTimeTokenPurpose>(
+			PURPOSE_ONE_TIME_TOKEN_KEY,
+			context.getHandler(),
+		);
+
+		if (isEmpty(securityToken)) {
+			throw new UnauthorizedException(`Missing or invalid security token header`);
+		}
+
+		if (isEmpty(handlerPurpose)) {
+			throw new ServiceException(
+				"SERVICE_RUN_ERROR",
+				"INTERNAL_SERVER_ERROR",
+				`@PurposeOneTimeToken()  should be exist `,
+			);
+		}
+
+		const decoded = this.decode(securityToken);
+		const user = await this.findOwner(decoded.email, this.getOption(context));
+
+		return { securityToken, securityTokenID, handlerPurpose, decoded, user };
+	}
+
+	validate(decoded: JWTDecode, securityTokenID: string, handlerPurpose: OneTimeTokenPurpose) {
+		const { purpose, type } = decoded;
+
+		if (type !== "ONE_TIME") {
+			throw new UnauthorizedException(`Can't access Without one-time-token`);
+		}
+
+		if (handlerPurpose !== purpose) {
+			throw new UnauthorizedException(`purpose is not proper to handler`);
+		}
+
+		// check whether token is forged or not .
+		if (!(securityTokenID && isUUID(securityTokenID))) {
+			throw new UnauthorizedException(
+				`Missing or invalid ${ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID} header field`,
+			);
+		}
+	}
+
+	async verify(securityToken: string, securityTokenID: string) {
+		const entity = await this.authService.findOneTimeToken({ where: { id: securityTokenID } });
+		if (!entity) {
+			throw new UnauthorizedException(`invalid token ID. ${securityTokenID}`);
+		}
+
+		const isHashMatched = await this.authService.isHashMatched(securityToken, entity.token);
+
+		if (!isHashMatched) {
+			throw new UnauthorizedException(
+				`invalid securityToken. it is not matched. ${securityToken}`,
+			);
+		}
+		if (entity.used_date) {
+			throw new UnauthorizedException(
+				`invalid securityToken. it is already used. ${entity.used_date.getDate()}`,
+			);
+		}
+	}
+
+	private getOption(context: ExecutionContext): SecurityTokenGuardOptions {
+		const options: SecurityTokenGuardOptions | undefined =
+			this.reflector.get<SecurityTokenGuardOptions>(
+				SECURITY_TOKEN_GUARD_OPTIONS,
+				context.getHandler(),
+			);
 		const defaultOptions: SecurityTokenGuardOptions = { withDeleted: false };
 		if (options === undefined || options === null) {
 			return defaultOptions;
@@ -144,5 +154,23 @@ export class SecurityTokenGuard implements CanActivate {
 		});
 
 		return options;
+	}
+
+	private decode(token: string): JWTDecode {
+		const decoded: JWTDecode = this.authService.verifyToken(token);
+		return decoded;
+	}
+
+	private async findOwner(email: string, options: SecurityTokenGuardOptions): Promise<User> {
+		const { withDeleted } = options;
+
+		const user = await this.userService.findOne({
+			where: { email },
+			withDeleted: withDeleted,
+		});
+		if (!user) {
+			throw new UnauthorizedException(`${email} user is not existed`);
+		}
+		return user;
 	}
 }
