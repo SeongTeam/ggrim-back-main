@@ -1,39 +1,53 @@
+# Project
 
+- 고전 예술 작품 관련 퀴즈를 제공
+
+## Demo
+
+- https://port-0-ggrim-front-m4i5o7t86f50fb45.sel4.cloudtype.app/
+- [front-repo](https://github.com/seongTeam/ggrim_front)
 
 ## Tech Stack
 
-### Nest.js (with express)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![TypeORM](https://img.shields.io/badge/TypeORM-262627?style=for-the-badge&logo=typeorm&logoColor=white)
+
+### Advantage & Disadvantage
+
+**Nest.js (with express)**
 
 - Advantage
     1. 코드베이스 구조화 컨벤션 제공
         - 익숙한 MVC 패턴을 적용하기 용이  
     2. 높은 이식성 라이브러리 생태계 
-- DisAdvantage
+- Disadvantage
     1. 기능 구현 비용 하한선이 높음
         - 새로운 기능 구현시, Module, service 등의 클래스 구현 필수적이며, 높은 추상화 설계가 필요 
     2. 프레임워크와 관련된 개념 및 라이브러리 학습 비용 높음.
         - IoC, DI, Decorator 등의 개념 숙지 비용 필요
         - Pipe Line 구축시 RxJs 라이브러리 등의 이해 필요.
 
-### Postgres DB
+**Postgres DB**
 - Advantage
     1. 사용 무료
     2. 사용 경험 있음 
-- DisAdvantage
+- Disadvantage
 
-### TypeORM
+**TypeORM**
 - Advantage
     1. nest.js와 호환성이 높음
     2. `QueryBuilder`를 통해 복잡한 쿼리문 생성 및 조합 가능
-- DisAdvantage 
+- Disadvantage 
     1. 공식 문서 설명 부족
         - DB 동작에 대한 이해가 부족하다면, 높은 추상화와 암묵적 기능 때문에 버그 발생 가능
 
-### Class-Validator & Class-transformer
+**Class-Validator & Class-transformer**
 - Advantage
     1. nest.js와 typeORM과 호환성이 높음
     2. 다양한 Validate 라이브러리 제공
-- DisAdvantage
+- Disadvantage
     1. 데코레이터 문법을 통한 높은 추상화와 암묵적 기능이 있으므로, 코드를 통해 문제를 발견하기 어려움.
 
 
