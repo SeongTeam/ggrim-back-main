@@ -7,9 +7,9 @@
 - Advantage
     1. 코드베이스 구조화 컨벤션 제공
         - 익숙한 MVC 패턴을 적용하기 용이  
-    2. 다양한 nestjs 라이브러리 제공 
+    2. 높은 이식성 라이브러리 생태계 
 - DisAdvantage
-    1. 기능 구현의 최저 비용이 높음
+    1. 기능 구현 비용 하한선이 높음
         - 새로운 기능 구현시, Module, service 등의 클래스 구현 필수적이며, 높은 추상화 설계가 필요 
     2. 프레임워크와 관련된 개념 및 라이브러리 학습 비용 높음.
         - IoC, DI, Decorator 등의 개념 숙지 비용 필요
@@ -20,28 +20,28 @@
     1. 사용 무료
     2. 사용 경험 있음 
 - DisAdvantage
-    1.
 
 ### TypeORM
 - Advantage
     1. nest.js와 호환성이 높음
+    2. `QueryBuilder`를 통해 복잡한 쿼리문 생성 및 조합 가능
 - DisAdvantage 
     1. 공식 문서 설명 부족
-        - DB 동작에 대한 이해가 부족하다면, 리소스 낭비가 발생할 수 있음
+        - DB 동작에 대한 이해가 부족하다면, 높은 추상화와 암묵적 기능 때문에 버그 발생 가능
 
 ### Class-Validator & Class-transformer
 - Advantage
     1. nest.js와 typeORM과 호환성이 높음
     2. 다양한 Validate 라이브러리 제공
 - DisAdvantage
-    1. 
+    1. 데코레이터 문법을 통한 높은 추상화와 암묵적 기능이 있으므로, 코드를 통해 문제를 발견하기 어려움.
 
 
 ## Structure
 
 ### DB
 
-- (ERD Link)[https://www.erdcloud.com/d/NyQYfCikoSsYqgKTs]
+- [ERD Link](https://www.erdcloud.com/d/NyQYfCikoSsYqgKTs)
 
 ### src/modules
 
@@ -174,9 +174,9 @@
 ### HTTP API Convention
 
 1. 의미를 바로 알아볼 수 있도록 작성하고, 소문자를 사용한다. 
-❌ GET /users/writing ❌ GET /users/Post-Comments ⭕ GET /users/post-comments
+- ❌ GET /users/writing ❌ GET /users/Post-Comments ⭕ GET /users/post-comments
 - URI가 길어지는 경우 언더바(_) 대신 하이픈(-)을 사용한다. 
-❌ GET /users/profile_image ⭕ GET /users/profile-image
+- ❌ GET /users/profile_image ⭕ GET /users/profile-image
 
 2. 리소스에 대한 행위를 HTTP Method로 표현한다.
 - ❌ get/users/ ⭕ GET /users/ resource
@@ -191,11 +191,15 @@
 리소스 삭제|	DELETE|	DELETE /users/{user_id}|
 
 3. Resource는 되도록 명사를 사용한다. 
-❌ GET /users/show/1 ⭕ GET /users/1
+
+- ❌ GET /users/show/1 ⭕ GET /users/1
 - 파일 확장자는 포함시키지 않는다.
-❌ GET /users/photo.jpg ⭕ GET /users/photo (이때, payload의 포맷은 headers에 accept를 사용한다.)
-- URI에 작성되는 영어는 단수형으로 작성한다.(이때, 반환되는 리소스가 복수 또는 단수인지는 확인해야한다.)
-❌ GET /product ⭕ GET /products
+- ❌ GET /users/photo.jpg ⭕ GET /users/photo 
+- (이때, payload의 포맷은 headers에 accept를 사용한다.)
+- URI에 작성되는 영어는 단수형으로 작성한다.
+- ❌ GET /product ⭕ GET /products
+- (이때, 반환되는 리소스가 복수 또는 단수인지는 확인해야한다.)
+
 - 리소스의 상태 변경이 필요한 경우, 동사를 사용할 수 있다.
 ```http
 POST /auth/login # Post 요청으로 로그인 처리
@@ -204,7 +208,7 @@ POST /auth/logout # Post 요청으로 로그아웃 처리
 ```
 
 4. URI 사이에 연관 관계가 있는 경우 /리소스/고유ID/관계 있는 리소스 순으로 작성한다.
-❌ GET /users/profile/{user_id} ⭕ GET /users/{user_id}/profile
+- ❌ GET /users/profile/{user_id} ⭕ GET /users/{user_id}/profile
 
 ```http
 GET /users/{user_id}/posts  # 특정 사용자의 모든 게시글 조회
@@ -219,7 +223,7 @@ POST /users/{user_id}/likes/posts/{post_id}
 ```
 
 5. 마지막에 슬래시(/)를 포함하지 않는다. 
-❌ GET /users/ ⭕ GET /users
+- ❌ GET /users/ ⭕ GET /users
 - 후행 슬래시(/)는 의미가 전혀 없고 혼란을 야기할 수 있다.
 
 ### TODO Convention
@@ -265,7 +269,7 @@ async login(@Body() loginDto: LoginDto) {
 ```
 
 ### Commit convention
-- refer (front conventions)[https://github.com/SeongTeam/ggrim_front?tab=readme-ov-file#commit-convention]
+- [Front commit conventions](https://github.com/SeongTeam/ggrim_front?tab=readme-ov-file#commit-convention)
 
 
 
@@ -326,15 +330,16 @@ docker run -d \
 ## 로그파일 AWS S3 업로드
 ### 자격 증명 획득
 - 단기 자격 증명으로 인증
-    - 참조 : https://docs.aws.amazon.com/ko_kr/cli/latest/userguide/cli-authentication-short-term.html
+    - [aws-cli 인증](https://docs.aws.amazon.com/ko_kr/cli/latest/userguide/cli-authentication-short-term.html)
 - aws sso 활용
 
     - 다음 명령어를 입력하여 sso 진행
+    - [aws cli sso 설정](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html)
 ```bash
 aws configure sso --use-device-code
 ```
 
-    - 참조 : https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html
+
 
 ### aws cli 사용
 1. aws cli 설치
@@ -352,4 +357,4 @@ aws s3 cp {your_local_file} s3://{your-buckets} --profile {your_profile_name}
 
 ## BoilerPlate Code
 
-ref : https://awesome-nestjs.com/resources/boilerplate.html
+- [awesome-nestjs](https://awesome-nestjs.com/resources/boilerplate.html)에서 다양한 보일러플레이트 참조 가능  
