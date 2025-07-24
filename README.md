@@ -149,11 +149,11 @@
 - DTO 파일은 해당 DTO를 사용하는 컨트롤러 또는 프로바이더와 같은 폴더내에 있는 `dto` 폴더 내에 정의한다.
     - 요청 DTO는 `<folder>/dto/request` 내에 정의한다. 
     - 응답 DTO는 `<folder>/dto/response` 내에 정의한다.
-- DTO 파일 이름은 `<camelCase>.ts` 형식을 사용한다. 
+- DTO 파일 이름은 `<camelCase>.<suffix>.ts` 형식을 사용한다. 
 - DTO는 **클래스만을 사용한다.**
 - DTO 클래스 이름은 `<CamelCase>` 형식을 사용한다.
-    - 요청 DTO 클래스는 `<Name>DTO` 형식을 사용한다.
-    - 응답 DTO 클래스는 `<Name>Response` 형식을 사용한다.
+    - 요청 DTO 클래스는 `<Name>.dto.ts` 형식을 사용한다.
+    - 응답 DTO 클래스는 `<Name>.response.ts` 형식을 사용한다.
 - DTO 클래스는 `class-validator`, `class-transformer` 등의 데코레이터를 사용한다.
 
 **6. metadata**
