@@ -2,6 +2,7 @@
     "editor.codeActionsOnSave" : {
         "source.fixAll.eslint": "never"
     },
+	"eslint.workingDirectories": ["./"],
 	"eslint.validate": ["javascript", "typescript"],
     "prettier.enable": true,
 	"editor.defaultFormatter": "esbenp.prettier-vscode",
