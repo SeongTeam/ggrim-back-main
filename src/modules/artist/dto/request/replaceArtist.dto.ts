@@ -1,3 +1,3 @@
-import { CreateArtistDTO } from "./createArtistDTO";
+import { CreateArtistDTO } from "./createArtist.dto";
 
 export class UpdateArtistDTO extends CreateArtistDTO {}

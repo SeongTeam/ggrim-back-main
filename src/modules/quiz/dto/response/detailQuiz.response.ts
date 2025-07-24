@@ -1,7 +1,7 @@
 import { Quiz } from "../../entities/quiz.entity";
 import { QuizReactionCount } from "../../types/reactionCount";
-import { QuizReactionType } from "../request/quizReactionDTO";
-import { ShowQuizResponse } from "./showQuizResponse.dto";
+import { QuizReactionType } from "../request/quizReaction.dto";
+import { ShowQuizResponse } from "./showQuiz.response";
 
 export class DetailQuizResponse {
 	quiz!: ShowQuizResponse;

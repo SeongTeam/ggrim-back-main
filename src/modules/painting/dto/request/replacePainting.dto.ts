@@ -1,6 +1,6 @@
 import { PickType } from "@nestjs/mapped-types";
 import { IsArray, IsString } from "class-validator";
-import { CreatePaintingDTO } from "./createPaintingDTO";
+import { CreatePaintingDTO } from "./createPainting.dto";
 
 export class ReplacePaintingDTO extends PickType(CreatePaintingDTO, [
 	"title",
