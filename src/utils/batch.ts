@@ -106,7 +106,7 @@ export class Batch<DTO, Entity> {
 			const dtoToResultMap: Map<DTO, Entity | ServiceException> = new Map();
 
 			itemHashMap.forEach((value) => {
-				const request: BatchRequest<DTO, Entity> = value.at(0)!;
+				const request: BatchRequest<DTO, Entity> = value[0];
 				const defaultResult = new ServiceException(
 					"ENTITY_CREATE_FAILED",
 					"INTERNAL_SERVER_ERROR",

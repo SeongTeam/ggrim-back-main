@@ -46,7 +46,7 @@ export class QueryRunnerInterceptor implements NestInterceptor {
 		Logger.debug("[QueryRunnerInterceptor] Commit transaction");
 		await queryRunner.commitTransaction();
 		await queryRunner.release();
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
 		return result;
 	}
 

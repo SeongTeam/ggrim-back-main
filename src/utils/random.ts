@@ -15,5 +15,5 @@ export function getRandomElement<T>(list: T[]): T | undefined {
 	const max = list.length - 1;
 	const idx = getRandomNumber(min, max);
 
-	return list.at(idx);
+	return list[idx];
 }

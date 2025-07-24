@@ -10,8 +10,6 @@ import { Painting } from "./entities/painting.entity";
 import { WikiArtPainting } from "./entities/wikiArtPainting.entity";
 import { PaintingController } from "./painting.controller";
 import { PaintingService } from "./painting.service";
-import { WikiArtPaintingService } from "./sub-service/wikiArt.painting.service";
-
 @Module({
 	imports: [
 		TypeOrmModule.forFeature([Painting, WikiArtPainting, Style]),
@@ -21,7 +19,7 @@ import { WikiArtPaintingService } from "./sub-service/wikiArt.painting.service";
 		S3Module,
 	],
 	controllers: [PaintingController],
-	providers: [PaintingService, WikiArtPaintingService, StyleService],
-	exports: [PaintingService, WikiArtPaintingService],
+	providers: [PaintingService, StyleService],
+	exports: [PaintingService],
 })
 export class PaintingModule {}

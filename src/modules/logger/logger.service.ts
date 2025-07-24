@@ -58,9 +58,9 @@ export class LoggerService {
 					undefined,
 					this.getFullContext(context),
 				);
-			} catch (josnErr) {
+			} catch (jsonErr) {
 				this.logger.error(
-					`${message}, unserializable error.`,
+					`${message}, unserializable error.` + JSON.stringify(jsonErr),
 					undefined,
 					this.getFullContext(context),
 				);
