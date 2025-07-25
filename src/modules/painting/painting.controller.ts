@@ -17,13 +17,11 @@ import {
 	ValidationPipe,
 } from "@nestjs/common";
 import { QueryRunner } from "typeorm";
-import { CONFIG_FILE_PATH } from "../_common/const/defaultValue";
-import { AWS_BUCKET, AWS_BUCKET_ARTWORK, AWS_INIT_FILE_KEY_PREFIX } from "../_common/const/envKeys";
+import { AWS_BUCKET_ARTWORK } from "../_common/const/envKeys";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { S3Service } from "../aws/s3.service";
 import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner";
 import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
-import { getLatestMonday } from "../../utils/date";
 import { CreatePaintingDTO } from "./dto/request/createPainting.dto";
 import { GetByIdsQueryDTO } from "./dto/request/getByIdsQuery.dto";
 import { ReplacePaintingDTO } from "./dto/request/replacePainting.dto";
@@ -69,41 +67,6 @@ export class PaintingController {
 		}
 
 		return paintings;
-	}
-
-	/*TODO 
-  - [ ]`artwork_of_week_${latestMonday}.json` 파일 내용형식을 DB에 저장된 Painting ID로 명시하기
-  - [ ]artist 이름 표기 방식을 서양식으로 변경하기. 현재는 성 + 이름 으로 표기됨. 
-  - [ ]GUI 만들기? => DB의 painting id를 찾는 것은 어렵기에
-       - painting 검색 후 나온 그림을 클릭으로 .json에 추가하기
-  - [ ]API 예외 처리 => id가 없는 경우 response에 메세지 나옴/ 다른 그림의 id일 경우 예외 처리 필요
-   */
-
-	@Get("init")
-	async initFile(): Promise<string> {
-		const latestMonday: string = getLatestMonday();
-		const artworkFileName: string = `artwork_of_week_${latestMonday}.json`;
-		const bucketName = process.env[AWS_BUCKET] || "no bucket";
-		const prefixKey = process.env[AWS_INIT_FILE_KEY_PREFIX];
-
-		try {
-			await this.s3Service.downloadFile(
-				bucketName,
-				prefixKey + artworkFileName,
-				CONFIG_FILE_PATH + artworkFileName,
-			);
-
-			return "success init";
-		} catch (err: unknown) {
-			throw new ServiceException(
-				"EXTERNAL_SERVICE_FAILED",
-				"INTERNAL_SERVER_ERROR",
-				`${this.initFile.name}() failed. need to check config`,
-				{
-					cause: err,
-				},
-			);
-		}
 	}
 
 	@Get(":id")
