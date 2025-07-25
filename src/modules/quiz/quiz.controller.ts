@@ -56,6 +56,8 @@ import { ShortQuiz } from "./types/shortQuiz";
 import { QuizScheduleService } from "./quizSchedule.service";
 import { QuizService } from "./quiz.service";
 import { Request } from "express";
+import { Pagination } from "../_common/types";
+import { ApiPaginationResponse } from "../_common/decorator/swagger/apiPaginationResponse";
 
 @Crud({
 	model: {
@@ -354,12 +356,13 @@ export class QuizController
 	// ? 질문: <의문점 또는 개선 방향>
 	// * 참고: <관련 정보나 링크>
 
+	@ApiPaginationResponse(ShortQuiz)
 	@Get("")
 	async searchQuiz(
 		@Query() dto: SearchQuizDTO,
 		@Query("page", new DefaultValuePipe(0), ParseIntPipe) page: number,
 		@Query("count", new DefaultValuePipe(20), ParseIntPipe) count: number,
-	) {
+	): Promise<Pagination<ShortQuiz>> {
 		const ret = await this.service.searchQuiz(dto, page, count);
 
 		return ret;
