@@ -24,8 +24,7 @@ import {
 } from "@nestjs/common";
 import { QueryRunner } from "typeorm";
 import { LoggerService } from "../logger/logger.service";
-import { CONFIG_FILE_PATH } from "../_common/const/defaultValue";
-import { AWS_BUCKET, AWS_BUCKET_ARTWORK, AWS_INIT_FILE_KEY_PREFIX } from "../_common/const/envKeys";
+import { AWS_BUCKET_ARTWORK } from "../_common/const/envKeys";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { ArtistService } from "../artist/artist.service";
 import { CheckOwner } from "../auth/metadata/owner";
@@ -39,7 +38,6 @@ import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.intercept
 import { PaintingService } from "../painting/painting.service";
 import { StyleService } from "../style/style.service";
 import { TagService } from "../tag/tag.service";
-import { getLatestMonday } from "../../utils/date";
 import { SearchQuizDTO } from "./dto/request/SearchQuiz.dto";
 import { CreateQuizDTO } from "./dto/request/createQuiz.dto";
 import { DetailQuizResponse } from "./dto/response/detailQuiz.response";
@@ -365,33 +363,6 @@ export class QuizController
 		const ret = await this.service.searchQuiz(dto, page, count);
 
 		return ret;
-	}
-
-	@Get("init")
-	async initFile(): Promise<string> {
-		const latestMonday: string = getLatestMonday();
-		const quizFileName: string = `quiz_of_week_${latestMonday}.json`;
-		const bucketName = process.env[AWS_BUCKET] || "no bucket";
-		const prefixKey = process.env[AWS_INIT_FILE_KEY_PREFIX];
-
-		try {
-			await this.s3Service.downloadFile(
-				bucketName,
-				prefixKey + quizFileName,
-				CONFIG_FILE_PATH + quizFileName,
-			);
-
-			return "success init";
-		} catch (err: unknown) {
-			throw new ServiceException(
-				"EXTERNAL_SERVICE_FAILED",
-				"INTERNAL_SERVER_ERROR",
-				`${this.initFile.name}() failed. need to check config`,
-				{
-					cause: err,
-				},
-			);
-		}
 	}
 
 	// TODO : 퀴즈 사용자 상호작용 기능 추가
