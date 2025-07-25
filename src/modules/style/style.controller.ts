@@ -14,7 +14,6 @@ import { CreateStyleDTO } from "./dto/request/createStyle.dto";
 import { ReplaceStyleDTO } from "./dto/request/replaceStyle.dto";
 import { Style } from "./entities/style.entity";
 import { StyleService } from "./style.service";
-const EXCLUDED_COLUMN = ["created_date", "updated_date", "deleted_date", "version"] as const;
 
 /*TODO
 - soft-deleted 상태인 데이터가 replace method 사용시 수정되는 것이 위험한지 고민하기
@@ -42,18 +41,10 @@ const EXCLUDED_COLUMN = ["created_date", "updated_date", "deleted_date", "versio
 			paintings: {
 				eager: false,
 				allow: ["title", "image_url"],
-				exclude: [
-					...EXCLUDED_COLUMN,
-					"width",
-					"height",
-					"completition_year",
-					"description",
-				],
 				persist: ["id", "title", "image_url"],
 			},
 		},
 		allow: ["name", "search_name"],
-		exclude: [...EXCLUDED_COLUMN],
 		persist: ["name", "info_url"],
 		softDelete: true,
 		alwaysPaginate: true,

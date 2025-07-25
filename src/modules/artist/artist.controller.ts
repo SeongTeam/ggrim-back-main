@@ -13,7 +13,6 @@ import { Roles } from "../user/metadata/role";
 import { ArtistService } from "./artist.service";
 import { CreateArtistDTO } from "./dto/request/createArtist.dto";
 import { Artist } from "./entities/artist.entity";
-const EXCLUDED_COLUMN = ["created_date", "updated_date", "deleted_date", "version"] as const;
 @Crud({
 	model: {
 		type: Artist,
@@ -34,19 +33,11 @@ const EXCLUDED_COLUMN = ["created_date", "updated_date", "deleted_date", "versio
 	},
 	query: {
 		allow: ["id", "name", "info_url", "birth_date", "death_date", "search_name"],
-		exclude: [...EXCLUDED_COLUMN],
 		join: {
 			paintings: {
 				eager: false,
 				allow: ["id", "title"], // TODO allow 옵션 적용안되는 버그 수정하기
 				persist: ["id", "title", "image_url"],
-				exclude: [
-					...EXCLUDED_COLUMN,
-					"width",
-					"height",
-					"completition_year",
-					"description",
-				],
 			},
 		},
 		softDelete: true,

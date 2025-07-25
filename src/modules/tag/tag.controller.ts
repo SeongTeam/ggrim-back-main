@@ -8,8 +8,6 @@ import { CreateTagDTO } from "./dto/request/createTag.dto";
 import { ReplaceTagDTO } from "./dto/request/replaceTag.dto";
 import { Tag } from "./entities/tag.entity";
 import { TagService } from "./tag.service";
-const EXCLUDED_COLUMN = ["created_date", "updated_date", "deleted_date", "version"] as const;
-
 /*TODO
 - typeORM 에러 발생시, 특정 에러 메세지는 응답에 포함시켜 보내는 로직 구현 고려
   1) unique constraint 열에 중복된 값을 삽입할 때,
@@ -38,18 +36,10 @@ const EXCLUDED_COLUMN = ["created_date", "updated_date", "deleted_date", "versio
 			paintings: {
 				eager: false,
 				allow: ["title", "image_url"],
-				exclude: [
-					...EXCLUDED_COLUMN,
-					"width",
-					"height",
-					"completition_year",
-					"description",
-				],
 				persist: ["id", "title", "image_url"],
 			},
 		},
 		allow: ["name", "search_name"],
-		exclude: [...EXCLUDED_COLUMN],
 		persist: ["name", "info_url"],
 		softDelete: true,
 		alwaysPaginate: true,
