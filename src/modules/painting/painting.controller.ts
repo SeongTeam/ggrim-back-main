@@ -29,6 +29,8 @@ import { SearchPaintingDTO } from "./dto/request/searchPainting.dto";
 import { Painting } from "./entities/painting.entity";
 import { ShortPainting } from "./types/shortPainting";
 import { PaintingService } from "./painting.service";
+import { Pagination } from "../_common/types";
+import { ApiPaginationResponse } from "../_common/decorator/swagger/apiPaginationResponse";
 
 @UsePipes(new ValidationPipe({ transform: true }))
 @Controller("painting")
@@ -84,12 +86,13 @@ export class PaintingController {
 		return paintings[0];
 	}
 
+	@ApiPaginationResponse(ShortPainting)
 	@Get("/")
 	async searchPainting(
 		@Query() dto: SearchPaintingDTO,
 		@Query("page", new DefaultValuePipe(0), ParseIntPipe) page: number,
 		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
-	) {
+	): Promise<Pagination<ShortPainting>> {
 		const paginationCount = 50;
 		const ret = await this.service.searchPainting(dto, page, paginationCount);
 		if (isS3Access) {
