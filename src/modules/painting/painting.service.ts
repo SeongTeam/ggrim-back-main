@@ -4,7 +4,7 @@ import { existsSync } from "fs";
 import { Brackets, QueryRunner, Repository } from "typeorm";
 import { CONFIG_FILE_PATH } from "../_common/const/defaultValue";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
-import { IPaginationResult } from "../_common/types";
+import { Pagination } from "../_common/types";
 import { ArtistService } from "../artist/artist.service";
 import { Artist } from "../artist/entities/artist.entity";
 import { createTransactionQueryBuilder } from "../db/query-runner/queryRunner.lib";
@@ -128,7 +128,7 @@ export class PaintingService {
 		dto: SearchPaintingDTO,
 		page: number,
 		paginationCount: number,
-	): Promise<IPaginationResult<ShortPainting>> {
+	): Promise<Pagination<ShortPainting>> {
 		/*TODO
     - 입력된 tag와 style이 유효한지 점검하기
     - [ ] 배열의 각 원소가 공백인지 확인 필요.

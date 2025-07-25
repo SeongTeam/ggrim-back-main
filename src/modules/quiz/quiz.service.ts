@@ -4,7 +4,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Mutex } from "async-mutex";
 import { FindManyOptions, QueryRunner, Repository } from "typeorm";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
-import { IPaginationResult } from "../_common/types";
+import { Pagination } from "../_common/types";
 import { Artist } from "../artist/entities/artist.entity";
 import { createTransactionQueryBuilder } from "../db/query-runner/queryRunner.lib";
 import { Painting } from "../painting/entities/painting.entity";
@@ -87,7 +87,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		dto: SearchQuizDTO,
 		page: number,
 		paginationCount: number,
-	): Promise<IPaginationResult<ShortQuiz>> {
+	): Promise<Pagination<ShortQuiz>> {
 		/*TODO 검색 로직 개선
       - [ ]각 JSON 값이 string[]인지 확인 필요.
       - [ ] 배열의 각 원소가 공백("")인지 확인 필요.
