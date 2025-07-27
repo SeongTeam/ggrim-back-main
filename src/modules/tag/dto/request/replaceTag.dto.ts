@@ -1,4 +1,4 @@
-import { PickType } from "@nestjs/mapped-types";
+import { PickType } from "@nestjs/swagger";
 import { IsUrl } from "class-validator";
 import { CreateTagDTO } from "./createTag.dto";
 
