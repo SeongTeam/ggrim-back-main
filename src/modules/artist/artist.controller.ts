@@ -2,6 +2,7 @@ import {
 	Crud,
 	CrudController,
 	CrudRequest,
+	GetManyDefaultResponse,
 	Override,
 	ParsedBody,
 	ParsedRequest,
@@ -13,6 +14,9 @@ import { Roles } from "../user/metadata/role";
 import { ArtistService } from "./artist.service";
 import { CreateArtistDTO } from "./dto/request/createArtist.dto";
 import { Artist } from "./entities/artist.entity";
+import { ShowArtistResponse } from "./dto/response/showArtist.response";
+import { isArray } from "class-validator";
+import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 @Crud({
 	model: {
 		type: Artist,
@@ -32,12 +36,10 @@ import { Artist } from "./entities/artist.entity";
 		replace: CreateArtistDTO,
 	},
 	query: {
-		allow: ["id", "name", "info_url", "birth_date", "death_date", "search_name"],
 		join: {
 			paintings: {
 				eager: false,
-				allow: ["id", "title"], // TODO allow 옵션 적용안되는 버그 수정하기
-				persist: ["id", "title", "image_url"],
+				allow: ["id", "title", "image_url"],
 			},
 		},
 		softDelete: true,
@@ -48,26 +50,80 @@ import { Artist } from "./entities/artist.entity";
 export class ArtistController implements CrudController<Artist> {
 	constructor(public service: ArtistService) {}
 
-	@Override("createOneBase")
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
-	async createOne(@ParsedRequest() req: CrudRequest, @ParsedBody() dto: CreateArtistDTO) {
-		const { name } = dto;
-		const search_name = name.trim().split(/\s+/).join("_").toUpperCase();
-		return this.service.createOne(req, { search_name, ...dto });
+	/**
+	 * Retrieve Artist by id.
+	 *
+	 */
+
+	@ApiOverride("getOneBase", ShowArtistResponse)
+	async getOne(req: CrudRequest): Promise<ShowArtistResponse> {
+		const artist = await this.service.getOne(req);
+
+		return new ShowArtistResponse(artist);
 	}
 
-	@Override("replaceOneBase")
+	/**
+	 * Retrieve multiple Artist
+	 *
+	 * @remarks
+	 * use join field, If want Painting[]. you can filter by painting properties id, title and image_url
+	 *
+	 * Example:
+	 * ```
+	 * GET backend/artist?s={"name":{"$cont":"Leonardo"}}&join=paintings
+	 * ```
+	 *
+	 *
+	 */
+
+	@ApiOverride("getManyBase", ShowArtistResponse)
+	async getMany(
+		req: CrudRequest,
+	): Promise<GetManyDefaultResponse<ShowArtistResponse> | ShowArtistResponse[]> {
+		const results = await this.service.getMany(req);
+
+		const ret = isArray(results)
+			? results.map((artist) => new ShowArtistResponse(artist))
+			: {
+					...results,
+					data: results.data.map((artist) => new ShowArtistResponse(artist)),
+				};
+
+		return ret;
+	}
+
+	@ApiOverride("createOneBase", ShowArtistResponse)
 	@Roles("admin")
 	@UseGuards(TokenAuthGuard, RolesGuard)
-	async replaceOne(@ParsedRequest() req: CrudRequest, @ParsedBody() dto: CreateArtistDTO) {
-		const search_name = dto.name.trim().split(/\s+/).join("_").toUpperCase();
-		return this.service.replaceOne(req, { ...dto, search_name });
+	async createOne(
+		@ParsedRequest() req: CrudRequest,
+		@ParsedBody() dto: CreateArtistDTO,
+	): Promise<ShowArtistResponse> {
+		const { name } = dto;
+		const search_name = name.trim().split(/\s+/).join("_").toUpperCase();
+		const newArtist = await this.service.createOne(req, { search_name, ...dto });
+
+		return new ShowArtistResponse(newArtist);
+	}
+
+	@ApiOverride("replaceOneBase", ShowArtistResponse)
+	@Roles("admin")
+	@UseGuards(TokenAuthGuard, RolesGuard)
+	async replaceOne(
+		@ParsedRequest() req: CrudRequest,
+		@ParsedBody() dto: CreateArtistDTO,
+	): Promise<ShowArtistResponse> {
+		const artist = await this.service.replaceOne(req, {
+			...dto,
+			search_name: dto.name.trim().split(/\s+/).join("_").toUpperCase(),
+		});
+		return new ShowArtistResponse(artist);
 	}
 	@Override("deleteOneBase")
 	@Roles("admin")
 	@UseGuards(TokenAuthGuard, RolesGuard)
 	async deleteOne(@ParsedRequest() req: CrudRequest) {
-		return this.service.deleteOne(req);
+		await this.service.deleteOne(req);
+		return;
 	}
 }
