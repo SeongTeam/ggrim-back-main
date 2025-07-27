@@ -59,8 +59,8 @@ export class AuthController {
 	// - [x] : 로그인 성공시, 사용자 정보 응답하기
 	// - [ ] : 로그인 성공 또는 실패에 대한 기록 저장하기
 
-	@Post("sign-in")
 	@UseGuards(BasicGuard)
+	@Post("sign-in")
 	signin(@Req() request: Request) {
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = userPayload;
@@ -92,8 +92,8 @@ export class AuthController {
 	// ? 질문: registerMethod에서 이미 인증된 계정인 경우, 어떻게 해야하는가?
 	// * 참고: <관련 정보나 링크>
 
-	@Post("request-verification")
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Post("request-verification")
 	async register(
 		@DBQueryRunner() qr: QueryRunner,
 		@Body() registerDTO: requestVerificationDTO,
@@ -128,8 +128,9 @@ export class AuthController {
 
 	// TODO 이메일 인증 로직 개선
 	// [x] : oneTimeToken을 발행하여 인증 여부 확인하기.
-	@Post("verify")
+
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Post("verify")
 	async verify(
 		@DBQueryRunner() qr: QueryRunner,
 		@Body() dto: VerifyDTO,
@@ -187,9 +188,9 @@ export class AuthController {
 		return oneTimeToken;
 	}
 
-	@Post("security-token")
 	@UseGuards(BasicGuard)
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Post("security-token")
 	async generateSecurityActionToken(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
@@ -204,8 +205,8 @@ export class AuthController {
 		return securityToken;
 	}
 
-	@Post("security-token/email-verification")
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Post("security-token/email-verification")
 	async sendSecurityActionToken(
 		@DBQueryRunner() qr: QueryRunner,
 		@Body() dto: SendOneTimeTokenDTO,
@@ -249,11 +250,11 @@ export class AuthController {
 		return "send email";
 	}
 
-	@Post("security-token/from-email-verification")
 	@UseInterceptors(QueryRunnerInterceptor)
 	@PurposeOneTimeToken("email-verification")
 	@SecurityTokenGuardOptions({ withDeleted: true })
 	@UseGuards(SecurityTokenGuard)
+	@Post("security-token/from-email-verification")
 	async generateSecurityTokenByEmailVerification(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
@@ -283,10 +284,10 @@ export class AuthController {
 		return true;
 	}
 
-	@Post("test/one-time-token-guard")
 	@PurposeOneTimeToken("delete-account")
 	@UseGuards(SecurityTokenGuard)
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Post("test/one-time-token-guard")
 	async testSecurityTokenGuard(@DBQueryRunner() qr: QueryRunner, @Req() request: Request) {
 		const SecurityTokenGuardResult: SecurityTokenPayload =
 			request[AUTH_GUARD_PAYLOAD.SECURITY_TOKEN]!;
@@ -297,7 +298,6 @@ export class AuthController {
 		return true;
 	}
 
-	@Get("one-time-token/:id")
 	@CheckOwner({
 		serviceClass: AuthService,
 		idParam: "id",
@@ -305,6 +305,7 @@ export class AuthController {
 		serviceMethod: "findOneTimeTokenByID",
 	})
 	@UseGuards(BasicGuard, OwnerGuard)
+	@Get("one-time-token/:id")
 	async getOneTimeToken(@Param("id", ParseUUIDPipe) id: string): Promise<OneTimeToken | null> {
 		const findOne = await this.service.findOneTimeToken({ where: { id } });
 
