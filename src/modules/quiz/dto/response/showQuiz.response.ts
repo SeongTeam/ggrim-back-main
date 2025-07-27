@@ -1,17 +1,17 @@
-import { OmitType } from "@nestjs/mapped-types";
 import { plainToInstance } from "class-transformer";
-import { ShortUser } from "../../../user/types/shortUser";
 import { Quiz } from "../../entities/quiz.entity";
+import { ShowUserResponse } from "../../../user/dto/request/response/showUser.response";
+import { OmitType } from "@nestjs/swagger";
 
 export class ShowQuizResponse extends OmitType(Quiz, ["owner"] as const) {
-	shortOwner!: ShortUser;
+	showOwner!: ShowUserResponse;
 
 	static createShowQuiz = (quiz: Quiz): ShowQuizResponse => {
 		const { owner, ...rest } = quiz;
 
 		const showQuiz = plainToInstance(ShowQuizResponse, rest);
-		const shortOwner = new ShortUser(owner);
-		showQuiz.shortOwner = shortOwner;
+		const showOwner = new ShowUserResponse(owner);
+		showQuiz.showOwner = showOwner;
 		return showQuiz;
 	};
 }

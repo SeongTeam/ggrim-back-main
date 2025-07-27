@@ -1,13 +1,13 @@
 import { randomInt } from "node:crypto";
 import { QuizContext } from "../../types/quizContext";
 import { QuizStatus } from "../../types/quizStatus";
-import { ShortQuiz } from "../../types/shortQuiz";
+import { ShortQuizResponse } from "./shortQuiz.response";
 
 export class QuizResponse {
-	shortQuiz!: ShortQuiz;
+	shortQuiz!: ShortQuizResponse;
 	status!: QuizStatus;
 
-	constructor(shortQuizzes: ShortQuiz[], context: QuizContext, currentIndex?: number) {
+	constructor(shortQuizzes: ShortQuizResponse[], context: QuizContext, currentIndex?: number) {
 		const INIT_INDEX = -1;
 		this.status = { currentIndex: INIT_INDEX, endIndex: INIT_INDEX, context };
 		this.status.currentIndex = currentIndex

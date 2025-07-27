@@ -25,7 +25,6 @@ import { QuizSubmission } from "./types/quizSubmission";
 import { QuizReactionCount } from "./types/reactionCount";
 import { RelatedPaintings } from "./types/relatedPaintings";
 import { RelatedPaintingIds } from "./types/relatedPaintingIds";
-import { ShortQuiz } from "./types/shortQuiz";
 
 @Injectable()
 export class QuizService extends TypeOrmCrudService<Quiz> {
@@ -87,7 +86,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		dto: SearchQuizDTO,
 		page: number,
 		paginationCount: number,
-	): Promise<Pagination<ShortQuiz>> {
+	): Promise<Pagination<Quiz>> {
 		/*TODO 검색 로직 개선
       - [ ]각 JSON 값이 string[]인지 확인 필요.
       - [ ] 배열의 각 원소가 공백("")인지 확인 필요.
@@ -175,11 +174,9 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 			.orderBy(`${quizAlias}.created_date`, "DESC")
 			.getManyAndCount();
 
-		const data = quizzes.map((quiz) => new ShortQuiz(quiz));
-
 		return {
-			data,
-			count: data.length,
+			data: quizzes,
+			count: quizzes.length,
 			total,
 			page,
 			pageCount:

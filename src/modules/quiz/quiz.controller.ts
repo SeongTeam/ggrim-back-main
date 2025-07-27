@@ -52,12 +52,13 @@ import { QuizDislike } from "./entities/quizDislike.entity";
 import { QuizLike } from "./entities/quizLike.entity";
 import { Quiz } from "./entities/quiz.entity";
 import { QuizContext } from "./types/quizContext";
-import { ShortQuiz } from "./types/shortQuiz";
+import { ShortQuizResponse } from "./dto/response/shortQuiz.response";
 import { QuizScheduleService } from "./quizSchedule.service";
 import { QuizService } from "./quiz.service";
 import { Request } from "express";
 import { Pagination } from "../_common/types";
 import { ApiPaginationResponse } from "../_common/decorator/swagger/apiPaginationResponse";
+import { ShowQuizResponse } from "./dto/response/showQuiz.response";
 
 @Crud({
 	model: {
@@ -246,7 +247,9 @@ export class QuizController
 				QUIZ_PAGINATION,
 			);
 
-			const quizList: ShortQuiz[] = pagination.data;
+			const quizList: ShortQuizResponse[] = pagination.data.map(
+				(q) => new ShortQuizResponse(q),
+			);
 			if (quizList.length === 0) {
 				await this.scheduleService.requestDeleteContext(context);
 				dto.context = undefined;
@@ -286,10 +289,12 @@ export class QuizController
 		@Req() request: Request,
 
 		@Body() dto: CreateQuizDTO,
-	) {
+	): Promise<ShowQuizResponse> {
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 
-		return this.service.createQuiz(qr, dto, userPayload.user);
+		const quiz = await this.service.createQuiz(qr, dto, userPayload.user);
+
+		return ShowQuizResponse.createShowQuiz(quiz);
 	}
 
 	@Override("getOneBase")
@@ -332,8 +337,9 @@ export class QuizController
 		@Req() request: Request,
 		@Param("id", ParseUUIDPipe) id: string,
 		@Body() dto: UpdateQuizDTO,
-	) {
-		return await this.service.updateQuiz(qr, id, dto);
+	): Promise<ShowQuizResponse> {
+		const quiz = await this.service.updateQuiz(qr, id, dto);
+		return ShowQuizResponse.createShowQuiz(quiz);
 	}
 
 	@Delete(":id")
@@ -356,14 +362,18 @@ export class QuizController
 	// ? 질문: <의문점 또는 개선 방향>
 	// * 참고: <관련 정보나 링크>
 
-	@ApiPaginationResponse(ShortQuiz)
+	@ApiPaginationResponse(ShortQuizResponse)
 	@Get("")
 	async searchQuiz(
 		@Query() dto: SearchQuizDTO,
 		@Query("page", new DefaultValuePipe(0), ParseIntPipe) page: number,
 		@Query("count", new DefaultValuePipe(20), ParseIntPipe) count: number,
-	): Promise<Pagination<ShortQuiz>> {
-		const ret = await this.service.searchQuiz(dto, page, count);
+	): Promise<Pagination<ShortQuizResponse>> {
+		const result = await this.service.searchQuiz(dto, page, count);
+		const ret = {
+			...result,
+			data: result.data.map((quiz) => new ShortQuizResponse(quiz)),
+		};
 
 		return ret;
 	}
