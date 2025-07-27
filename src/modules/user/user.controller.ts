@@ -1,4 +1,4 @@
-import { Crud, CrudController, Override } from "@dataui/crud";
+import { Crud, CrudController, CrudRequest, GetManyDefaultResponse, Override } from "@dataui/crud";
 import {
 	Body,
 	Controller,
@@ -16,7 +16,7 @@ import {
 	UsePipes,
 	ValidationPipe,
 } from "@nestjs/common";
-import { isEmail, isEmpty, isNotEmpty } from "class-validator";
+import { isArray, isEmail, isEmpty, isNotEmpty } from "class-validator";
 import { QueryRunner } from "typeorm";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { AuthService } from "../auth/auth.service";
@@ -44,6 +44,7 @@ import { ReplaceUsernameDTO } from "./dto/request/replaceUsername.dto";
 import { User } from "./entity/user.entity";
 import { UserService } from "./user.service";
 import { Request } from "express";
+import { ShowUserResponse } from "./dto/request/response/showUser.response";
 
 @Crud({
 	model: {
@@ -60,8 +61,6 @@ import { Request } from "express";
 		},
 	},
 	query: {
-		allow: ["email", "username", "oauth_provider_id"],
-		exclude: ["password"],
 		softDelete: true,
 	},
 	dto: {
@@ -85,6 +84,28 @@ export class UserController implements CrudController<User> {
 	// ! 주의: <경고할 사항>
 	// ? 질문: <의문점 또는 개선 방향>
 	// * 참고: <관련 정보나 링크>
+
+	@Override("getOneBase")
+	async getOne(req: CrudRequest): Promise<ShowUserResponse> {
+		const user = await this.service.getOne(req);
+
+		return new ShowUserResponse(user);
+	}
+
+	@Override("getManyBase")
+	async getMany(
+		req: CrudRequest,
+	): Promise<GetManyDefaultResponse<ShowUserResponse> | ShowUserResponse[]> {
+		const results = await this.service.getMany(req);
+		const ret = isArray(results)
+			? results.map((usr) => new ShowUserResponse(usr))
+			: {
+					...results,
+					data: results.data.map((usr) => new ShowUserResponse(usr)),
+				};
+
+		return ret;
+	}
 
 	@Override(`createOneBase`)
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -113,7 +134,9 @@ export class UserController implements CrudController<User> {
 		await this.authService.markOneTimeJWT(qr, oneTimeTokenID);
 
 		const encryptedPW = await this.authService.hash(dto.password);
-		return await this.service.createUser(qr, { ...dto, password: encryptedPW, email });
+		const newUser = await this.service.createUser(qr, { ...dto, password: encryptedPW, email });
+
+		return new ShowUserResponse(newUser);
 	}
 
 	// TODO: 사용자 정보 변경 로직 개선하기
