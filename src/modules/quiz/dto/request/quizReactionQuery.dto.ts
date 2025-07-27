@@ -1,4 +1,4 @@
-import { PickType } from "@nestjs/mapped-types";
+import { PickType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { IsNumber, IsOptional, IsUUID } from "class-validator";
 import { QuizReactionDTO } from "./quizReaction.dto";

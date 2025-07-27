@@ -1,4 +1,4 @@
-import { PickType } from "@nestjs/mapped-types";
+import { PickType } from "@nestjs/swagger";
 import { IsArray, IsString } from "class-validator";
 import { CreatePaintingDTO } from "./createPainting.dto";
 

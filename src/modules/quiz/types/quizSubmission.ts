@@ -1,4 +1,4 @@
-import { PickType } from "@nestjs/mapped-types";
+import { PickType } from "@nestjs/swagger";
 import { Quiz } from "../entities/quiz.entity";
 
 export class QuizSubmission extends PickType(Quiz, ["incorrect_count", "correct_count"]) {

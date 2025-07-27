@@ -1,4 +1,4 @@
-import { PartialType } from "@nestjs/mapped-types";
+import { PartialType } from "@nestjs/swagger";
 import { TYPE_DEFAULT_VALUE } from "../../../_common/const/defaultValue";
 import { WikiArtPainting } from "../../entities/wikiArtPainting.entity";
 
