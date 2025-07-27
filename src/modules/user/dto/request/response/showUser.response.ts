@@ -6,12 +6,12 @@ export class ShowUserResponse {
 	id: string;
 
 	email: string;
-	@ApiProperty({ enum: [...Object.values(USER_ROLE)] })
+	@ApiProperty({ enum: Object.values(USER_ROLE) })
 	role: UserRole;
 
 	username: string;
 
-	@ApiProperty({ enum: [...Object.values(USER_STATE)] })
+	@ApiProperty({ enum: Object.values(USER_STATE) })
 	active!: UserState;
 
 	last_login_date: Date;

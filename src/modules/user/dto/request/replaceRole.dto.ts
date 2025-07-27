@@ -1,7 +1,9 @@
+import { ApiProperty } from "@dataui/crud/lib/crud";
 import { IsInArray } from "../../../../utils/classValidator";
-import { UserRole } from "../../const";
+import { USER_ROLE, UserRole } from "../../const";
 
 export class ReplaceRoleDTO {
-	@IsInArray(["admin", "user"])
+	@ApiProperty({ enum: Object.values(USER_ROLE) })
+	@IsInArray(Object.values(USER_ROLE))
 	role!: UserRole;
 }
