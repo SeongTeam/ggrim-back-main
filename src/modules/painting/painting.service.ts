@@ -20,7 +20,6 @@ import { WeeklyArtWorkSet } from "./types/weeklyArtWorkSet";
 import { ReplacePaintingDTO } from "./dto/request/replacePainting.dto";
 import { SearchPaintingDTO } from "./dto/request/searchPainting.dto";
 import { Painting } from "./entities/painting.entity";
-import { ShortPainting } from "./types/shortPainting";
 
 @Injectable()
 export class PaintingService {
@@ -128,7 +127,7 @@ export class PaintingService {
 		dto: SearchPaintingDTO,
 		page: number,
 		paginationCount: number,
-	): Promise<Pagination<ShortPainting>> {
+	): Promise<Pagination<Painting>> {
 		/*TODO
     - 입력된 tag와 style이 유효한지 점검하기
     - [ ] 배열의 각 원소가 공백인지 확인 필요.
@@ -206,11 +205,9 @@ export class PaintingService {
 			.orderBy("p.created_date", "DESC")
 			.getManyAndCount();
 
-		const data = paintings.map((p) => new ShortPainting(p));
-
 		return {
-			data,
-			count: data.length,
+			data: paintings,
+			count: paintings.length,
 			total,
 			page,
 			pageCount:

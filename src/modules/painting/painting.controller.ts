@@ -27,7 +27,7 @@ import { GetByIdsQueryDTO } from "./dto/request/getByIdsQuery.dto";
 import { ReplacePaintingDTO } from "./dto/request/replacePainting.dto";
 import { SearchPaintingDTO } from "./dto/request/searchPainting.dto";
 import { Painting } from "./entities/painting.entity";
-import { ShortPainting } from "./types/shortPainting";
+import { ShortPaintingResponse } from "./dto/response/shortPainting.response";
 import { PaintingService } from "./painting.service";
 import { Pagination } from "../_common/types";
 import { ApiPaginationResponse } from "../_common/decorator/swagger/apiPaginationResponse";
@@ -86,19 +86,24 @@ export class PaintingController {
 		return paintings[0];
 	}
 
-	@ApiPaginationResponse(ShortPainting)
+	@ApiPaginationResponse(ShortPaintingResponse)
 	@Get("/")
 	async searchPainting(
 		@Query() dto: SearchPaintingDTO,
 		@Query("page", new DefaultValuePipe(0), ParseIntPipe) page: number,
 		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
-	): Promise<Pagination<ShortPainting>> {
+	): Promise<Pagination<ShortPaintingResponse>> {
 		const paginationCount = 50;
-		const ret = await this.service.searchPainting(dto, page, paginationCount);
+		const result = await this.service.searchPainting(dto, page, paginationCount);
 		if (isS3Access) {
-			const replaced = await this.replaceImageSrcToS3(ret.data);
-			ret.data = replaced;
+			const replaced = await this.replaceImageSrcToS3(result.data);
+			result.data = replaced;
 		}
+
+		const ret = {
+			...result,
+			data: result.data.map((p) => new ShortPaintingResponse(p)),
+		};
 
 		return ret;
 	}
@@ -152,7 +157,7 @@ export class PaintingController {
 		return this.service.deleteOne(queryRunner, targetPainting);
 	}
 
-	async replaceImageSrcToS3<T extends ShortPainting>(paintings: T[]) {
+	async replaceImageSrcToS3<T extends Painting>(paintings: T[]) {
 		const bucket = process.env[AWS_BUCKET_ARTWORK];
 		if (!bucket) {
 			throw new ServiceException(
