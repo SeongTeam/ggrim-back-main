@@ -21,10 +21,10 @@ import { UpdateQuizDTO } from "./dto/request/updateQuiz.dto";
 import { QuizDislike } from "./entities/quizDislike.entity";
 import { QuizLike } from "./entities/quizLike.entity";
 import { Quiz } from "./entities/quiz.entity";
-import { QuizSubmission } from "./types/quizSubmission";
 import { QuizReactionCount } from "./types/reactionCount";
 import { RelatedPaintings } from "./types/relatedPaintings";
 import { RelatedPaintingIds } from "./types/relatedPaintingIds";
+import { QuizSubmission } from "./types/quiz";
 
 @Injectable()
 export class QuizService extends TypeOrmCrudService<Quiz> {
