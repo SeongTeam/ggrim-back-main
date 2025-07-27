@@ -1,4 +1,4 @@
-import { Crud, CrudController, CrudRequest, GetManyDefaultResponse, Override } from "@dataui/crud";
+import { Crud, CrudController, CrudRequest, GetManyDefaultResponse } from "@dataui/crud";
 import {
 	Body,
 	Controller,
@@ -45,6 +45,7 @@ import { User } from "./entity/user.entity";
 import { UserService } from "./user.service";
 import { Request } from "express";
 import { ShowUserResponse } from "./dto/request/response/showUser.response";
+import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 
 @Crud({
 	model: {
@@ -85,14 +86,14 @@ export class UserController implements CrudController<User> {
 	// ? 질문: <의문점 또는 개선 방향>
 	// * 참고: <관련 정보나 링크>
 
-	@Override("getOneBase")
+	@ApiOverride("getOneBase", ShowUserResponse)
 	async getOne(req: CrudRequest): Promise<ShowUserResponse> {
 		const user = await this.service.getOne(req);
 
 		return new ShowUserResponse(user);
 	}
 
-	@Override("getManyBase")
+	@ApiOverride("getManyBase", ShowUserResponse)
 	async getMany(
 		req: CrudRequest,
 	): Promise<GetManyDefaultResponse<ShowUserResponse> | ShowUserResponse[]> {
@@ -107,7 +108,7 @@ export class UserController implements CrudController<User> {
 		return ret;
 	}
 
-	@Override(`createOneBase`)
+	@ApiOverride(`createOneBase`, ShowUserResponse)
 	@UseInterceptors(QueryRunnerInterceptor)
 	@PurposeOneTimeToken("sign-up")
 	@UseGuards(TempUserGuard)
@@ -178,8 +179,6 @@ export class UserController implements CrudController<User> {
 		const SecurityTokenGuardResult: SecurityTokenPayload =
 			request[AUTH_GUARD_PAYLOAD.SECURITY_TOKEN]!;
 		await this.authService.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
-
-		return;
 	}
 
 	@Put(":email/username")
@@ -210,7 +209,6 @@ export class UserController implements CrudController<User> {
 		}
 
 		await this.service.updateUser(qr, user.id, dto);
-		return;
 	}
 
 	@Put(":email/role")
