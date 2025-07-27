@@ -1,6 +1,6 @@
 import { Expose, Transform, Type } from "class-transformer";
 import { ArrayNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
-import { QuizContext } from "../../types/quizContext";
+import { QuizContext } from "../../types/quiz";
 
 export class QuizContextDTO implements QuizContext {
 	@IsOptional()

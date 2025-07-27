@@ -14,7 +14,7 @@ import { Style } from "../../style/entities/style.entity";
 import { Tag } from "../../tag/entities/tag.entity";
 import { User } from "../../user/entity/user.entity";
 import { QUIZ_TIME_LIMIT } from "../const";
-import { QUIZ_TYPE } from "../type";
+import { QuizType } from "../types/quiz";
 
 /*TODO
 - 문제 풀이 로직 통계 정보 열 추가하기
@@ -77,7 +77,7 @@ export class Quiz extends CustomBaseEntity {
 	description!: string;
 
 	@Column()
-	type!: QUIZ_TYPE;
+	type!: QuizType;
 
 	@ManyToMany(() => Artist, {
 		cascade: ["update", "insert"],

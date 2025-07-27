@@ -51,7 +51,7 @@ import { UpdateQuizDTO } from "./dto/request/updateQuiz.dto";
 import { QuizDislike } from "./entities/quizDislike.entity";
 import { QuizLike } from "./entities/quizLike.entity";
 import { Quiz } from "./entities/quiz.entity";
-import { QuizContext } from "./types/quizContext";
+import { QuizContext } from "./types/quiz";
 import { ShortQuizResponse } from "./dto/response/shortQuiz.response";
 import { QuizScheduleService } from "./quizSchedule.service";
 import { QuizService } from "./quiz.service";

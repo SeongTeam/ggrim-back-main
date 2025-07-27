@@ -1,6 +1,5 @@
 import { randomInt } from "node:crypto";
-import { QuizContext } from "../../types/quizContext";
-import { QuizStatus } from "../../types/quizStatus";
+import { QuizContext, QuizStatus } from "../../types/quiz";
 import { ShortQuizResponse } from "./shortQuiz.response";
 
 export class QuizResponse {

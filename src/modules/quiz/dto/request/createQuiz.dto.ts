@@ -1,7 +1,8 @@
 import { ArrayNotEmpty, IsArray, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
 import { IsInArray } from "../../../../utils/classValidator";
-import { TYPE_VALUES } from "../../const";
-import { QUIZ_TYPE } from "../../type";
+import { QUIZ_TYPE } from "../../const";
+import { ApiProperty } from "@dataui/crud/lib/crud";
+import { QuizType } from "../../types/quiz";
 
 export class CreateQuizDTO {
 	/*TODO
@@ -36,9 +37,10 @@ export class CreateQuizDTO {
 	@IsNumber()
 	timeLimit!: number;
 
+	@ApiProperty({ enum: Object.values(QUIZ_TYPE) })
 	@IsString()
-	@IsInArray(TYPE_VALUES)
-	type!: QUIZ_TYPE;
+	@IsInArray(Object.values(QUIZ_TYPE))
+	type!: QuizType;
 
 	@IsString()
 	description!: string;
