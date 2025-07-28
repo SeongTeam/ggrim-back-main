@@ -1,22 +1,23 @@
-import { IsDate, IsOptional, IsString, IsUrl } from "class-validator";
+import { IsDate, IsString, IsUrl } from "class-validator";
+import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 
 export class CreateArtistDTO {
 	@IsString()
 	name!: string;
 
-	@IsOptional()
+	@IsOptionalProperty()
 	@IsDate()
 	birth_date!: Date;
 
-	@IsOptional()
+	@IsOptionalProperty()
 	@IsDate()
 	death_date!: Date;
 
-	@IsOptional()
+	@IsOptionalProperty()
 	@IsUrl()
 	info_url!: string;
 
-	@IsOptional()
+	@IsOptionalProperty()
 	@IsUrl()
 	image_url!: string;
 }

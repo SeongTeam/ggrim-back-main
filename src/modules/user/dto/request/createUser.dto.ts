@@ -1,4 +1,5 @@
-import { IsOptional, IsString, MaxLength, MinLength } from "class-validator";
+import { IsString, MaxLength, MinLength } from "class-validator";
+import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 
 export class CreateUserDTO {
 	@IsString()
@@ -14,9 +15,9 @@ export class CreateUserDTO {
 	@MaxLength(12)
 	username!: string;
 
-	@IsOptional()
+	@IsOptionalProperty()
 	oauth_provider!: string;
 
-	@IsOptional()
+	@IsOptionalProperty()
 	oauth_provider_id!: string;
 }

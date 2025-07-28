@@ -1,15 +1,16 @@
 import { plainToClass, Transform, Type } from "class-transformer";
-import { IsNumber, IsOptional, ValidateNested } from "class-validator";
+import { IsNumber, ValidateNested } from "class-validator";
 import { QuizContextDTO } from "./quizContext.dto";
+import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 
 export class ScheduleQuizQueryDTO {
 	@Type(() => Number)
-	@IsOptional()
+	@IsOptionalProperty()
 	@IsNumber()
 	currentIndex?: number;
 
 	@Type(() => Number)
-	@IsOptional()
+	@IsOptionalProperty()
 	@IsNumber()
 	endIndex?: number;
 
@@ -17,7 +18,7 @@ export class ScheduleQuizQueryDTO {
 	@Transform(({ value }: { value: string }) =>
 		value ? plainToClass(QuizContextDTO, JSON.parse(value)) : null,
 	)
-	@IsOptional()
+	@IsOptionalProperty()
 	@ValidateNested()
 	context?: QuizContextDTO;
 }

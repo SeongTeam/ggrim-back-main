@@ -1,11 +1,13 @@
-import { IsArray, IsOptional, IsString } from "class-validator";
+import { IsArray, IsString } from "class-validator";
+import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 
 export class SearchPaintingDTO {
+	@IsOptionalProperty()
 	@IsString()
 	@IsOptional()
 	title: string = "";
 
-	@IsOptional()
+	@IsOptionalProperty()
 	@IsString()
 	artistName: string = "";
 
@@ -14,7 +16,7 @@ export class SearchPaintingDTO {
       - 예시) url?tags=["1","2"]
       - 서버쪽에서 파싱 로직을 사용해야함
     */
-	@IsOptional()
+	@IsOptionalProperty()
 	@IsArray()
 	@IsString({ each: true })
 	tags: string[] = [];
@@ -24,7 +26,7 @@ export class SearchPaintingDTO {
       - 예시) url?tags=["1","2"]
       - 서버쪽에서 파싱 로직을 사용해야함
     */
-	@IsOptional()
+	@IsOptionalProperty()
 	@IsArray()
 	@IsString({ each: true })
 	styles: string[] = [];

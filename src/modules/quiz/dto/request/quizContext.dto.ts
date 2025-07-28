@@ -1,17 +1,18 @@
 import { Expose, Transform, Type } from "class-transformer";
-import { ArrayNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { ArrayNotEmpty, IsNumber, IsString } from "class-validator";
 import { QuizContext } from "../../types/quiz";
+import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 
 export class QuizContextDTO implements QuizContext {
-	@IsOptional()
+	@IsOptionalProperty()
 	@IsString()
 	artist?: string;
 
-	@IsOptional()
+	@IsOptionalProperty()
 	@IsString()
 	tag?: string;
 
-	@IsOptional()
+	@IsOptionalProperty()
 	@IsString()
 	style?: string;
 

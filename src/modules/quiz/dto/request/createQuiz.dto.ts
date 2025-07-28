@@ -1,8 +1,9 @@
-import { ArrayNotEmpty, IsArray, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
+import { ArrayNotEmpty, IsArray, IsNumber, IsString, IsUUID } from "class-validator";
 import { IsInArray } from "../../../../utils/classValidator";
 import { QUIZ_TYPE } from "../../const";
 import { ApiProperty } from "@dataui/crud/lib/crud";
 import { QuizType } from "../../types/quiz";
+import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 
 export class CreateQuizDTO {
 	/*TODO
@@ -23,7 +24,7 @@ export class CreateQuizDTO {
 	})
 	distractorPaintingIds!: string[];
 
-	@IsOptional()
+	@IsOptionalProperty()
 	@IsArray()
 	@ArrayNotEmpty()
 	@IsUUID(undefined, {
