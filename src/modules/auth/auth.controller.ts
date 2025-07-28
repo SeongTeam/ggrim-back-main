@@ -26,7 +26,7 @@ import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.intercept
 import { MailService } from "../mail/mail.service";
 import { User } from "../user/entity/user.entity";
 import { UserService } from "../user/user.service";
-import { isArrayEmpty } from "../../utils/validator";
+import { isArrayEmpty, isFalsy } from "../../utils/validator";
 import { AuthService } from "./auth.service";
 import { CheckOwner } from "./metadata/owner";
 import { PurposeOneTimeToken } from "./metadata/purposeOneTimeToken";
@@ -36,7 +36,8 @@ import { requestVerificationDTO } from "./dto/request/requestVerification.dto";
 import { SignInResponse } from "./dto/response/signIn.response";
 import { SendOneTimeTokenDTO } from "./dto/request/sendOneTimeToken.dto";
 import { VerifyDTO } from "./dto/request/verify.dto";
-import { OneTimeToken, OneTimeTokenPurpose } from "./entity/oneTimeToken.entity";
+import { OneTimeToken } from "./entity/oneTimeToken.entity";
+import { OneTimeTokenPurpose } from "./types/oneTimeToken";
 import { Verification } from "./entity/verification.entity";
 import { BasicGuard } from "./guard/authentication/basic.guard";
 import { SecurityTokenGuard } from "./guard/authentication/securityToken.guard";
@@ -44,6 +45,8 @@ import { OwnerGuard } from "./guard/authorization/owner.guard";
 import { AuthUserPayload, SecurityTokenPayload } from "./guard/types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "./guard/const";
 import { Request } from "express";
+import { ShowVerificationResponse } from "./dto/response/showVerfication.response";
+import { ShowOneTimeTokenResponse } from "./dto/response/showOneTimeToken.response";
 
 @Controller("auth")
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -97,7 +100,7 @@ export class AuthController {
 	async register(
 		@DBQueryRunner() qr: QueryRunner,
 		@Body() registerDTO: requestVerificationDTO,
-	): Promise<Verification> {
+	): Promise<ShowVerificationResponse> {
 		const { email } = registerDTO;
 
 		const existedUser = await this.userService.findOne({ where: { email } });
@@ -123,7 +126,7 @@ export class AuthController {
 		await this.mailService.sendVerificationPinCode(email, pinCode);
 		// verification.pin_code = pinCode;
 
-		return verification;
+		return new ShowVerificationResponse(verification);
 	}
 
 	// TODO 이메일 인증 로직 개선
@@ -134,7 +137,7 @@ export class AuthController {
 	async verify(
 		@DBQueryRunner() qr: QueryRunner,
 		@Body() dto: VerifyDTO,
-	): Promise<OneTimeToken | null> {
+	): Promise<ShowOneTimeTokenResponse> {
 		const { email, pinCode } = dto;
 
 		const existedUser = await this.userService.findOne({ where: { email } });
@@ -185,7 +188,7 @@ export class AuthController {
 			verification_success_date: now,
 		});
 		const oneTimeToken: OneTimeToken = await this.createOneTimeToken(qr, email, "sign-up");
-		return oneTimeToken;
+		return new ShowOneTimeTokenResponse(oneTimeToken);
 	}
 
 	@UseGuards(BasicGuard)
@@ -195,14 +198,14 @@ export class AuthController {
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
 		@Body() dto: CreateOneTimeTokenDTO,
-	): Promise<OneTimeToken> {
+	): Promise<ShowOneTimeTokenResponse> {
 		const { purpose } = dto;
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER] as AuthUserPayload;
 		const user = userPayload.user;
 		const { email } = user;
 		const securityToken = await this.createOneTimeToken(qr, email, purpose, user);
 
-		return securityToken;
+		return new ShowOneTimeTokenResponse(securityToken);
 	}
 
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -210,7 +213,7 @@ export class AuthController {
 	async sendSecurityActionToken(
 		@DBQueryRunner() qr: QueryRunner,
 		@Body() dto: SendOneTimeTokenDTO,
-	): Promise<string> {
+	) {
 		const { email, purpose } = dto;
 		const withDeleted = true;
 		const user: User | null = await this.userService.findOne({ where: { email }, withDeleted });
@@ -246,8 +249,6 @@ export class AuthController {
 					"logic is partially implemented",
 				);
 		}
-
-		return "send email";
 	}
 
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -259,7 +260,7 @@ export class AuthController {
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
 		@Body() dto: CreateOneTimeTokenDTO,
-	): Promise<OneTimeToken> {
+	): Promise<ShowOneTimeTokenResponse> {
 		const { purpose } = dto;
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const securityTokenPayload: SecurityTokenPayload =
@@ -271,7 +272,7 @@ export class AuthController {
 		const { email } = user;
 		const securityToken = await this.createOneTimeToken(qr, email, purpose, user);
 
-		return securityToken;
+		return new ShowOneTimeTokenResponse(securityToken);
 	}
 
 	@Get("emailTest")
@@ -292,10 +293,6 @@ export class AuthController {
 		const SecurityTokenGuardResult: SecurityTokenPayload =
 			request[AUTH_GUARD_PAYLOAD.SECURITY_TOKEN]!;
 		await this.service.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
-
-		//do next task.
-
-		return true;
 	}
 
 	@CheckOwner({
@@ -306,10 +303,16 @@ export class AuthController {
 	})
 	@UseGuards(BasicGuard, OwnerGuard)
 	@Get("one-time-token/:id")
-	async getOneTimeToken(@Param("id", ParseUUIDPipe) id: string): Promise<OneTimeToken | null> {
+	async getOneTimeToken(
+		@Param("id", ParseUUIDPipe) id: string,
+	): Promise<ShowOneTimeTokenResponse> {
 		const findOne = await this.service.findOneTimeToken({ where: { id } });
 
-		return findOne;
+		if (isFalsy(findOne)) {
+			throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST");
+		}
+
+		return new ShowOneTimeTokenResponse(findOne);
 	}
 
 	private async createOneTimeToken(
