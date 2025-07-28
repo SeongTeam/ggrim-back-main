@@ -31,6 +31,7 @@ import { ShortPaintingResponse } from "./dto/response/shortPainting.response";
 import { PaintingService } from "./painting.service";
 import { Pagination } from "../_common/types";
 import { ApiPaginationResponse } from "../_common/decorator/swagger/apiPaginationResponse";
+import { ShowPaintingResponse } from "./dto/response/showPainting.response";
 
 @UsePipes(new ValidationPipe({ transform: true }))
 @Controller("painting")
@@ -41,49 +42,53 @@ export class PaintingController {
 	) {}
 
 	/**
-	 * 사용법 {domain}/painting/by-ids?ids=id1&id2&id3
-	 * ex) http://localhost:3000/painting/by-ids?ids=409ba4c6-0553-4b72-a53a-d9b9857c253d&ids=4f4d9398-b10a-45b8-912c-6ccd0c6700ab
+	 * retrieve multiple paintings by id
+	 *
+	 * @remarks {domain}/painting/by-ids?ids=id1&id2&id3
+	 * Example:
+	 * ```
+	 * GET backend/painting/by-ids?ids=409ba4c6-0553-4b72-a53a-d9b9857c253d&ids=4f4d9398-b10a-45b8-912c-6ccd0c6700ab
+	 * ```
 	 */
 	@Get("/by-ids")
 	async getByIds(
 		@Query(new ValidationPipe({ transform: true })) query: GetByIdsQueryDTO,
 		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
-	): Promise<Painting[]> {
+	): Promise<ShowPaintingResponse[]> {
 		let foundPaintings: Painting[] = await this.service.getByIds(query.ids);
 
 		if (isS3Access) {
 			foundPaintings = await this.replaceImageSrcToS3(foundPaintings);
 		}
 
-		return foundPaintings;
+		return foundPaintings.map((p) => new ShowPaintingResponse(p));
 	}
 
 	@Get("artwork-of-week")
 	async getWeeklyArtworkData(
 		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
-	) {
+	): Promise<ShowPaintingResponse[]> {
 		let paintings = await this.service.getWeeklyPaintings();
 
 		if (isS3Access) {
 			paintings = await this.replaceImageSrcToS3(paintings);
 		}
 
-		return paintings;
+		return paintings.map((p) => new ShowPaintingResponse(p));
 	}
 
 	@Get(":id")
 	async getById(
 		@Param("id", ParseUUIDPipe) id: string,
 		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
-	) {
-		const paintings = await this.service.getByIds([id]);
+	): Promise<ShowPaintingResponse> {
+		let paintings = await this.service.getByIds([id]);
 
 		if (isS3Access) {
-			const ret = await this.replaceImageSrcToS3([paintings[0]]);
-			return ret[0];
+			paintings = await this.replaceImageSrcToS3([paintings[0]]);
 		}
 
-		return paintings[0];
+		return new ShowPaintingResponse(paintings[0]);
 	}
 
 	@ApiPaginationResponse(ShortPaintingResponse)
@@ -112,10 +117,10 @@ export class PaintingController {
 	async createPainting(
 		@DBQueryRunner() queryRunner: QueryRunner,
 		@Body() body: CreatePaintingDTO,
-	) {
+	): Promise<ShowPaintingResponse> {
 		try {
-			const newPaintingWithoutRelations = await this.service.create(queryRunner, body);
-			return newPaintingWithoutRelations;
+			const newPainting = await this.service.create(queryRunner, body);
+			return new ShowPaintingResponse(newPainting);
 		} catch (error: unknown) {
 			/*TODO
         - 비동기 함수의 에러를 캐치할수 있도록, await를 명시하도록 컨벤션을 정해야함.
@@ -144,7 +149,7 @@ export class PaintingController {
 
 		const target = (await this.service.getByIds([id]))[0];
 
-		return target;
+		return new ShowPaintingResponse(target);
 	}
 
 	@Delete("/:id")
@@ -154,7 +159,7 @@ export class PaintingController {
 		@Param("id", ParseUUIDPipe) id: string,
 	) {
 		const targetPainting = await this.service.findPaintingOrThrow(id);
-		return this.service.deleteOne(queryRunner, targetPainting);
+		await this.service.deleteOne(queryRunner, targetPainting);
 	}
 
 	async replaceImageSrcToS3<T extends Painting>(paintings: T[]) {
