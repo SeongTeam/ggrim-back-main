@@ -25,12 +25,8 @@ export class CreateQuizDTO {
 	distractorPaintingIds!: string[];
 
 	@IsOptionalProperty()
-	@IsArray()
-	@ArrayNotEmpty()
-	@IsUUID(undefined, {
-		each: true,
-	})
-	examplePaintingId!: string;
+	@IsUUID(undefined)
+	examplePaintingId?: string;
 
 	@IsString()
 	title!: string;
