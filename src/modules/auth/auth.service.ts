@@ -24,7 +24,8 @@ import {
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { createTransactionQueryBuilder } from "../db/query-runner/queryRunner.lib";
 import { User } from "../user/entity/user.entity";
-import { OneTimeToken, OneTimeTokenPurpose } from "./entity/oneTimeToken.entity";
+import { OneTimeToken } from "./entity/oneTimeToken.entity";
+import { OneTimeTokenPurpose } from "./types/oneTimeToken";
 import { Verification } from "./entity/verification.entity";
 import { AUTHORIZATION_TYPE, BaseJWTPayload, JWTDecode, JWTPayload } from "./types/jwt";
 

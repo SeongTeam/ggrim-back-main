@@ -1,6 +1,7 @@
 import { IsEmail } from "class-validator";
 import { IsInArray } from "../../../../utils/classValidator";
-import { OneTimeTokenPurpose, OneTimeTokenPurposeValues } from "../../entity/oneTimeToken.entity";
+import { OneTimeTokenPurpose } from "../../types/oneTimeToken";
+import { ONE_TIME_TOKEN_PURPOSE } from "../../const";
 import { ApiProperty } from "@dataui/crud/lib/crud";
 
 export class SendOneTimeTokenDTO {
@@ -8,14 +9,8 @@ export class SendOneTimeTokenDTO {
 	email!: string;
 
 	@ApiProperty({
-		enum: [
-			OneTimeTokenPurposeValues.UPDATE_PASSWORD,
-			OneTimeTokenPurposeValues.RECOVER_ACCOUNT,
-		],
+		enum: [ONE_TIME_TOKEN_PURPOSE.UPDATE_PASSWORD, ONE_TIME_TOKEN_PURPOSE.RECOVER_ACCOUNT],
 	})
-	@IsInArray([
-		OneTimeTokenPurposeValues.UPDATE_PASSWORD,
-		OneTimeTokenPurposeValues.RECOVER_ACCOUNT,
-	])
+	@IsInArray([ONE_TIME_TOKEN_PURPOSE.UPDATE_PASSWORD, ONE_TIME_TOKEN_PURPOSE.RECOVER_ACCOUNT])
 	purpose!: OneTimeTokenPurpose;
 }

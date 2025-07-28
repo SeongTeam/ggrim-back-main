@@ -13,7 +13,7 @@ import { User } from "../../../user/entity/user.entity";
 import { UserService } from "../../../user/user.service";
 import { AuthService } from "../../auth.service";
 import { PURPOSE_ONE_TIME_TOKEN_KEY } from "../../metadata/purposeOneTimeToken";
-import { OneTimeTokenPurpose } from "../../entity/oneTimeToken.entity";
+import { OneTimeTokenPurpose } from "../../types/oneTimeToken";
 import { AUTH_GUARD_PAYLOAD, ONE_TIME_TOKEN_HEADER } from "../const";
 import { Request } from "express";
 import { JWTDecode } from "../../types/jwt";

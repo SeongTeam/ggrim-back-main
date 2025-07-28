@@ -2,20 +2,8 @@ import { Exclude } from "class-transformer";
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { CustomBaseEntity } from "../../db/entity/customBase.entity";
 import { User } from "../../user/entity/user.entity";
+import { OneTimeTokenPurpose } from "../types/oneTimeToken";
 
-export const OneTimeTokenPurposeValues = {
-	UPDATE_PASSWORD: "update-password",
-	DELETE_ACCOUNT: "delete-account",
-	MAGIC_LOGIN: "magic-login",
-	SIGN_UP: "sign-up",
-	EMAIL_VERIFICATION: "email-verification",
-	RECOVER_ACCOUNT: "recover-account",
-	// SET_USER_ACTIVE : 'set-user-active',
-	// RESET_PASSWORD: 'reset-password',
-} as const;
-
-export type OneTimeTokenPurpose =
-	(typeof OneTimeTokenPurposeValues)[keyof typeof OneTimeTokenPurposeValues];
 @Entity()
 export class OneTimeToken extends CustomBaseEntity {
 	@PrimaryGeneratedColumn("uuid")

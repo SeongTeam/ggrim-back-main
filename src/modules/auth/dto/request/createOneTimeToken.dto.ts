@@ -1,9 +1,10 @@
 import { ApiProperty } from "@dataui/crud/lib/crud";
 import { IsInArray } from "../../../../utils/classValidator";
-import { OneTimeTokenPurpose, OneTimeTokenPurposeValues } from "../../entity/oneTimeToken.entity";
+import { OneTimeTokenPurpose } from "../../types/oneTimeToken";
+import { ONE_TIME_TOKEN_PURPOSE } from "../../const";
 
 export class CreateOneTimeTokenDTO {
-	@ApiProperty({ enum: Object.values(OneTimeTokenPurposeValues) })
-	@IsInArray(Object.values(OneTimeTokenPurposeValues))
+	@ApiProperty({ enum: Object.values(ONE_TIME_TOKEN_PURPOSE) })
+	@IsInArray(Object.values(ONE_TIME_TOKEN_PURPOSE))
 	purpose!: OneTimeTokenPurpose;
 }
