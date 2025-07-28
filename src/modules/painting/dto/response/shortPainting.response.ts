@@ -1,13 +1,11 @@
 import { Painting } from "../../entities/painting.entity";
 
-export class ShortPaintingResponse
-	implements Pick<Painting, "id" | "title" | "image_url" | "width" | "height" | "image_s3_key">
-{
-	readonly id!: string;
-	readonly title!: string;
-	readonly image_url!: string;
-	readonly width!: number;
-	readonly height!: number;
+export class ShortPaintingResponse {
+	readonly id: string;
+	readonly title: string;
+	readonly image_url: string;
+	readonly width: number;
+	readonly height: number;
 	readonly image_s3_key: string;
 
 	public constructor(painting: Painting) {
