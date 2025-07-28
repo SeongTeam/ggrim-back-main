@@ -5,8 +5,6 @@ import { AppModule } from "./app.module";
 import { winstonLogger } from "./utils/winston.config";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { ShortPaintingResponse } from "./modules/painting/dto/response/shortPainting.response";
-import { OneTimeToken } from "./modules/auth/entity/oneTimeToken.entity";
-import { Verification } from "./modules/auth/entity/verification.entity";
 import { ShowTagResponse } from "./modules/tag/dto/response/showTag.response";
 import { ShowArtistResponse } from "./modules/artist/dto/response/showArtist.response";
 import { ShowStyleResponse } from "./modules/style/dto/response/showStyle.response";
@@ -14,6 +12,9 @@ import { ShowUserResponse } from "./modules/user/dto/request/response/showUser.r
 import { ShowQuizResponse } from "./modules/quiz/dto/response/showQuiz.response";
 import { ShortQuizResponse } from "./modules/quiz/dto/response/shortQuiz.response";
 import { DetailQuizResponse } from "./modules/quiz/dto/response/detailQuiz.response";
+import { ShowPaintingResponse } from "./modules/painting/dto/response/showPainting.response";
+import { ShowOneTimeTokenResponse } from "./modules/auth/dto/response/showOneTimeToken.response";
+import { ShowVerificationResponse } from "./modules/auth/dto/response/showVerfication.response";
 
 async function bootstrap() {
 	const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -56,8 +57,9 @@ export function setSwagger<T extends INestApplication>(app: T): void {
 			ShortQuizResponse,
 			DetailQuizResponse,
 			ShortPaintingResponse,
-			OneTimeToken,
-			Verification,
+			ShowPaintingResponse,
+			ShowOneTimeTokenResponse,
+			ShowVerificationResponse,
 		],
 	});
 
