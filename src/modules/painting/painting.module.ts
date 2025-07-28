@@ -10,13 +10,17 @@ import { Painting } from "./entities/painting.entity";
 import { WikiArtPainting } from "./entities/wikiArtPainting.entity";
 import { PaintingController } from "./painting.controller";
 import { PaintingService } from "./painting.service";
+import { AuthModule } from "../auth/auth.module";
+import { UserModule } from "../user/user.module";
 @Module({
 	imports: [
 		TypeOrmModule.forFeature([Painting, WikiArtPainting, Style]),
 		ArtistModule,
-		TagModule,
+		AuthModule,
 		StyleModule,
 		S3Module,
+		TagModule,
+		UserModule,
 	],
 	controllers: [PaintingController],
 	providers: [PaintingService, StyleService],
