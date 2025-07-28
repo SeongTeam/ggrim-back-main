@@ -2,7 +2,7 @@ import { IsArray, IsString } from "class-validator";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 import { Transform } from "class-transformer";
 
-export class SearchQuizDTO {
+export class SearchQuizQueryDTO {
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
 	@IsOptionalProperty()

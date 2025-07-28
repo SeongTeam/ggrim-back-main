@@ -24,9 +24,9 @@ import { S3Service } from "../aws/s3.service";
 import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner";
 import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
 import { CreatePaintingDTO } from "./dto/request/createPainting.dto";
-import { GetByIdsQueryDTO } from "./dto/request/getByIdsQuery.dto";
+import { GetByIdsQueryDTO } from "./dto/request/getByIds.query.dto";
 import { ReplacePaintingDTO } from "./dto/request/replacePainting.dto";
-import { SearchPaintingDTO } from "./dto/request/searchPainting.dto";
+import { SearchPaintingQueryDTO } from "./dto/request/searchPainting.query.dto";
 import { Painting } from "./entities/painting.entity";
 import { ShortPaintingResponse } from "./dto/response/shortPainting.response";
 import { PaintingService } from "./painting.service";
@@ -98,7 +98,7 @@ export class PaintingController {
 	@ApiPaginationResponse(ShortPaintingResponse)
 	@Get("/")
 	async searchPainting(
-		@Query() dto: SearchPaintingDTO,
+		@Query() dto: SearchPaintingQueryDTO,
 		@Query("page", new DefaultValuePipe(0), ParseIntPipe) page: number,
 		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
 	): Promise<Pagination<ShortPaintingResponse>> {

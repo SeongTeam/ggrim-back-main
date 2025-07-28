@@ -9,8 +9,8 @@ export class QuizReactionQueryDTO extends PickType(QuizReactionDTO, ["type"]) {
 	@IsUUID()
 	user_id?: string;
 
-	@IsOptionalProperty()
 	@Transform(({ value }) => Number(value))
+	@IsOptionalProperty()
 	@IsNumber()
 	page?: number = 0;
 }

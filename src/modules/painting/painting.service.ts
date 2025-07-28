@@ -18,7 +18,7 @@ import { isArrayEmpty, isFalsy, isNotFalsy } from "../../utils/validator";
 import { CreatePaintingDTO } from "./dto/request/createPainting.dto";
 import { WeeklyArtWorkSet } from "./types/weeklyArtWorkSet";
 import { ReplacePaintingDTO } from "./dto/request/replacePainting.dto";
-import { SearchPaintingDTO } from "./dto/request/searchPainting.dto";
+import { SearchPaintingQueryDTO } from "./dto/request/searchPainting.query.dto";
 import { Painting } from "./entities/painting.entity";
 
 @Injectable()
@@ -124,7 +124,7 @@ export class PaintingService {
   */
 
 	async searchPainting(
-		dto: SearchPaintingDTO,
+		dto: SearchPaintingQueryDTO,
 		page: number,
 		paginationCount: number,
 	): Promise<Pagination<Painting>> {

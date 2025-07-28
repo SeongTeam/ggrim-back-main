@@ -38,14 +38,14 @@ import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.intercept
 import { PaintingService } from "../painting/painting.service";
 import { StyleService } from "../style/style.service";
 import { TagService } from "../tag/tag.service";
-import { SearchQuizDTO } from "./dto/request/SearchQuiz.dto";
+import { SearchQuizQueryDTO } from "./dto/request/SearchQuiz.query.dto";
 import { CreateQuizDTO } from "./dto/request/createQuiz.dto";
 import { DetailQuizResponse } from "./dto/response/detailQuiz.response";
 import { QuizResponse } from "./dto/response/quiz.response";
 import { QuizContextDTO } from "./dto/request/quizContext.dto";
 import { QuizReactionDTO, QuizReactionType } from "./dto/request/quizReaction.dto";
-import { QuizReactionQueryDTO } from "./dto/request/quizReactionQuery.dto";
-import { ScheduleQuizQueryDTO } from "./dto/request/scheduleQuizQuery.dto";
+import { QuizReactionQueryDTO } from "./dto/request/quizReaction.query.dto";
+import { ScheduleQuizQueryDTO } from "./dto/request/scheduleQuiz.query.dto";
 import { QuizSubmitDTO } from "./dto/request/quizSubmit.dto";
 import { UpdateQuizDTO } from "./dto/request/updateQuiz.dto";
 import { QuizDislike } from "./entities/quizDislike.entity";
@@ -239,7 +239,7 @@ export class QuizController
 		for (attempt = 0; attempt < MAX_RETRY; attempt++) {
 			const context: QuizContext = await this.extractContext(dto);
 
-			const searchDTO: SearchQuizDTO = this.buildSearchDTO(context);
+			const searchDTO: SearchQuizQueryDTO = this.buildSearchDTO(context);
 
 			const pagination = await this.service.searchQuiz(
 				searchDTO,
@@ -365,7 +365,7 @@ export class QuizController
 	@ApiPaginationResponse(ShortQuizResponse)
 	@Get("")
 	async searchQuiz(
-		@Query() dto: SearchQuizDTO,
+		@Query() dto: SearchQuizQueryDTO,
 		@Query("page", new DefaultValuePipe(0), ParseIntPipe) page: number,
 		@Query("count", new DefaultValuePipe(20), ParseIntPipe) count: number,
 	): Promise<Pagination<ShortQuizResponse>> {
@@ -431,7 +431,7 @@ export class QuizController
 		return await this.scheduleService.scheduleContext();
 	}
 
-	private buildSearchDTO(context: QuizContext): SearchQuizDTO {
+	private buildSearchDTO(context: QuizContext): SearchQuizQueryDTO {
 		return {
 			artists: context.artist ? [context.artist] : [],
 			tags: context.tag ? [context.tag] : [],

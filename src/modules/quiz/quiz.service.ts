@@ -14,7 +14,7 @@ import { Tag } from "../tag/entities/tag.entity";
 import { User } from "../user/entity/user.entity";
 import { updateProperty } from "../../utils/object";
 import { isArrayEmpty, isNotFalsy } from "../../utils/validator";
-import { SearchQuizDTO } from "./dto/request/SearchQuiz.dto";
+import { SearchQuizQueryDTO } from "./dto/request/SearchQuiz.query.dto";
 import { CreateQuizDTO } from "./dto/request/createQuiz.dto";
 import { QuizReactionType } from "./dto/request/quizReaction.dto";
 import { UpdateQuizDTO } from "./dto/request/updateQuiz.dto";
@@ -83,7 +83,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 	}
 
 	async searchQuiz(
-		dto: SearchQuizDTO,
+		dto: SearchQuizQueryDTO,
 		page: number,
 		paginationCount: number,
 	): Promise<Pagination<Quiz>> {

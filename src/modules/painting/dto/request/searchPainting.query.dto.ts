@@ -2,7 +2,7 @@ import { IsArray, IsString } from "class-validator";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 import { Transform } from "class-transformer";
 
-export class SearchPaintingDTO {
+export class SearchPaintingQueryDTO {
 	@IsOptionalProperty()
 	@IsString()
 	title: string = "";
