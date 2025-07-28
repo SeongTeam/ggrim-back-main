@@ -14,7 +14,7 @@ export class ShowArtistResponse {
 
 	readonly info_url: string;
 
-	readonly shortPaintings: ShortPaintingResponse[];
+	readonly shortPaintings?: ShortPaintingResponse[];
 
 	constructor(artist: Artist) {
 		this.id = artist.id;
@@ -23,6 +23,6 @@ export class ShowArtistResponse {
 		this.birth_date = artist.birth_date;
 		this.death_date = artist.death_date;
 		this.info_url = artist.info_url;
-		this.shortPaintings = artist.paintings.map((p) => new ShortPaintingResponse(p));
+		this.shortPaintings = artist.paintings?.map((p) => new ShortPaintingResponse(p));
 	}
 }
