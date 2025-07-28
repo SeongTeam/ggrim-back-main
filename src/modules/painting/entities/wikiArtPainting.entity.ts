@@ -18,9 +18,6 @@ export class WikiArtPainting {
 	@Column()
 	artistUrl: string = TYPE_DEFAULT_VALUE.string;
 
-	//   @ManyToOne(() => wikiArtArtist, (artist) => artist.works)
-	//   artist: wikiArtArtist;
-
 	@Column()
 	image: string = TYPE_DEFAULT_VALUE.string;
 
