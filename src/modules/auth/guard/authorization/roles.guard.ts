@@ -33,6 +33,11 @@ export class RolesGuard implements CanActivate {
 		}
 
 		const userRole = user.role;
-		return requiredRoles.some((role) => userRole === role);
+		const isAllowed = requiredRoles.some((role) => userRole === role);
+		if (!isAllowed) {
+			throw new ServiceException("BASE", "FORBIDDEN", `Not allowed User's role`);
+		}
+
+		return true;
 	}
 }
