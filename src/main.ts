@@ -45,6 +45,8 @@ export function setSwagger<T extends INestApplication>(app: T): void {
 		.setTitle("GGrim API Specification")
 		.setDescription("Description for multiple")
 		.setVersion("1.0")
+		.addBasicAuth()
+		.addBearerAuth()
 		.build();
 
 	const document = SwaggerModule.createDocument(app, rootOptions, {
