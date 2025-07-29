@@ -7,16 +7,14 @@ import {
 	ParsedBody,
 	ParsedRequest,
 } from "@dataui/crud";
-import { Controller, UseGuards } from "@nestjs/common";
-import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
-import { RolesGuard } from "../auth/guard/authorization/roles.guard";
-import { Roles } from "../user/metadata/role";
+import { Controller } from "@nestjs/common";
 import { ArtistService } from "./artist.service";
 import { CreateArtistDTO } from "./dto/request/createArtist.dto";
 import { Artist } from "./entities/artist.entity";
 import { ShowArtistResponse } from "./dto/response/showArtist.response";
 import { isArray } from "class-validator";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
+import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 @Crud({
 	model: {
 		type: Artist,
@@ -93,8 +91,7 @@ export class ArtistController implements CrudController<Artist> {
 	}
 
 	@ApiOverride("createOneBase", ShowArtistResponse)
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
+	@UseRolesGuard("admin")
 	async createOne(
 		@ParsedRequest() req: CrudRequest,
 		@ParsedBody() dto: CreateArtistDTO,
@@ -107,8 +104,7 @@ export class ArtistController implements CrudController<Artist> {
 	}
 
 	@ApiOverride("replaceOneBase", ShowArtistResponse)
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
+	@UseRolesGuard("admin")
 	async replaceOne(
 		@ParsedRequest() req: CrudRequest,
 		@ParsedBody() dto: CreateArtistDTO,
@@ -120,8 +116,7 @@ export class ArtistController implements CrudController<Artist> {
 		return new ShowArtistResponse(artist);
 	}
 	@Override("deleteOneBase")
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
+	@UseRolesGuard("admin")
 	async deleteOne(@ParsedRequest() req: CrudRequest) {
 		await this.service.deleteOne(req);
 		return;

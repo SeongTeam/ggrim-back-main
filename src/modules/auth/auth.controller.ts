@@ -28,7 +28,6 @@ import { User } from "../user/entity/user.entity";
 import { UserService } from "../user/user.service";
 import { isArrayEmpty, isFalsy } from "../../utils/validator";
 import { AuthService } from "./auth.service";
-import { CheckOwner } from "./metadata/owner";
 import { PurposeOneTimeToken } from "./metadata/purposeOneTimeToken";
 import { SecurityTokenGuardOptions } from "./metadata/securityTokenGuardOption";
 import { CreateOneTimeTokenDTO } from "./dto/request/createOneTimeToken.dto";
@@ -41,12 +40,12 @@ import { OneTimeTokenPurpose } from "./types/oneTimeToken";
 import { Verification } from "./entity/verification.entity";
 import { BasicGuard } from "./guard/authentication/basic.guard";
 import { SecurityTokenGuard } from "./guard/authentication/securityToken.guard";
-import { OwnerGuard } from "./guard/authorization/owner.guard";
 import { AuthUserPayload, SecurityTokenPayload } from "./guard/types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "./guard/const";
 import { Request } from "express";
 import { ShowVerificationResponse } from "./dto/response/showVerfication.response";
 import { ShowOneTimeTokenResponse } from "./dto/response/showOneTimeToken.response";
+import { UseOwnerGuard } from "./guard/decorator/authorization";
 
 @Controller("auth")
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -295,13 +294,15 @@ export class AuthController {
 		await this.service.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
 	}
 
-	@CheckOwner({
-		serviceClass: AuthService,
-		idParam: "id",
-		ownerField: "user_id",
-		serviceMethod: "findOneTimeTokenByID",
-	})
-	@UseGuards(BasicGuard, OwnerGuard)
+	@UseOwnerGuard(
+		{ guard: BasicGuard },
+		{
+			serviceClass: AuthService,
+			idParam: "id",
+			ownerField: "user_id",
+			serviceMethod: "findOneTimeTokenByID",
+		},
+	)
 	@Get("one-time-token/:id")
 	async getOneTimeToken(
 		@Param("id", ParseUUIDPipe) id: string,

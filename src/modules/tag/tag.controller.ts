@@ -6,11 +6,9 @@ import {
 	Override,
 	ParsedRequest,
 } from "@dataui/crud";
-import { Body, Controller, Post, Put, UseGuards, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Body, Controller, Post, Put, UsePipes, ValidationPipe } from "@nestjs/common";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
-import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
-import { RolesGuard } from "../auth/guard/authorization/roles.guard";
-import { Roles } from "../user/metadata/role";
+
 import { CreateTagDTO } from "./dto/request/createTag.dto";
 import { ReplaceTagDTO } from "./dto/request/replaceTag.dto";
 import { Tag } from "./entities/tag.entity";
@@ -18,6 +16,7 @@ import { TagService } from "./tag.service";
 import { ShowTagResponse } from "./dto/response/showTag.response";
 import { isArray } from "class-validator";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
+import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 /*TODO
 - typeORM 에러 발생시, 특정 에러 메세지는 응답에 포함시켜 보내는 로직 구현 고려
   1) unique constraint 열에 중복된 값을 삽입할 때,
@@ -96,8 +95,7 @@ export class TagController implements CrudController<Tag> {
 		return ret;
 	}
 
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
+	@UseRolesGuard("admin")
 	@Post()
 	async create(@Body() dto: CreateTagDTO): Promise<ShowTagResponse> {
 		/*TODO
@@ -112,8 +110,7 @@ export class TagController implements CrudController<Tag> {
 		return new ShowTagResponse(newTag);
 	}
 
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
+	@UseRolesGuard("admin")
 	@Put()
 	async replace(@Body() dto: ReplaceTagDTO): Promise<ShowTagResponse> {
 		const existedEntity: Tag | null = await this.service.findOne({ where: { name: dto.name } });
@@ -134,8 +131,7 @@ export class TagController implements CrudController<Tag> {
 	}
 
 	@Override("deleteOneBase")
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
+	@UseRolesGuard("admin")
 	async deleteOne(@ParsedRequest() req: CrudRequest) {
 		await this.service.deleteOne(req);
 	}

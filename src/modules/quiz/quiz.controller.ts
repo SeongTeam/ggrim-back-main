@@ -27,9 +27,7 @@ import { LoggerService } from "../logger/logger.service";
 import { AWS_BUCKET_ARTWORK } from "../_common/const/envKeys";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { ArtistService } from "../artist/artist.service";
-import { CheckOwner } from "../auth/metadata/owner";
 import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
-import { OwnerGuard } from "../auth/guard/authorization/owner.guard";
 import { AuthUserPayload } from "../auth/guard/types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "../auth/guard/const";
 import { S3Service } from "../aws/s3.service";
@@ -59,6 +57,7 @@ import { Request } from "express";
 import { Pagination } from "../_common/types";
 import { ApiPaginationResponse } from "../_common/decorator/swagger/apiPaginationResponse";
 import { ShowQuizResponse } from "./dto/response/showQuiz.response";
+import { UseOwnerGuard } from "../auth/guard/decorator/authorization";
 
 @Crud({
 	model: {
@@ -323,15 +322,17 @@ export class QuizController
 		return new DetailQuizResponse(quiz, reactionCount, userReaction);
 	}
 
-	@Put(":id")
-	@CheckOwner({
-		serviceClass: QuizService,
-		idParam: "id",
-		ownerField: "owner_id",
-		serviceMethod: "getQuizById",
-	})
-	@UseGuards(TokenAuthGuard, OwnerGuard)
+	@UseOwnerGuard(
+		{ guard: TokenAuthGuard },
+		{
+			serviceClass: QuizService,
+			idParam: "id",
+			ownerField: "owner_id",
+			serviceMethod: "getQuizById",
+		},
+	)
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Put(":id")
 	async update(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
@@ -342,15 +343,17 @@ export class QuizController
 		return ShowQuizResponse.createShowQuiz(quiz);
 	}
 
-	@Delete(":id")
-	@CheckOwner({
-		serviceClass: QuizService,
-		idParam: "id",
-		ownerField: "owner_id",
-		serviceMethod: "getQuizById",
-	})
-	@UseGuards(TokenAuthGuard, OwnerGuard)
+	@UseOwnerGuard(
+		{ guard: TokenAuthGuard },
+		{
+			serviceClass: QuizService,
+			idParam: "id",
+			ownerField: "owner_id",
+			serviceMethod: "getQuizById",
+		},
+	)
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Delete(":id")
 	async delete(@DBQueryRunner() qr: QueryRunner, @Param("id", ParseUUIDPipe) id: string) {
 		return this.service.softDeleteQuiz(qr, id);
 	}

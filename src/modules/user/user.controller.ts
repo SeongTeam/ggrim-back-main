@@ -20,14 +20,10 @@ import { isArray, isEmail, isEmpty, isNotEmpty } from "class-validator";
 import { QueryRunner } from "typeorm";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { AuthService } from "../auth/auth.service";
-import { CheckOwner } from "../auth/metadata/owner";
 import { PurposeOneTimeToken } from "../auth/metadata/purposeOneTimeToken";
-import { SecurityTokenGuardOptions } from "../auth/metadata/securityTokenGuardOption";
 import { SecurityTokenGuard } from "../auth/guard/authentication/securityToken.guard";
 import { TempUserGuard } from "../auth/guard/authentication/tempUser.guard";
 import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
-import { OwnerGuard } from "../auth/guard/authorization/owner.guard";
-import { RolesGuard } from "../auth/guard/authorization/roles.guard";
 import {
 	AuthUserPayload,
 	SecurityTokenPayload,
@@ -36,7 +32,6 @@ import {
 import { AUTH_GUARD_PAYLOAD } from "../auth/guard/const";
 import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner";
 import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
-import { Roles } from "./metadata/role";
 import { CreateUserDTO } from "./dto/request/createUser.dto";
 import { ReplacePassWordDTO } from "./dto/request/replacePw.dto";
 import { ReplaceRoleDTO } from "./dto/request/replaceRole.dto";
@@ -46,6 +41,7 @@ import { UserService } from "./user.service";
 import { Request } from "express";
 import { ShowUserResponse } from "./dto/request/response/showUser.response";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
+import { UseOwnerGuard, UseRolesGuard } from "../auth/guard/decorator/authorization";
 
 @Crud({
 	model: {
@@ -151,16 +147,17 @@ export class UserController implements CrudController<User> {
 	// ? 질문: <의문점 또는 개선 방향>
 	// * 참고: <관련 정보나 링크>
 
-	@Put(":email/password")
-	@CheckOwner({
-		serviceClass: UserService,
-		idParam: "email",
-		serviceMethod: "findUserByEmail",
-		ownerField: "id",
-	})
-	@PurposeOneTimeToken("update-password")
-	@UseGuards(SecurityTokenGuard, OwnerGuard)
+	@UseOwnerGuard(
+		{ guard: SecurityTokenGuard, purpose: "update-password" },
+		{
+			serviceClass: UserService,
+			idParam: "email",
+			serviceMethod: "findUserByEmail",
+			ownerField: "id",
+		},
+	)
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Put(":email/password")
 	async replacePassword(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
@@ -181,15 +178,17 @@ export class UserController implements CrudController<User> {
 		await this.authService.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
 	}
 
-	@Put(":email/username")
+	@UseOwnerGuard(
+		{ guard: TokenAuthGuard },
+		{
+			serviceClass: UserService,
+			idParam: "email",
+			serviceMethod: "findUserByEmail",
+			ownerField: "id",
+		},
+	)
 	@UseInterceptors(QueryRunnerInterceptor)
-	@CheckOwner({
-		serviceClass: UserService,
-		idParam: "email",
-		serviceMethod: "findUserByEmail",
-		ownerField: "id",
-	})
-	@UseGuards(TokenAuthGuard, OwnerGuard)
+	@Put(":email/username")
 	async replaceUsername(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
@@ -211,10 +210,9 @@ export class UserController implements CrudController<User> {
 		await this.service.updateUser(qr, user.id, dto);
 	}
 
-	@Put(":email/role")
+	@UseRolesGuard("admin")
 	@UseInterceptors(QueryRunnerInterceptor)
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
+	@Put(":email/role")
 	async replaceRole(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
@@ -230,16 +228,17 @@ export class UserController implements CrudController<User> {
 		await this.service.updateUser(qr, user.id, dto);
 	}
 
-	@Delete(":email")
-	@CheckOwner({
-		serviceClass: UserService,
-		idParam: "email",
-		serviceMethod: "findUserByEmail",
-		ownerField: "id",
-	})
-	@PurposeOneTimeToken("delete-account")
-	@UseGuards(SecurityTokenGuard, OwnerGuard)
+	@UseOwnerGuard(
+		{ guard: SecurityTokenGuard, purpose: "delete-account" },
+		{
+			serviceClass: UserService,
+			idParam: "email",
+			serviceMethod: "findUserByEmail",
+			ownerField: "id",
+		},
+	)
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Delete(":email")
 	async deleteUser(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
@@ -258,17 +257,21 @@ export class UserController implements CrudController<User> {
 		await this.authService.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
 	}
 
-	@Patch("recover/:email")
-	@CheckOwner({
-		serviceClass: UserService,
-		idParam: "email",
-		serviceMethod: "findDeletedUserByEmail",
-		ownerField: "id",
-	})
-	@PurposeOneTimeToken("recover-account")
-	@SecurityTokenGuardOptions({ withDeleted: true })
-	@UseGuards(SecurityTokenGuard, OwnerGuard)
+	@UseOwnerGuard(
+		{
+			guard: SecurityTokenGuard,
+			purpose: "recover-account",
+			authOptions: { withDeleted: true },
+		},
+		{
+			serviceClass: UserService,
+			idParam: "email",
+			serviceMethod: "findDeletedUserByEmail",
+			ownerField: "id",
+		},
+	)
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Patch("recover/:email")
 	async recoverUser(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,

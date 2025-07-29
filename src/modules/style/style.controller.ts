@@ -7,10 +7,8 @@ import {
 	ParsedBody,
 	ParsedRequest,
 } from "@dataui/crud";
-import { Controller, UseGuards, UsePipes, ValidationPipe } from "@nestjs/common";
-import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
-import { RolesGuard } from "../auth/guard/authorization/roles.guard";
-import { Roles } from "../user/metadata/role";
+import { Controller, UsePipes, ValidationPipe } from "@nestjs/common";
+
 import { CreateStyleDTO } from "./dto/request/createStyle.dto";
 import { ReplaceStyleDTO } from "./dto/request/replaceStyle.dto";
 import { Style } from "./entities/style.entity";
@@ -18,6 +16,7 @@ import { StyleService } from "./style.service";
 import { ShowStyleResponse } from "./dto/response/showStyle.response";
 import { isArray } from "class-validator";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
+import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 
 /*TODO
 - soft-deleted 상태인 데이터가 replace method 사용시 수정되는 것이 위험한지 고민하기
@@ -102,8 +101,7 @@ export class StyleController implements CrudController<Style> {
 	}
 
 	@ApiOverride("createOneBase", ShowStyleResponse)
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
+	@UseRolesGuard("admin")
 	async createOne(
 		@ParsedRequest() req: CrudRequest,
 		@ParsedBody() dto: CreateStyleDTO,
@@ -115,8 +113,7 @@ export class StyleController implements CrudController<Style> {
 	}
 
 	@ApiOverride("replaceOneBase", ShowStyleResponse)
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
+	@UseRolesGuard("admin")
 	async replaceOne(
 		@ParsedRequest() req: CrudRequest,
 		@ParsedBody() dto: ReplaceStyleDTO,
@@ -129,8 +126,7 @@ export class StyleController implements CrudController<Style> {
 		return new ShowStyleResponse(style);
 	}
 	@Override("deleteOneBase")
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
+	@UseRolesGuard("admin")
 	async deleteOne(@ParsedRequest() req: CrudRequest) {
 		await this.service.deleteOne(req);
 	}

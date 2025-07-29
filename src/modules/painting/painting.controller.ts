@@ -12,7 +12,6 @@ import {
 	Post,
 	Put,
 	Query,
-	UseGuards,
 	UseInterceptors,
 	UsePipes,
 	ValidationPipe,
@@ -33,9 +32,7 @@ import { PaintingService } from "./painting.service";
 import { Pagination } from "../_common/types";
 import { ApiPaginationResponse } from "../_common/decorator/swagger/apiPaginationResponse";
 import { ShowPaintingResponse } from "./dto/response/showPainting.response";
-import { Roles } from "../user/metadata/role";
-import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
-import { RolesGuard } from "../auth/guard/authorization/roles.guard";
+import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 
 @UsePipes(new ValidationPipe({ transform: true }))
 @Controller("painting")
@@ -117,8 +114,7 @@ export class PaintingController {
 		return ret;
 	}
 
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
+	@UseRolesGuard("admin")
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Post()
 	async createPainting(
@@ -143,8 +139,7 @@ export class PaintingController {
 		}
 	}
 
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
+	@UseRolesGuard("admin")
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Put("/:id")
 	async replacePainting(
@@ -161,8 +156,7 @@ export class PaintingController {
 		return new ShowPaintingResponse(target);
 	}
 
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
+	@UseRolesGuard("admin")
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Delete("/:id")
 	async deletePainting(
