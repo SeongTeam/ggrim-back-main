@@ -22,6 +22,8 @@
     1. 코드베이스 구조화 컨벤션 제공
         - 익숙한 MVC 패턴을 적용하기 용이  
     2. 높은 이식성 라이브러리 생태계 
+    3. `nest-cli`의 다양한 플러그인
+        - `@nestjs/swagger` 플러그인을 통한 swagger doc 자동화 
 - Disadvantage
     1. 기능 구현 비용 하한선이 높음
         - 새로운 기능 구현시, Module, service 등의 클래스 구현 필수적이며, 높은 추상화 설계가 필요 
@@ -175,6 +177,14 @@
 - 각각의 데코레이터는 별도의 파일로 관리한다.
 - 데코레이터 파일은 관련된 `<domain>/decorator` 폴더에 위치한다.
 - 데코레이터 객체는 `PascalCase`를 사용한다.
+- 클래스 method에 `Route-level Decorator` 사용시 `Nest.js Request LifeCycle `기준으로 작성한다.
+    ```ts
+    @UseGuards()
+    @UseInterceptors()
+    @UsePipes()
+    @Get('id')
+    async getPainting( id : string){}
+    ```
 
 **9. constant**
 - 상수는 객체 리터럴 정의과 `as const` 키워드를 사용하여 정의한다.
