@@ -42,7 +42,6 @@ export function UseSecurityTokenGuard(
 		PurposeOneTimeToken(purpose),
 		SecurityTokenGuardOptions(options ?? { withDeleted: false }),
 		UseGuards(SecurityTokenGuard),
-		//TODO ApiHeader 중복사용확인하기
 		ApiHeader({
 			name: ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN,
 			description: "oneTimeToken issued for security purpose",
