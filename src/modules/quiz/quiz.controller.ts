@@ -17,7 +17,6 @@ import {
 	Put,
 	Query,
 	Req,
-	UseGuards,
 	UseInterceptors,
 	UsePipes,
 	ValidationPipe,
@@ -58,6 +57,7 @@ import { Pagination } from "../_common/types";
 import { ApiPaginationResponse } from "../_common/decorator/swagger/apiPaginationResponse";
 import { ShowQuizResponse } from "./dto/response/showQuiz.response";
 import { UseOwnerGuard } from "../auth/guard/decorator/authorization";
+import { UseTokenAuthGuard } from "../auth/guard/decorator/authentication";
 
 @Crud({
 	model: {
@@ -174,7 +174,7 @@ export class QuizController
 	}
 
 	@Post(":id/reaction")
-	@UseGuards(TokenAuthGuard)
+	@UseTokenAuthGuard()
 	@UseInterceptors(QueryRunnerInterceptor)
 	async createQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
@@ -208,7 +208,7 @@ export class QuizController
 	}
 
 	@Delete(":id/reaction")
-	@UseGuards(TokenAuthGuard)
+	@UseTokenAuthGuard()
 	@UseInterceptors(QueryRunnerInterceptor)
 	async deleteQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
@@ -280,9 +280,9 @@ export class QuizController
 	// - [x] DB transaction 로직 추가하기
 	// - [x] 삭제 로직 추가
 
-	@Post()
-	@UseGuards(TokenAuthGuard)
+	@UseTokenAuthGuard()
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Post()
 	async create(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,

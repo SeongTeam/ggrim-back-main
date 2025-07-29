@@ -8,7 +8,6 @@ import {
 	ParseUUIDPipe,
 	Post,
 	Req,
-	UseGuards,
 	UseInterceptors,
 	UsePipes,
 	ValidationPipe,
@@ -28,8 +27,6 @@ import { User } from "../user/entity/user.entity";
 import { UserService } from "../user/user.service";
 import { isArrayEmpty, isFalsy } from "../../utils/validator";
 import { AuthService } from "./auth.service";
-import { PurposeOneTimeToken } from "./metadata/purposeOneTimeToken";
-import { SecurityTokenGuardOptions } from "./metadata/securityTokenGuardOption";
 import { CreateOneTimeTokenDTO } from "./dto/request/createOneTimeToken.dto";
 import { requestVerificationDTO } from "./dto/request/requestVerification.dto";
 import { SignInResponse } from "./dto/response/signIn.response";
@@ -39,13 +36,13 @@ import { OneTimeToken } from "./entity/oneTimeToken.entity";
 import { OneTimeTokenPurpose } from "./types/oneTimeToken";
 import { Verification } from "./entity/verification.entity";
 import { BasicGuard } from "./guard/authentication/basic.guard";
-import { SecurityTokenGuard } from "./guard/authentication/securityToken.guard";
 import { AuthUserPayload, SecurityTokenPayload } from "./guard/types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "./guard/const";
 import { Request } from "express";
 import { ShowVerificationResponse } from "./dto/response/showVerfication.response";
 import { ShowOneTimeTokenResponse } from "./dto/response/showOneTimeToken.response";
 import { UseOwnerGuard } from "./guard/decorator/authorization";
+import { UseBasicAuthGuard, UseSecurityTokenGuard } from "./guard/decorator/authentication";
 
 @Controller("auth")
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -61,7 +58,7 @@ export class AuthController {
 	// - [x] : 로그인 성공시, 사용자 정보 응답하기
 	// - [ ] : 로그인 성공 또는 실패에 대한 기록 저장하기
 
-	@UseGuards(BasicGuard)
+	@UseBasicAuthGuard()
 	@Post("sign-in")
 	signin(@Req() request: Request) {
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
@@ -190,7 +187,7 @@ export class AuthController {
 		return new ShowOneTimeTokenResponse(oneTimeToken);
 	}
 
-	@UseGuards(BasicGuard)
+	@UseBasicAuthGuard()
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Post("security-token")
 	async generateSecurityActionToken(
@@ -250,10 +247,8 @@ export class AuthController {
 		}
 	}
 
+	@UseSecurityTokenGuard("email-verification", { withDeleted: true })
 	@UseInterceptors(QueryRunnerInterceptor)
-	@PurposeOneTimeToken("email-verification")
-	@SecurityTokenGuardOptions({ withDeleted: true })
-	@UseGuards(SecurityTokenGuard)
 	@Post("security-token/from-email-verification")
 	async generateSecurityTokenByEmailVerification(
 		@DBQueryRunner() qr: QueryRunner,
@@ -284,8 +279,7 @@ export class AuthController {
 		return true;
 	}
 
-	@PurposeOneTimeToken("delete-account")
-	@UseGuards(SecurityTokenGuard)
+	@UseSecurityTokenGuard("delete-account")
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Post("test/one-time-token-guard")
 	async testSecurityTokenGuard(@DBQueryRunner() qr: QueryRunner, @Req() request: Request) {
