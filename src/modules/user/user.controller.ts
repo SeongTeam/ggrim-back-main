@@ -11,7 +11,6 @@ import {
 	Patch,
 	Put,
 	Req,
-	UseGuards,
 	UseInterceptors,
 	UsePipes,
 	ValidationPipe,
@@ -20,9 +19,7 @@ import { isArray, isEmail, isEmpty, isNotEmpty } from "class-validator";
 import { QueryRunner } from "typeorm";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { AuthService } from "../auth/auth.service";
-import { PurposeOneTimeToken } from "../auth/metadata/purposeOneTimeToken";
 import { SecurityTokenGuard } from "../auth/guard/authentication/securityToken.guard";
-import { TempUserGuard } from "../auth/guard/authentication/tempUser.guard";
 import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
 import {
 	AuthUserPayload,
@@ -42,6 +39,7 @@ import { Request } from "express";
 import { ShowUserResponse } from "./dto/request/response/showUser.response";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseOwnerGuard, UseRolesGuard } from "../auth/guard/decorator/authorization";
+import { UseTempUserGuard } from "../auth/guard/decorator/authentication";
 
 @Crud({
 	model: {
@@ -105,9 +103,8 @@ export class UserController implements CrudController<User> {
 	}
 
 	@ApiOverride(`createOneBase`, ShowUserResponse)
+	@UseTempUserGuard("sign-up")
 	@UseInterceptors(QueryRunnerInterceptor)
-	@PurposeOneTimeToken("sign-up")
-	@UseGuards(TempUserGuard)
 	async signUp(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
