@@ -7,6 +7,7 @@ import { ONE_TIME_TOKEN_HEADER } from "../const";
 import { OneTimeTokenPurpose } from "../../types/oneTimeToken";
 import { SecurityTokenGuardOptions } from "../../metadata/securityTokenGuardOption";
 import { PurposeOneTimeToken } from "../../metadata/purposeOneTimeToken";
+import { TempUserGuard } from "../authentication/tempUser.guard";
 
 export function UseBasicAuthGuard() {
 	return applyDecorators(
@@ -51,5 +52,21 @@ export function UseSecurityTokenGuard(
 			description: "oneTimeToken identifier",
 		}),
 		ApiUnauthorizedResponse({ description: "Not Authorized oneTimeToken" }),
+	);
+}
+
+export function UseTempUserGuard(purpose: OneTimeTokenPurpose) {
+	return applyDecorators(
+		PurposeOneTimeToken(purpose),
+		UseGuards(TempUserGuard),
+		ApiHeader({
+			name: ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN,
+			description: "oneTimeToken issued for security purpose",
+		}),
+		ApiHeader({
+			name: ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID,
+			description: "oneTimeToken identifier",
+		}),
+		ApiUnauthorizedResponse({ description: "Not Authorized oneTimeToken for temp user" }),
 	);
 }
