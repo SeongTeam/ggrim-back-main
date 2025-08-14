@@ -11,7 +11,7 @@
           "classValidatorShim": false,
           "introspectComments": true,
           "skipAutoHttpCode": true,
-          "dtoFileNameSuffix" : [".dto.ts",".entity.ts",".response.ts"]
+          "dtoFileNameSuffix" : [".dto.ts",".response.ts"]
         }
       }
     ]
