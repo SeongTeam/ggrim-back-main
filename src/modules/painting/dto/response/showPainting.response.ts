@@ -2,13 +2,12 @@ import { Painting } from "../../entities/painting.entity";
 import { ShowTagResponse } from "../../../tag/dto/response/showTag.response";
 import { ShowArtistResponse } from "../../../artist/dto/response/showArtist.response";
 import { ShowStyleResponse } from "../../../style/dto/response/showStyle.response";
-import { ApiExtraModels, ApiProperty, OmitType } from "@nestjs/swagger";
+import { ApiProperty, OmitType } from "@nestjs/swagger";
 
 class ShowTag extends OmitType(ShowTagResponse, ["shortPaintings"] as const) {}
 class ShowStyle extends OmitType(ShowStyleResponse, ["shortPaintings"] as const) {}
 class ShowArtist extends OmitType(ShowArtistResponse, ["shortPaintings"] as const) {}
 
-@ApiExtraModels(ShowTagResponse)
 export class ShowPaintingResponse {
 	readonly id: string;
 	readonly title: string;
