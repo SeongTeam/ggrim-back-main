@@ -46,10 +46,12 @@ export function UseSecurityTokenGuard(
 		ApiHeader({
 			name: ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN,
 			description: "oneTimeToken issued for security purpose",
+			required: true,
 		}),
 		ApiHeader({
 			name: ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID,
 			description: "oneTimeToken identifier",
+			required: true,
 		}),
 		ApiUnauthorizedResponse({ description: "Not Authorized oneTimeToken" }),
 	);
@@ -62,10 +64,12 @@ export function UseTempUserGuard(purpose: OneTimeTokenPurpose) {
 		ApiHeader({
 			name: ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN,
 			description: "oneTimeToken issued for security purpose",
+			required: true,
 		}),
 		ApiHeader({
 			name: ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID,
 			description: "oneTimeToken identifier",
+			required: true,
 		}),
 		ApiUnauthorizedResponse({ description: "Not Authorized oneTimeToken for temp user" }),
 	);
