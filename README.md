@@ -192,8 +192,40 @@
 - 전역 상수의 위치는 문맥과 연광성에 맞는 파일에 위치시킨다.
     - 일반적으로 `/src/modules/<domain>/const.ts`에 위치시킨다.
 
+**10. Api Handler**
+- Api handler Query는 다음 규칙을 지킨다.
+    - Api handler에서 `@Query`는 1개만 사용하여 Query 타입 그룹 관리를 지향한다.
+        - Query 필드가 1개이고 원시값인 경우, 
+            ```ts
+            @Get("artwork-of-week")
+            async getWeeklyArtworkData(
+                @Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
+            )
+            ```
+        - 그 외의 경우
+        ```ts
+        //QuizReactionQueryDTO.ts
+        export class QuizReactionQueryDTO extends PickType(QuizReactionDTO, ["type"]) {
+            @IsOptionalProperty()
+            @IsUUID()
+            user_id?: string;
 
-**10. 그외는 다음 규칙을 따른다.**
+            @Transform(({ value }) => Number(value))
+            @IsOptionalProperty()
+            @IsNumber()
+            page?: number = 0;
+        }
+
+        //quiz.controller.ts
+        @Get(":id/reactions")
+        async getQuizReactions(
+            @Param("id") id: string,
+            @Query() dto: QuizReactionQueryDTO,
+        )
+        ```
+
+
+**11. 그외는 다음 규칙을 따른다.**
 
 - `namespace` 사용을 자제한다.
 
