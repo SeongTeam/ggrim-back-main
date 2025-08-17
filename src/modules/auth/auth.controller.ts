@@ -9,8 +9,6 @@ import {
 	Post,
 	Req,
 	UseInterceptors,
-	UsePipes,
-	ValidationPipe,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { isNotEmpty } from "class-validator";
@@ -45,7 +43,6 @@ import { UseOwnerGuard } from "./guard/decorator/authorization";
 import { UseBasicAuthGuard, UseSecurityTokenGuard } from "./guard/decorator/authentication";
 
 @Controller("auth")
-@UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class AuthController {
 	constructor(
 		@Inject(AuthService) private readonly service: AuthService,

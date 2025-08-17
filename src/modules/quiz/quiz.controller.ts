@@ -18,8 +18,6 @@ import {
 	Query,
 	Req,
 	UseInterceptors,
-	UsePipes,
-	ValidationPipe,
 } from "@nestjs/common";
 import { QueryRunner } from "typeorm";
 import { LoggerService } from "../logger/logger.service";
@@ -100,7 +98,6 @@ import { UseTokenAuthGuard } from "../auth/guard/decorator/authentication";
 	},
 })
 //TODO whitelist 옵션 추가하여 보안강화 고려하기
-@UsePipes(new ValidationPipe({ transform: true }))
 @Controller("quiz")
 export class QuizController
 	implements CrudController<Quiz>, OnApplicationBootstrap, OnModuleDestroy

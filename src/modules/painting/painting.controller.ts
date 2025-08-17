@@ -13,8 +13,6 @@ import {
 	Put,
 	Query,
 	UseInterceptors,
-	UsePipes,
-	ValidationPipe,
 } from "@nestjs/common";
 import { QueryRunner } from "typeorm";
 import { AWS_BUCKET_ARTWORK } from "../_common/const/envKeys";
@@ -34,7 +32,6 @@ import { ApiPaginationResponse } from "../_common/decorator/swagger/apiPaginatio
 import { ShowPaintingResponse } from "./dto/response/showPainting.response";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 
-@UsePipes(new ValidationPipe({ transform: true }))
 @Controller("painting")
 export class PaintingController {
 	constructor(

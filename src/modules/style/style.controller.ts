@@ -7,7 +7,7 @@ import {
 	ParsedBody,
 	ParsedRequest,
 } from "@dataui/crud";
-import { Controller, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Controller } from "@nestjs/common";
 
 import { CreateStyleDTO } from "./dto/request/createStyle.dto";
 import { ReplaceStyleDTO } from "./dto/request/replaceStyle.dto";
@@ -50,7 +50,6 @@ import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 		alwaysPaginate: true,
 	},
 })
-@UsePipes(new ValidationPipe({ transform: true }))
 @Controller("painting/style")
 export class StyleController implements CrudController<Style> {
 	constructor(public service: StyleService) {}

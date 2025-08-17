@@ -1,4 +1,4 @@
-import { ClassSerializerInterceptor, INestApplication } from "@nestjs/common";
+import { ClassSerializerInterceptor, INestApplication, ValidationPipe } from "@nestjs/common";
 import { NestFactory, Reflector } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
@@ -21,6 +21,16 @@ async function bootstrap() {
 		bufferLogs: true,
 		logger: winstonLogger,
 	});
+	app.useGlobalPipes(
+		new ValidationPipe({
+			transform: true,
+			transformOptions: {
+				enableImplicitConversion: true,
+			},
+			whitelist: true,
+			forbidNonWhitelisted: true,
+		}),
+	);
 
 	// config app
 	setNestApp(app);

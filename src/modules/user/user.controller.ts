@@ -12,8 +12,6 @@ import {
 	Put,
 	Req,
 	UseInterceptors,
-	UsePipes,
-	ValidationPipe,
 } from "@nestjs/common";
 import { isArray, isEmail, isEmpty, isNotEmpty } from "class-validator";
 import { QueryRunner } from "typeorm";
@@ -63,7 +61,6 @@ import { UseTempUserGuard } from "../auth/guard/decorator/authentication";
 	},
 })
 @Controller("user")
-@UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class UserController implements CrudController<User> {
 	constructor(
 		public service: UserService,

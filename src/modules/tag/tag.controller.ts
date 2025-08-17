@@ -6,7 +6,7 @@ import {
 	Override,
 	ParsedRequest,
 } from "@dataui/crud";
-import { Body, Controller, Post, Put, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Body, Controller, Post, Put } from "@nestjs/common";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 
 import { CreateTagDTO } from "./dto/request/createTag.dto";
@@ -51,7 +51,6 @@ import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 		alwaysPaginate: true,
 	},
 })
-@UsePipes(new ValidationPipe({ transform: true }))
 @Controller("painting/tag")
 export class TagController implements CrudController<Tag> {
 	constructor(public service: TagService) {}
