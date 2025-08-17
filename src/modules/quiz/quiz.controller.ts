@@ -2,7 +2,6 @@ import { Crud, CrudController, CrudRequest, Override, ParsedRequest } from "@dat
 import {
 	Body,
 	Controller,
-	DefaultValuePipe,
 	Delete,
 	Get,
 	Inject,
@@ -10,8 +9,6 @@ import {
 	OnApplicationBootstrap,
 	OnModuleDestroy,
 	Param,
-	ParseBoolPipe,
-	ParseIntPipe,
 	ParseUUIDPipe,
 	Post,
 	Put,
@@ -56,6 +53,7 @@ import { ApiPaginationResponse } from "../_common/decorator/swagger/apiPaginatio
 import { ShowQuizResponse } from "./dto/response/showQuiz.response";
 import { UseOwnerGuard } from "../auth/guard/decorator/authorization";
 import { UseTokenAuthGuard } from "../auth/guard/decorator/authentication";
+import { GetQuizQueryDTO } from "./dto/request/getQuizQuery.dto";
 
 @Crud({
 	model: {
@@ -235,13 +233,9 @@ export class QuizController
 		for (attempt = 0; attempt < MAX_RETRY; attempt++) {
 			const context: QuizContext = await this.extractContext(dto);
 
-			const searchDTO: SearchQuizQueryDTO = this.buildSearchDTO(context);
+			const search = this.buildSearchDTO(context);
 
-			const pagination = await this.service.searchQuiz(
-				searchDTO,
-				context.page,
-				QUIZ_PAGINATION,
-			);
+			const pagination = await this.service.searchQuiz(search, context.page, QUIZ_PAGINATION);
 
 			const quizList: ShortQuizResponse[] = pagination.data.map(
 				(q) => new ShortQuizResponse(q),
@@ -296,11 +290,11 @@ export class QuizController
 	@Override("getOneBase")
 	async getQuizAndIncreaseView(
 		@Param("id") id: string,
-		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
+		@Query() query: GetQuizQueryDTO,
 		@ParsedRequest() req: CrudRequest,
-		@Query("user-id") userId: string | undefined,
 	): Promise<DetailQuizResponse> {
 		let quiz = await this.service.getOne(req);
+		const { isS3Access, userId } = query;
 
 		if (isS3Access) {
 			quiz = await this.replaceImageSrcToS3(quiz);
@@ -364,11 +358,8 @@ export class QuizController
 
 	@ApiPaginationResponse(ShortQuizResponse)
 	@Get("")
-	async searchQuiz(
-		@Query() dto: SearchQuizQueryDTO,
-		@Query("page", new DefaultValuePipe(0), ParseIntPipe) page: number,
-		@Query("count", new DefaultValuePipe(20), ParseIntPipe) count: number,
-	): Promise<Pagination<ShortQuizResponse>> {
+	async searchQuiz(@Query() dto: SearchQuizQueryDTO): Promise<Pagination<ShortQuizResponse>> {
+		const { page, count } = dto;
 		const result = await this.service.searchQuiz(dto, page, count);
 		const ret = {
 			...result,
@@ -431,7 +422,9 @@ export class QuizController
 		return await this.scheduleService.scheduleContext();
 	}
 
-	private buildSearchDTO(context: QuizContext): SearchQuizQueryDTO {
+	private buildSearchDTO(
+		context: QuizContext,
+	): Pick<SearchQuizQueryDTO, "artists" | "tags" | "styles"> {
 		return {
 			artists: context.artist ? [context.artist] : [],
 			tags: context.tag ? [context.tag] : [],

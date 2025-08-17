@@ -1,6 +1,7 @@
-import { IsArray, IsString } from "class-validator";
+import { IsArray, IsNumber, IsString } from "class-validator";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 import { Transform } from "class-transformer";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class SearchQuizQueryDTO {
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
@@ -34,4 +35,16 @@ export class SearchQuizQueryDTO {
 	@IsArray()
 	@IsString({ each: true })
 	styles: string[] = [];
+
+	@ApiProperty({ default: 0 })
+	@Transform(({ value }) => (isNaN(Number(value)) ? 0 : Number(value)))
+	@IsOptionalProperty()
+	@IsNumber()
+	page!: number;
+
+	@ApiProperty({ default: 20 })
+	@Transform(({ value }) => (isNaN(Number(value)) ? 20 : Number(value)))
+	@IsOptionalProperty()
+	@IsNumber()
+	count!: number;
 }

@@ -83,7 +83,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 	}
 
 	async searchQuiz(
-		dto: SearchQuizQueryDTO,
+		dto: Pick<SearchQuizQueryDTO, "artists" | "tags" | "styles">,
 		page: number,
 		paginationCount: number,
 	): Promise<Pagination<Quiz>> {
