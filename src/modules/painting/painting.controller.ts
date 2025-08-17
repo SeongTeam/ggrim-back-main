@@ -7,7 +7,6 @@ import {
 	Inject,
 	Param,
 	ParseBoolPipe,
-	ParseIntPipe,
 	ParseUUIDPipe,
 	Post,
 	Put,
@@ -49,11 +48,9 @@ export class PaintingController {
 	 * ```
 	 */
 	@Get("/by-ids")
-	async getByIds(
-		@Query(new ValidationPipe({ transform: true })) query: GetByIdsQueryDTO,
-		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
-	): Promise<ShowPaintingResponse[]> {
-		let foundPaintings: Painting[] = await this.service.getByIds(query.ids);
+	async getByIds(@Query() query: GetByIdsQueryDTO): Promise<ShowPaintingResponse[]> {
+		const { ids, isS3Access } = query;
+		let foundPaintings: Painting[] = await this.service.getByIds(ids);
 
 		if (isS3Access) {
 			foundPaintings = await this.replaceImageSrcToS3(foundPaintings);
@@ -93,9 +90,8 @@ export class PaintingController {
 	@Get("/")
 	async searchPainting(
 		@Query() dto: SearchPaintingQueryDTO,
-		@Query("page", new DefaultValuePipe(0), ParseIntPipe) page: number,
-		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
 	): Promise<Pagination<ShortPaintingResponse>> {
+		const { page, isS3Access } = dto;
 		const paginationCount = 50;
 		const result = await this.service.searchPainting(dto, page, paginationCount);
 		if (isS3Access) {

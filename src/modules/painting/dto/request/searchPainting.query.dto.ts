@@ -1,6 +1,7 @@
-import { IsArray, IsString } from "class-validator";
+import { IsArray, IsBoolean, IsNumber, IsString } from "class-validator";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 import { Transform } from "class-transformer";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class SearchPaintingQueryDTO {
 	@IsOptionalProperty()
@@ -34,4 +35,16 @@ export class SearchPaintingQueryDTO {
 	@IsArray()
 	@IsString({ each: true })
 	styles: string[] = [];
+
+	@ApiProperty({ default: false })
+	@Transform(({ value }) => (value === "true" ? true : false))
+	@IsOptionalProperty()
+	@IsBoolean()
+	isS3Access!: boolean;
+
+	@ApiProperty({ default: 0 })
+	@Transform(({ value }) => (isNaN(Number(value)) ? 0 : Number(value)))
+	@IsOptionalProperty()
+	@IsNumber()
+	page!: number;
 }

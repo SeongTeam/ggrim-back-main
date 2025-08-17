@@ -124,7 +124,7 @@ export class PaintingService {
   */
 
 	async searchPainting(
-		dto: SearchPaintingQueryDTO,
+		dto: Pick<SearchPaintingQueryDTO, "title" | "artistName" | "styles" | "tags">,
 		page: number,
 		paginationCount: number,
 	): Promise<Pagination<Painting>> {
