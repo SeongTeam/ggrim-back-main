@@ -53,7 +53,7 @@ import { ApiPaginationResponse } from "../_common/decorator/swagger/apiPaginatio
 import { ShowQuizResponse } from "./dto/response/showQuiz.response";
 import { UseOwnerGuard } from "../auth/guard/decorator/authorization";
 import { UseTokenAuthGuard } from "../auth/guard/decorator/authentication";
-import { GetQuizQueryDTO } from "./dto/request/getQuizQuery.dto";
+import { GetQuizQueryDTO } from "./dto/request/getQuiz.query.dto";
 
 @Crud({
 	model: {
@@ -277,7 +277,6 @@ export class QuizController
 	async create(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-
 		@Body() dto: CreateQuizDTO,
 	): Promise<ShowQuizResponse> {
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
