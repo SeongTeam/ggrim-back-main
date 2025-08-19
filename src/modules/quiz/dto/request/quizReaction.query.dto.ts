@@ -7,7 +7,7 @@ import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-val
 export class QuizReactionQueryDTO extends PickType(QuizReactionDTO, ["type"]) {
 	@IsOptionalProperty()
 	@IsUUID()
-	user_id?: string;
+	userId?: string;
 
 	@Transform(({ value }) => Number(value))
 	@IsOptionalProperty()
