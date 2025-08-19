@@ -152,11 +152,13 @@
     - 요청 DTO는 `<folder>/dto/request` 내에 정의한다. 
     - 응답 DTO는 `<folder>/dto/response` 내에 정의한다.
 - DTO 파일 이름은 `<camelCase>.<suffix>.ts` 형식을 사용한다. 
-- DTO는 **클래스만을 사용한다.**
-- DTO 클래스 이름은 `<CamelCase>` 형식을 사용한다.
     - 요청 DTO 클래스는 `<Name>.dto.ts` 형식을 사용한다.
     - 응답 DTO 클래스는 `<Name>.response.ts` 형식을 사용한다.
+    - Query DTO의 경우 `<camelCase>.query.<suffix>.ts`형식을 사용한다.
+- DTO는 **클래스만을 사용한다.**
+- DTO 클래스 이름은 `<CamelCase>` 형식을 사용한다.
 - DTO 클래스는 `class-validator`, `class-transformer` 등의 데코레이터를 사용한다.
+    > validator 라이브러리가 변경되면 컨벤션이 변경될 수 있다. 
 
 **6. metadata**
 - 각각의 메타데이터는 별도의 파일로 관리한다.
