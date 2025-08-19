@@ -2,12 +2,12 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique }
 import { CustomBaseEntity } from "../../db/entity/customBase.entity";
 import { User } from "../../user/entity/user.entity";
 import { Quiz } from "./quiz.entity";
-import { QuizReactionType, QuizReactionTypeValues } from "../dto/request/quizReaction.dto";
+import { QuizReactionType, QUIZ_REACTION } from "../dto/request/quizReaction.dto";
 
 @Entity()
 @Unique(["user", "quiz"])
 export class QuizDislike extends CustomBaseEntity {
-	readonly _type = QuizReactionTypeValues.DISLIKE;
+	readonly _type = QUIZ_REACTION.DISLIKE;
 
 	@PrimaryGeneratedColumn("uuid")
 	id!: string;
