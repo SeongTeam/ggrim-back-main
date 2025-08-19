@@ -1,6 +1,6 @@
-import { ApiProperty } from "@dataui/crud/lib/crud";
 import { User } from "../../../entity/user.entity";
 import { USER_ROLE, USER_STATE, UserRole, UserState } from "../../../const";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class ShowUserResponse {
 	id: string;

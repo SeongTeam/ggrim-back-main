@@ -1,7 +1,7 @@
 import { IsBoolean, IsUUID } from "class-validator";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 import { Transform } from "class-transformer";
-import { ApiProperty } from "@dataui/crud/lib/crud";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class GetQuizQueryDTO {
 	@ApiProperty({ default: false })

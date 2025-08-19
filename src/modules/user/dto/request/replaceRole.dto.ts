@@ -1,4 +1,4 @@
-import { ApiProperty } from "@dataui/crud/lib/crud";
+import { ApiProperty } from "@nestjs/swagger";
 import { IsInArray } from "../../../../utils/classValidator";
 import { USER_ROLE, UserRole } from "../../const";
 
