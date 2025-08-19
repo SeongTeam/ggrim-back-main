@@ -2,7 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique }
 import { CustomBaseEntity } from "../../db/entity/customBase.entity";
 import { User } from "../../user/entity/user.entity";
 import { Quiz } from "./quiz.entity";
-import { QuizReactionType, QUIZ_REACTION } from "../dto/request/quizReaction.dto";
+import { QUIZ_REACTION } from "../dto/request/quizReaction.dto";
 
 @Entity()
 @Unique(["user", "quiz"])
