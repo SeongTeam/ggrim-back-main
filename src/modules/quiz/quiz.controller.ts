@@ -145,12 +145,12 @@ export class QuizController
 	): Promise<QuizDislike[] | QuizLike[]> {
 		const pageCount = 30;
 
-		const { page, type, user_id } = dto;
+		const { page, type, userId } = dto;
 
 		const baseOptions = {
 			take: pageCount,
 			skip: page,
-			where: { quiz_id: id, user_id },
+			where: { quiz_id: id, user_id: userId },
 			relations: ["user"],
 		};
 
