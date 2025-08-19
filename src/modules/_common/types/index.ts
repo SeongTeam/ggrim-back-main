@@ -1,4 +1,4 @@
-import { ApiProperty } from "@dataui/crud/lib/crud";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class Pagination<T> {
 	@ApiProperty()
