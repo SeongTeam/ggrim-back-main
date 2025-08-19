@@ -37,7 +37,7 @@ import { QuizResponse } from "./dto/response/quiz.response";
 import { QuizContextDTO } from "./dto/request/quizContext.dto";
 import { QuizReactionDTO } from "./dto/request/quizReaction.dto";
 import { QuizReactionType } from "./const";
-import { QuizReactionQueryDTO } from "./dto/request/quizReaction.query.dto";
+import { QuizReactionQueryDTO } from "./dto/request/getQuizReaction.query.dto";
 import { ScheduleQuizQueryDTO } from "./dto/request/scheduleQuiz.query.dto";
 import { QuizSubmitDTO } from "./dto/request/quizSubmit.dto";
 import { UpdateQuizDTO } from "./dto/request/updateQuiz.dto";

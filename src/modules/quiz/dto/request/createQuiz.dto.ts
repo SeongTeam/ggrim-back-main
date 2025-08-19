@@ -34,7 +34,7 @@ export class CreateQuizDTO {
 	@IsNumber()
 	timeLimit!: number;
 
-	@ApiProperty({ enum: Object.values(QUIZ_TYPE) })
+	@ApiProperty({ enum: Object.values(QUIZ_TYPE), enumName: "QUIZ_TYPE" })
 	@IsString()
 	@IsInArray(Object.values(QUIZ_TYPE))
 	type!: QuizType;

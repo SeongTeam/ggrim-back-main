@@ -11,7 +11,7 @@ export class ShowUserResponse {
 
 	username: string;
 
-	@ApiProperty({ enum: Object.values(USER_STATE) })
+	@ApiProperty({ enum: Object.values(USER_STATE), enumName: "USER_STATE" })
 	active!: UserState;
 
 	last_login_date: Date;
