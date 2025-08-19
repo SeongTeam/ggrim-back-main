@@ -16,3 +16,9 @@ export const QUIZ_TYPE_CONFIG = {
 	MULTIPLE_CHOICE: { COUNT: { TOTAL: 6, MIN_ANSWER: 2 } },
 	TRUE_FALSE: { ANSWER: 1, FALSE: 1 },
 } as const;
+export const QUIZ_REACTION = {
+	LIKE: "like",
+	DISLIKE: "dislike",
+} as const;
+
+export type QuizReactionType = (typeof QUIZ_REACTION)[keyof typeof QUIZ_REACTION];
