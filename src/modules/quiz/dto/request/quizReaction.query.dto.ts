@@ -1,16 +1,12 @@
-import { PickType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsNumber, IsUUID } from "class-validator";
-import { QuizReactionDTO } from "./quizReaction.dto";
+import { IsNumber } from "class-validator";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
+import { ApiProperty } from "@nestjs/swagger";
 
-export class QuizReactionQueryDTO extends PickType(QuizReactionDTO, ["type"]) {
-	@IsOptionalProperty()
-	@IsUUID()
-	userId?: string;
-
-	@Transform(({ value }) => Number(value))
+export class QuizReactionQueryDTO {
+	@ApiProperty({ default: 0 })
+	@Transform(({ value }) => (isNaN(Number(value)) ? 0 : Number(value)))
 	@IsOptionalProperty()
 	@IsNumber()
-	page?: number = 0;
+	page?: number;
 }

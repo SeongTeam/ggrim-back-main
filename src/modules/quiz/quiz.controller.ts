@@ -40,8 +40,6 @@ import { QuizReactionQueryDTO } from "./dto/request/quizReaction.query.dto";
 import { ScheduleQuizQueryDTO } from "./dto/request/scheduleQuiz.query.dto";
 import { QuizSubmitDTO } from "./dto/request/quizSubmit.dto";
 import { UpdateQuizDTO } from "./dto/request/updateQuiz.dto";
-import { QuizDislike } from "./entities/quizDislike.entity";
-import { QuizLike } from "./entities/quizLike.entity";
 import { Quiz } from "./entities/quiz.entity";
 import { QuizContext } from "./types/quiz";
 import { ShortQuizResponse } from "./dto/response/shortQuiz.response";
@@ -54,6 +52,7 @@ import { ShowQuizResponse } from "./dto/response/showQuiz.response";
 import { UseOwnerGuard } from "../auth/guard/decorator/authorization";
 import { UseTokenAuthGuard } from "../auth/guard/decorator/authentication";
 import { GetQuizQueryDTO } from "./dto/request/getQuiz.query.dto";
+import { ShowQuizReactionResponse } from "./dto/response/showQuizReaction.response";
 
 @Crud({
 	model: {
@@ -142,30 +141,29 @@ export class QuizController
 	async getQuizReactions(
 		@Param("id") id: string,
 		@Query() dto: QuizReactionQueryDTO,
-	): Promise<QuizDislike[] | QuizLike[]> {
+	): Promise<ShowQuizReactionResponse[]> {
 		const pageCount = 30;
 
-		const { page, type, userId } = dto;
+		const { page } = dto;
 
 		const baseOptions = {
 			take: pageCount,
 			skip: page,
-			where: { quiz_id: id, user_id: userId },
+			where: { quiz_id: id },
 			relations: ["user"],
 		};
 
-		switch (type) {
-			case "dislike":
-				return this.service.findQuizDislikes(baseOptions);
-			case "like":
-				return this.service.findQuizLikes(baseOptions);
-			default:
-				throw new ServiceException(
-					"NOT_IMPLEMENTED",
-					"NOT_IMPLEMENTED",
-					"access not implemented logic",
-				);
-		}
+		const [likes, dislikes] = await Promise.all([
+			this.service.findQuizLikes(baseOptions),
+			this.service.findQuizDislikes(baseOptions),
+		]);
+
+		const res = [
+			...likes.map((lk) => new ShowQuizReactionResponse(lk)),
+			...dislikes.map((dlk) => new ShowQuizReactionResponse(dlk)),
+		];
+
+		return res;
 	}
 
 	@Post(":id/reaction")
