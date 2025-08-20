@@ -1,19 +1,33 @@
 import { randomInt } from "node:crypto";
-import { QuizContext, QuizStatus } from "../../types/quiz";
+import { QuizContext } from "../../types/quiz";
 import { ShortQuizResponse } from "./shortQuiz.response";
+
+class ShowQuizContext implements QuizContext {
+	artist?: string | undefined;
+	tag?: string | undefined;
+	style?: string | undefined;
+	page: number;
+	constructor(ctx: QuizContext) {
+		this.artist = ctx.artist;
+		this.tag = ctx.tag;
+		this.style = ctx.style;
+		this.page = ctx.page;
+	}
+}
 
 export class ScheduleQuizResponse {
 	shortQuiz!: ShortQuizResponse;
-	status!: QuizStatus;
+	context: ShowQuizContext;
+	currentIndex: number;
+	endIndex: number;
 
 	constructor(shortQuizzes: ShortQuizResponse[], context: QuizContext, currentIndex?: number) {
-		const INIT_INDEX = -1;
-		this.status = { currentIndex: INIT_INDEX, endIndex: INIT_INDEX, context };
-		this.status.currentIndex = currentIndex
+		this.context = new ShowQuizContext(context);
+		this.currentIndex = currentIndex
 			? (currentIndex + 1) % shortQuizzes.length
 			: randomInt(shortQuizzes.length);
 
-		this.status.endIndex = shortQuizzes.length - 1;
-		this.shortQuiz = shortQuizzes[this.status.currentIndex];
+		this.endIndex = shortQuizzes.length - 1;
+		this.shortQuiz = shortQuizzes[this.currentIndex];
 	}
 }

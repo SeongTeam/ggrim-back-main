@@ -2,6 +2,7 @@ import { Expose, Transform, Type } from "class-transformer";
 import { ArrayNotEmpty, IsNumber, IsString } from "class-validator";
 import { QuizContext } from "../../types/quiz";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
+import { ApiHideProperty } from "@nestjs/swagger";
 
 export class QuizContextDTO implements QuizContext {
 	@IsOptionalProperty()
@@ -20,6 +21,7 @@ export class QuizContextDTO implements QuizContext {
 	@IsNumber()
 	page!: number;
 
+	@ApiHideProperty()
 	@Expose()
 	@Transform(({ obj }: { obj: QuizContextDTO }) =>
 		[obj.artist, obj.tag, obj.style].filter((v) => v),

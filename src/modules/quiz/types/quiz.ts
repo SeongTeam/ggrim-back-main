@@ -14,12 +14,6 @@ export interface QuizContext {
 	page: number;
 }
 
-export interface QuizStatus {
-	context: QuizContext;
-	currentIndex: number;
-	endIndex: number;
-}
-
 export class QuizSubmission extends PickType(Quiz, ["incorrect_count", "correct_count"]) {
 	incorrect_count: number = 0;
 	correct_count: number = 0;
