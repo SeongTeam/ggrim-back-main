@@ -9,7 +9,7 @@ export class DetailQuizResponse {
 	userReaction?: QuizReactionType;
 
 	constructor(quiz: Quiz, reactionCount: QuizReactionCount, userReaction?: QuizReactionType) {
-		this.quiz = ShowQuizResponse.createShowQuiz(quiz);
+		this.quiz = new ShowQuizResponse(quiz);
 		this.reactionCount = reactionCount;
 		this.userReaction = userReaction;
 	}

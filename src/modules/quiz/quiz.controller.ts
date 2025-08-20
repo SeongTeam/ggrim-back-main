@@ -33,7 +33,7 @@ import { TagService } from "../tag/tag.service";
 import { SearchQuizQueryDTO } from "./dto/request/SearchQuiz.query.dto";
 import { CreateQuizDTO } from "./dto/request/createQuiz.dto";
 import { DetailQuizResponse } from "./dto/response/detailQuiz.response";
-import { QuizResponse } from "./dto/response/quiz.response";
+import { ScheduleQuizResponse } from "./dto/response/scheduleQuiz.response";
 import { QuizContextDTO } from "./dto/request/quizContext.dto";
 import { QuizReactionDTO } from "./dto/request/quizReaction.dto";
 import { QuizReactionType } from "./const";
@@ -224,7 +224,7 @@ export class QuizController
 	}
 
 	@Get("schedule")
-	async getScheduledQuiz(@Query() dto: ScheduleQuizQueryDTO): Promise<QuizResponse> {
+	async getScheduledQuiz(@Query() dto: ScheduleQuizQueryDTO): Promise<ScheduleQuizResponse> {
 		Logger.log(`context : `, dto.context);
 		const QUIZ_PAGINATION = 20;
 		const MAX_RETRY = 10;
@@ -248,7 +248,7 @@ export class QuizController
 			const isContextChanged = dto.context !== context;
 			const currentIndex = isContextChanged ? undefined : dto.currentIndex;
 
-			return new QuizResponse(quizList, context, currentIndex);
+			return new ScheduleQuizResponse(quizList, context, currentIndex);
 		}
 		throw new ServiceException(
 			`SERVICE_RUN_ERROR`,
@@ -282,7 +282,7 @@ export class QuizController
 
 		const quiz = await this.service.createQuiz(qr, dto, userPayload.user);
 
-		return ShowQuizResponse.createShowQuiz(quiz);
+		return new ShowQuizResponse(quiz);
 	}
 
 	@Override("getOneBase")
@@ -329,7 +329,7 @@ export class QuizController
 		@Body() dto: UpdateQuizDTO,
 	): Promise<ShowQuizResponse> {
 		const quiz = await this.service.updateQuiz(qr, id, dto);
-		return ShowQuizResponse.createShowQuiz(quiz);
+		return new ShowQuizResponse(quiz);
 	}
 
 	@UseOwnerGuard(

@@ -2,7 +2,7 @@ import { randomInt } from "node:crypto";
 import { QuizContext, QuizStatus } from "../../types/quiz";
 import { ShortQuizResponse } from "./shortQuiz.response";
 
-export class QuizResponse {
+export class ScheduleQuizResponse {
 	shortQuiz!: ShortQuizResponse;
 	status!: QuizStatus;
 
