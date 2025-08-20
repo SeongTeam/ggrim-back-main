@@ -20,17 +20,17 @@ export class ShowPaintingResponse {
 	@ApiProperty({
 		type: [ShowTag],
 	})
-	readonly showTags?: ShowTag[];
+	readonly showTags: ShowTag[];
 
 	@ApiProperty({
 		type: [ShowStyle],
 	})
-	readonly showStyles?: ShowStyle[];
+	readonly showStyles: ShowStyle[];
 
 	@ApiProperty({
-		type: [ShowArtist],
+		type: ShowArtist,
 	})
-	readonly showArtist?: ShowArtist;
+	readonly showArtist: ShowArtist;
 
 	constructor(painting: Painting) {
 		this.id = painting.id;
@@ -40,8 +40,8 @@ export class ShowPaintingResponse {
 		this.completition_year = painting.completition_year;
 		this.width = painting.width;
 		this.height = painting.height;
-		this.showTags = painting.tags?.map((t) => new ShowTagResponse(t));
-		this.showStyles = painting.styles?.map((s) => new ShowStyleResponse(s));
+		this.showTags = painting.tags.map((t) => new ShowTagResponse(t));
+		this.showStyles = painting.styles.map((s) => new ShowStyleResponse(s));
 		this.showArtist = new ShowArtistResponse(painting.artist);
 	}
 }
