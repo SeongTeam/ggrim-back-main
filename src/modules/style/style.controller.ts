@@ -17,6 +17,7 @@ import { ShowStyleResponse } from "./dto/response/showStyle.response";
 import { isArray } from "class-validator";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
+import { setJoinEager } from "../../utils/curd";
 
 /*TODO
 - soft-deleted 상태인 데이터가 replace method 사용시 수정되는 것이 위험한지 고민하기
@@ -65,7 +66,7 @@ export class StyleController implements CrudController<Style> {
 
 	@ApiOverride("getOneBase", ShowStyleResponse)
 	async getOne(req: CrudRequest): Promise<ShowStyleResponse> {
-		const style = await this.service.getOne(req);
+		const style = await this.service.getOne(setJoinEager<Style>(req, "paintings"));
 		return new ShowStyleResponse(style);
 	}
 

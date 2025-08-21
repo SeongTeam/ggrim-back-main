@@ -17,6 +17,7 @@ import { ShowTagResponse } from "./dto/response/showTag.response";
 import { isArray } from "class-validator";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
+import { setJoinEager } from "../../utils/curd";
 /*TODO
 - typeORM 에러 발생시, 특정 에러 메세지는 응답에 포함시켜 보내는 로직 구현 고려
   1) unique constraint 열에 중복된 값을 삽입할 때,
@@ -61,7 +62,7 @@ export class TagController implements CrudController<Tag> {
 
 	@ApiOverride("getOneBase", ShowTagResponse)
 	async getOne(req: CrudRequest): Promise<ShowTagResponse> {
-		const tag = await this.service.getOne(req);
+		const tag = await this.service.getOne(setJoinEager<Tag>(req, "paintings"));
 		return new ShowTagResponse(tag);
 	}
 

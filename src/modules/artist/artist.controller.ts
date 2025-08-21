@@ -15,6 +15,7 @@ import { ShowArtistResponse } from "./dto/response/showArtist.response";
 import { isArray } from "class-validator";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
+import { setJoinEager } from "../../utils/curd";
 @Crud({
 	model: {
 		type: Artist,
@@ -55,7 +56,7 @@ export class ArtistController implements CrudController<Artist> {
 
 	@ApiOverride("getOneBase", ShowArtistResponse)
 	async getOne(req: CrudRequest): Promise<ShowArtistResponse> {
-		const artist = await this.service.getOne(req);
+		const artist = await this.service.getOne(setJoinEager<Artist>(req, "paintings"));
 
 		return new ShowArtistResponse(artist);
 	}
