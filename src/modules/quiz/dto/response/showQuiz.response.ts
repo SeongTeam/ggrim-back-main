@@ -1,11 +1,12 @@
 import { Quiz } from "../../entities/quiz.entity";
 import { ShowUserResponse } from "../../../user/dto/request/response/showUser.response";
-import { OmitType } from "@nestjs/swagger";
+import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { ShowPaintingResponse } from "../../../painting/dto/response/showPainting.response";
 import { QuizType } from "../../types/quiz";
 import { ShowTagResponse } from "../../../tag/dto/response/showTag.response";
 import { ShowStyleResponse } from "../../../style/dto/response/showStyle.response";
 import { ShowArtistResponse } from "../../../artist/dto/response/showArtist.response";
+import { QUIZ_TYPE } from "../../const";
 
 class ShowTag extends OmitType(ShowTagResponse, ["shortPaintings"] as const) {}
 class ShowStyle extends OmitType(ShowStyleResponse, ["shortPaintings"] as const) {}
@@ -29,6 +30,7 @@ export class ShowQuizResponse {
 	incorrect_count: number;
 	time_limit: number;
 	description: string;
+	@ApiProperty({ enum: Object.values(QUIZ_TYPE), enumName: "QUIZ_TYPE" })
 	type: QuizType;
 	artists: ShowArtist[];
 	tags: ShowTag[];

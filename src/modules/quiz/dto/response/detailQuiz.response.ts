@@ -1,11 +1,18 @@
 import { Quiz } from "../../entities/quiz.entity";
 import { QuizReactionCount } from "../../types/reaction";
-import { QuizReactionType } from "../../const";
+import { QUIZ_REACTION, QuizReactionType } from "../../const";
 import { ShowQuizResponse } from "./showQuiz.response";
+import { ApiProperty } from "@nestjs/swagger";
+
+class ShowQuizReactionCount implements QuizReactionCount {
+	likeCount!: number;
+	dislikeCount!: number;
+}
 
 export class DetailQuizResponse {
 	quiz!: ShowQuizResponse;
-	reactionCount!: QuizReactionCount;
+	reactionCount!: ShowQuizReactionCount;
+	@ApiProperty({ enum: Object.values(QUIZ_REACTION) })
 	userReaction?: QuizReactionType;
 
 	constructor(quiz: Quiz, reactionCount: QuizReactionCount, userReaction?: QuizReactionType) {
