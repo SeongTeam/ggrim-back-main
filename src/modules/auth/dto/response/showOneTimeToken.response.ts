@@ -8,7 +8,10 @@ export class ShowOneTimeTokenResponse {
 	readonly token: string;
 	readonly used_date: Date | null;
 	readonly expired_date: Date;
-	@ApiProperty({ enum: Object.values(ONE_TIME_TOKEN_PURPOSE) })
+	@ApiProperty({
+		enum: Object.values(ONE_TIME_TOKEN_PURPOSE),
+		enumName: "ONE_TIME_TOKEN_PURPOSE",
+	})
 	readonly purpose: OneTimeTokenPurpose;
 
 	constructor(oneTimeToken: OneTimeToken) {

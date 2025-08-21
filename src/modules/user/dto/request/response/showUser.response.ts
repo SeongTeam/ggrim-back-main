@@ -6,7 +6,7 @@ export class ShowUserResponse {
 	id: string;
 
 	email: string;
-	@ApiProperty({ enum: Object.values(USER_ROLE) })
+	@ApiProperty({ enum: Object.values(USER_ROLE), enumName: "USER_ROLE" })
 	role: UserRole;
 
 	username: string;

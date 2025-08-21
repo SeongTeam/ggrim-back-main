@@ -12,7 +12,7 @@ class ShowQuizReactionCount implements QuizReactionCount {
 export class DetailQuizResponse {
 	quiz!: ShowQuizResponse;
 	reactionCount!: ShowQuizReactionCount;
-	@ApiProperty({ enum: Object.values(QUIZ_REACTION) })
+	@ApiProperty({ enum: Object.values(QUIZ_REACTION), enumName: "QUIZ_REACTION" })
 	userReaction?: QuizReactionType;
 
 	constructor(quiz: Quiz, reactionCount: QuizReactionCount, userReaction?: QuizReactionType) {
