@@ -1,21 +1,29 @@
 import { Painting } from "../../entities/painting.entity";
-import { ShowTagResponse } from "../../../tag/dto/response/showTag.response";
-import { ShowArtistResponse } from "../../../artist/dto/response/showArtist.response";
-import { ShowStyleResponse } from "../../../style/dto/response/showStyle.response";
-import { ApiProperty, OmitType } from "@nestjs/swagger";
+import { ShowTag } from "../../../tag/dto/response/showTag.response";
+import { ShowArtist } from "../../../artist/dto/response/showArtist.response";
+import { ShowStyle } from "../../../style/dto/response/showStyle.response";
+import { ApiProperty } from "@nestjs/swagger";
 
-class ShowTag extends OmitType(ShowTagResponse, ["shortPaintings"] as const) {}
-class ShowStyle extends OmitType(ShowStyleResponse, ["shortPaintings"] as const) {}
-class ShowArtist extends OmitType(ShowArtistResponse, ["shortPaintings"] as const) {}
-
-export class ShowPaintingResponse {
+export class ShowPainting {
 	readonly id: string;
 	readonly title: string;
 	readonly image_url: string;
-	readonly description: string;
-	readonly completition_year: number;
 	readonly width: number;
 	readonly height: number;
+
+	public constructor(painting: Painting) {
+		const { id, title, width, height, image_url } = painting;
+		this.id = id;
+		this.title = title;
+		this.width = width;
+		this.height = height;
+		this.image_url = image_url;
+	}
+}
+
+export class ShowPaintingResponse extends ShowPainting {
+	readonly description: string;
+	readonly completition_year: number;
 
 	@ApiProperty({
 		type: [ShowTag],
@@ -33,15 +41,11 @@ export class ShowPaintingResponse {
 	readonly showArtist: ShowArtist;
 
 	constructor(painting: Painting) {
-		this.id = painting.id;
-		this.title = painting.title;
-		this.image_url = painting.image_url;
+		super(painting);
 		this.description = painting.description;
 		this.completition_year = painting.completition_year;
-		this.width = painting.width;
-		this.height = painting.height;
-		this.showTags = painting.tags.map((t) => new ShowTagResponse(t));
-		this.showStyles = painting.styles.map((s) => new ShowStyleResponse(s));
-		this.showArtist = new ShowArtistResponse(painting.artist);
+		this.showTags = painting.tags.map((t) => new ShowTag(t));
+		this.showStyles = painting.styles.map((s) => new ShowStyle(s));
+		this.showArtist = new ShowArtist(painting.artist);
 	}
 }

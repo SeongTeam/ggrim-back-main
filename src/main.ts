@@ -4,13 +4,11 @@ import { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
 import { winstonLogger } from "./utils/winston.config";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import { ShortPaintingResponse } from "./modules/painting/dto/response/shortPainting.response";
 import { ShowTagResponse } from "./modules/tag/dto/response/showTag.response";
 import { ShowArtistResponse } from "./modules/artist/dto/response/showArtist.response";
 import { ShowStyleResponse } from "./modules/style/dto/response/showStyle.response";
 import { ShowUserResponse } from "./modules/user/dto/request/response/showUser.response";
 import { ShowQuizResponse } from "./modules/quiz/dto/response/showQuiz.response";
-import { ShortQuizResponse } from "./modules/quiz/dto/response/shortQuiz.response";
 import { DetailQuizResponse } from "./modules/quiz/dto/response/detailQuiz.response";
 import { ShowPaintingResponse } from "./modules/painting/dto/response/showPainting.response";
 import { ShowOneTimeTokenResponse } from "./modules/auth/dto/response/showOneTimeToken.response";
@@ -66,9 +64,7 @@ export function setSwagger<T extends INestApplication>(app: T): void {
 			ShowStyleResponse,
 			ShowUserResponse,
 			ShowQuizResponse,
-			ShortQuizResponse,
 			DetailQuizResponse,
-			ShortPaintingResponse,
 			ShowPaintingResponse,
 			ShowOneTimeTokenResponse,
 			ShowVerificationResponse,

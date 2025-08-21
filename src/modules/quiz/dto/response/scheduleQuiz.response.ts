@@ -1,6 +1,6 @@
 import { randomInt } from "node:crypto";
 import { QuizContext } from "../../types/quiz";
-import { ShortQuizResponse } from "./shortQuiz.response";
+import { ShowQuiz } from "./showQuiz.response";
 
 class ShowQuizContext implements QuizContext {
 	artist?: string | undefined;
@@ -16,12 +16,12 @@ class ShowQuizContext implements QuizContext {
 }
 
 export class ScheduleQuizResponse {
-	shortQuiz!: ShortQuizResponse;
+	shortQuiz!: ShowQuiz;
 	context: ShowQuizContext;
 	currentIndex: number;
 	endIndex: number;
 
-	constructor(shortQuizzes: ShortQuizResponse[], context: QuizContext, currentIndex?: number) {
+	constructor(shortQuizzes: ShowQuiz[], context: QuizContext, currentIndex?: number) {
 		this.context = new ShowQuizContext(context);
 		this.currentIndex = currentIndex
 			? (currentIndex + 1) % shortQuizzes.length

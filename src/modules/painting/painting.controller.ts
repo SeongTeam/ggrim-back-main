@@ -24,11 +24,10 @@ import { GetByIdsQueryDTO } from "./dto/request/getByIds.query.dto";
 import { ReplacePaintingDTO } from "./dto/request/replacePainting.dto";
 import { SearchPaintingQueryDTO } from "./dto/request/searchPainting.query.dto";
 import { Painting } from "./entities/painting.entity";
-import { ShortPaintingResponse } from "./dto/response/shortPainting.response";
 import { PaintingService } from "./painting.service";
 import { Pagination } from "../_common/types";
 import { ApiPaginationResponse } from "../_common/decorator/swagger/apiPaginationResponse";
-import { ShowPaintingResponse } from "./dto/response/showPainting.response";
+import { ShowPainting, ShowPaintingResponse } from "./dto/response/showPainting.response";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 
 @Controller("painting")
@@ -86,11 +85,9 @@ export class PaintingController {
 		return new ShowPaintingResponse(paintings[0]);
 	}
 
-	@ApiPaginationResponse(ShortPaintingResponse)
+	@ApiPaginationResponse(ShowPainting)
 	@Get("/")
-	async searchPainting(
-		@Query() dto: SearchPaintingQueryDTO,
-	): Promise<Pagination<ShortPaintingResponse>> {
+	async searchPainting(@Query() dto: SearchPaintingQueryDTO): Promise<Pagination<ShowPainting>> {
 		const { page, isS3Access } = dto;
 		const paginationCount = 50;
 		const result = await this.service.searchPainting(dto, page, paginationCount);
@@ -101,7 +98,7 @@ export class PaintingController {
 
 		const ret = {
 			...result,
-			data: result.data.map((p) => new ShortPaintingResponse(p)),
+			data: result.data.map((p) => new ShowPainting(p)),
 		};
 
 		return ret;
