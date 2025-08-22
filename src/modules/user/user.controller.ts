@@ -4,10 +4,12 @@ import {
 	Controller,
 	Delete,
 	forwardRef,
+	Get,
 	HttpException,
 	HttpStatus,
 	Inject,
 	Param,
+	ParseUUIDPipe,
 	Patch,
 	Put,
 	Req,
@@ -44,7 +46,7 @@ import { UseTempUserGuard } from "../auth/guard/decorator/authentication";
 		type: User,
 	},
 	routes: {
-		only: ["getOneBase", "getManyBase", "createOneBase"],
+		only: ["getManyBase", "createOneBase"],
 	},
 	params: {
 		id: {
@@ -77,10 +79,12 @@ export class UserController implements CrudController<User> {
 	// ? 질문: <의문점 또는 개선 방향>
 	// * 참고: <관련 정보나 링크>
 
-	@ApiOverride("getOneBase", ShowUserResponse)
-	async getOne(req: CrudRequest): Promise<ShowUserResponse> {
-		const user = await this.service.getOne(req);
-
+	@Get(":id")
+	async getOne(@Param("id", ParseUUIDPipe) id: string): Promise<ShowUserResponse> {
+		const user = await this.service.findOne({
+			where: { id },
+		});
+		if (!user) throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST");
 		return new ShowUserResponse(user);
 	}
 

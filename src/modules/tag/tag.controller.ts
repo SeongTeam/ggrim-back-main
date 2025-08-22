@@ -6,7 +6,7 @@ import {
 	Override,
 	ParsedRequest,
 } from "@dataui/crud";
-import { Body, Controller, Post, Put } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Put } from "@nestjs/common";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 
 import { CreateTagDTO } from "./dto/request/createTag.dto";
@@ -17,7 +17,6 @@ import { ShowTagResponse } from "./dto/response/showTag.response";
 import { isArray } from "class-validator";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
-import { setJoinEager } from "../../utils/curd";
 /*TODO
 - typeORM 에러 발생시, 특정 에러 메세지는 응답에 포함시켜 보내는 로직 구현 고려
   1) unique constraint 열에 중복된 값을 삽입할 때,
@@ -35,7 +34,7 @@ import { setJoinEager } from "../../utils/curd";
 		},
 	},
 	routes: {
-		only: ["getOneBase", "getManyBase", "deleteOneBase"],
+		only: ["getManyBase", "deleteOneBase"],
 	},
 	dto: {
 		create: CreateTagDTO,
@@ -60,9 +59,13 @@ export class TagController implements CrudController<Tag> {
 		return this;
 	}
 
-	@ApiOverride("getOneBase", ShowTagResponse)
-	async getOne(req: CrudRequest): Promise<ShowTagResponse> {
-		const tag = await this.service.getOne(setJoinEager<Tag>(req, "paintings"));
+	@Get(":id")
+	async getOne(@Param("id", ParseUUIDPipe) id: string): Promise<ShowTagResponse> {
+		const tag = await this.service.findOne({
+			where: { id },
+			relations: { paintings: true },
+		});
+		if (!tag) throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST");
 		return new ShowTagResponse(tag);
 	}
 

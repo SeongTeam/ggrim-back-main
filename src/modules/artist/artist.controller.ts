@@ -7,7 +7,7 @@ import {
 	ParsedBody,
 	ParsedRequest,
 } from "@dataui/crud";
-import { Controller } from "@nestjs/common";
+import { Controller, Get, Param, ParseUUIDPipe } from "@nestjs/common";
 import { ArtistService } from "./artist.service";
 import { CreateArtistDTO } from "./dto/request/createArtist.dto";
 import { Artist } from "./entities/artist.entity";
@@ -15,13 +15,13 @@ import { ShowArtistResponse } from "./dto/response/showArtist.response";
 import { isArray } from "class-validator";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
-import { setJoinEager } from "../../utils/curd";
+import { ServiceException } from "../_common/filter/exception/service/serviceException";
 @Crud({
 	model: {
 		type: Artist,
 	},
 	routes: {
-		only: ["getOneBase", "getManyBase", "createOneBase", "replaceOneBase", "deleteOneBase"],
+		only: ["getManyBase", "createOneBase", "replaceOneBase", "deleteOneBase"],
 	},
 	params: {
 		id: {
@@ -54,9 +54,13 @@ export class ArtistController implements CrudController<Artist> {
 	 *
 	 */
 
-	@ApiOverride("getOneBase", ShowArtistResponse)
-	async getOne(req: CrudRequest): Promise<ShowArtistResponse> {
-		const artist = await this.service.getOne(setJoinEager<Artist>(req, "paintings"));
+	@Get(":id")
+	async getOne(@Param("id", ParseUUIDPipe) id: string): Promise<ShowArtistResponse> {
+		const artist = await this.service.findOne({
+			where: { id },
+			relations: { paintings: true },
+		});
+		if (!artist) throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST");
 
 		return new ShowArtistResponse(artist);
 	}

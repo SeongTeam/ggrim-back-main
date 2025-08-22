@@ -7,7 +7,7 @@ import {
 	ParsedBody,
 	ParsedRequest,
 } from "@dataui/crud";
-import { Controller } from "@nestjs/common";
+import { Controller, Get, Param, ParseUUIDPipe } from "@nestjs/common";
 
 import { CreateStyleDTO } from "./dto/request/createStyle.dto";
 import { ReplaceStyleDTO } from "./dto/request/replaceStyle.dto";
@@ -17,7 +17,7 @@ import { ShowStyleResponse } from "./dto/response/showStyle.response";
 import { isArray } from "class-validator";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
-import { setJoinEager } from "../../utils/curd";
+import { ServiceException } from "../_common/filter/exception/service/serviceException";
 
 /*TODO
 - soft-deleted 상태인 데이터가 replace method 사용시 수정되는 것이 위험한지 고민하기
@@ -34,7 +34,7 @@ import { setJoinEager } from "../../utils/curd";
 		},
 	},
 	routes: {
-		only: ["getOneBase", "getManyBase", "createOneBase", "replaceOneBase", "deleteOneBase"],
+		only: ["getManyBase", "createOneBase", "replaceOneBase", "deleteOneBase"],
 	},
 	dto: {
 		create: CreateStyleDTO,
@@ -64,9 +64,13 @@ export class StyleController implements CrudController<Style> {
 	 *
 	 */
 
-	@ApiOverride("getOneBase", ShowStyleResponse)
-	async getOne(req: CrudRequest): Promise<ShowStyleResponse> {
-		const style = await this.service.getOne(setJoinEager<Style>(req, "paintings"));
+	@Get(":id")
+	async getOne(@Param("id", ParseUUIDPipe) id: string): Promise<ShowStyleResponse> {
+		const style = await this.service.findOne({
+			where: { id },
+			relations: { paintings: true },
+		});
+		if (!style) throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST");
 		return new ShowStyleResponse(style);
 	}
 
