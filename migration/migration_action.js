@@ -1,10 +1,11 @@
-import { execSync } from "child_process";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { execSync } = require("child_process");
 
 const command = process.argv[2]; // 실행할 명령어를 첫 번째 인자로 받음
 const migrationName = process.argv[3]; // 마이그레이션 이름 (필요한 경우)
 
 const PATH = "./migration";
-const OPTION_FILE = "migration.option.ts";
+const OPTION_FILE = "migration.option.js";
 
 switch (command) {
 	case "generate":
