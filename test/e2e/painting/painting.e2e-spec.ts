@@ -1,15 +1,25 @@
 import { INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
-import { AppModule } from "../../src/app.module";
+import { AppModule } from "../../../src/app.module";
 
 import * as request from "supertest";
-import { S3Service } from "../../src/modules/aws/s3.service";
-import { PaintingService } from "../../src/modules/painting/painting.service";
+import TestAgent from "supertest/lib/agent";
+import { DatabaseService } from "../../../src/modules/db/db.service";
+import { Painting } from "../../../src/modules/painting/entities/painting.entity";
+import { Repository } from "typeorm";
+import { DataBaseModule } from "../../../src/modules/db/db.module";
 
 describe("PaintingController (e2e)", () => {
 	let app: INestApplication;
-	let paintingService: PaintingService;
-	let s3Service: S3Service;
+	let repo: Repository<Painting>;
+	// TODO 테스트 환경 설정하기
+	// [ ] nest.js APP 인스턴스 생성
+	// [ ] nest.js APP 인스턴스 설정(global pipe, Module, .env.test)
+	// [ ] 테스트 DB 연결
+	// [ ] 테스트 DB 데이터정의
+	// [ ] 테스트 DB 데이터 삽입 로직 추가
+	// [ ] 테스트 DB 데이터 삭제 로직
+	// [x] 테스트 종료후 APP 인스턴스 종료
 
 	beforeEach(async () => {
 		const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -17,15 +27,20 @@ describe("PaintingController (e2e)", () => {
 		}).compile();
 
 		app = moduleFixture.createNestApplication();
+
 		await app.init();
-		paintingService = moduleFixture.get<PaintingService>(PaintingService);
-		s3Service = moduleFixture.get<S3Service>(S3Service);
 	});
+
+	afterAll(async () => {
+		await app.close();
+	});
+
+	beforeEach(async () => {});
 
 	describe("200: /painting (GET)", () => {
 		it("기본 /painting/", async () => {
-			const response = await request(app.getHttpServer())
-				.get("/painting/")
+			const response = await request(app.getHttpServer() as TestAgent)
+				.get("/painting")
 				.query({
 					page: 0,
 				})
