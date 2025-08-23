@@ -7,14 +7,13 @@ import { StyleModule } from "../style/style.module";
 import { StyleService } from "../style/style.service";
 import { TagModule } from "../tag/tag.modue";
 import { Painting } from "./entities/painting.entity";
-import { WikiArtPainting } from "./entities/wikiArtPainting.entity";
 import { PaintingController } from "./painting.controller";
 import { PaintingService } from "./painting.service";
 import { AuthModule } from "../auth/auth.module";
 import { UserModule } from "../user/user.module";
 @Module({
 	imports: [
-		TypeOrmModule.forFeature([Painting, WikiArtPainting, Style]),
+		TypeOrmModule.forFeature([Painting, Style]),
 		ArtistModule,
 		AuthModule,
 		StyleModule,
