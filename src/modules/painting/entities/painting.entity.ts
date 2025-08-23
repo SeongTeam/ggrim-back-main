@@ -5,7 +5,6 @@ import {
 	JoinTable,
 	ManyToMany,
 	ManyToOne,
-	OneToOne,
 	PrimaryGeneratedColumn,
 } from "typeorm";
 import { Artist } from "../../artist/entities/artist.entity";
@@ -30,8 +29,8 @@ export class Painting extends CustomBaseEntity {
 	@Column({ type: "text", default: "" })
 	description!: string; // painting description, default: ""
 
-	@Column({ nullable: true })
-	completition_year!: number; // painting completition year, default: null
+	@Column({ type: "integer", nullable: true })
+	completition_year!: number | null; // painting completition year, default: null
 
 	@Column()
 	width!: number;

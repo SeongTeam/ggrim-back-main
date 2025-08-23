@@ -11,7 +11,6 @@ import * as bcrypt from "bcrypt";
 import * as crypto from "crypto";
 
 import { InjectRepository } from "@nestjs/typeorm";
-import { isEmpty } from "class-validator";
 import { ENV_HASH_ROUNDS_KEY, ENV_JWT_SECRET_KEY, NODE_ENV } from "../_common/const/envKeys";
 import {
 	DeepPartial,
@@ -251,7 +250,7 @@ export class AuthService {
 		const now = new Date();
 		const lastDate: null | Date = lastVerification.last_verified_date;
 
-		if (isEmpty(lastDate)) {
+		if (lastDate === null) {
 			return 0;
 		}
 

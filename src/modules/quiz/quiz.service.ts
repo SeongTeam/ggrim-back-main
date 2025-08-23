@@ -51,7 +51,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		newQuiz.type = dto.type;
 		newQuiz.time_limit = dto.timeLimit;
 		newQuiz.title = dto.title;
-		newQuiz.example_painting = examplePainting;
+		newQuiz.example_painting = examplePainting === undefined ? null : examplePainting;
 		newQuiz.description = dto.description;
 		newQuiz.owner_id = owner.id;
 		newQuiz.owner = owner;
@@ -77,7 +77,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 			await this.getRelatedPaintings({ ...dto });
 		quiz.answer_paintings = answerPaintings;
 		quiz.distractor_paintings = distractorPaintings;
-		quiz.example_painting = examplePainting;
+		quiz.example_painting = examplePainting === undefined ? null : examplePainting;
 
 		return this.insertQuiz(queryRunner, quiz);
 	}

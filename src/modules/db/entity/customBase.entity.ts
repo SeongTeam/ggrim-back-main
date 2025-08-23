@@ -13,17 +13,15 @@ export class CustomBaseEntity {
 		precision: 6,
 		nullable: true,
 	})
-	updated_date!: Date;
+	updated_date!: Date | null;
 
 	@DeleteDateColumn({
 		type: "timestamp with time zone",
 		precision: 6,
 		nullable: true,
 	})
-	deleted_date!: Date;
+	deleted_date!: Date | null;
 
-	@VersionColumn({
-		nullable: true,
-	})
-	version!: number;
+	@VersionColumn({ type: "integer", nullable: true })
+	version!: number | null;
 }

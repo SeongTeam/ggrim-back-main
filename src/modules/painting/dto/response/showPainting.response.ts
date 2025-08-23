@@ -23,7 +23,7 @@ export class ShowPainting {
 
 export class ShowPaintingResponse extends ShowPainting {
 	readonly description: string;
-	readonly completition_year: number;
+	readonly completition_year: number | null;
 
 	@ApiProperty({
 		type: [ShowTag],

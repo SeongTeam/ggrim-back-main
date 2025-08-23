@@ -37,11 +37,11 @@ export class User extends CustomBaseEntity {
 	/*TODO
     - Oauth 로직추가시 해당 컬럼 관련 로직 개선하기
   	*/
-	@Column({ nullable: true })
-	oauth_provider!: string;
+	@Column({ type: "character varying", nullable: true })
+	oauth_provider!: string | null;
 
-	@Column({ nullable: true })
-	oauth_provider_id!: string;
+	@Column({ type: "character varying", nullable: true })
+	oauth_provider_id!: string | null;
 
 	@OneToMany(() => OneTimeToken, (oneTimeToken) => oneTimeToken.user)
 	oneTimeTokens!: OneTimeToken[];

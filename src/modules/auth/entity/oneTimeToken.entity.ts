@@ -15,20 +15,20 @@ export class OneTimeToken extends CustomBaseEntity {
 	@Column()
 	token!: string;
 
-	@Column({ nullable: true })
-	used_date!: Date;
+	@Column({ type: "timestamp without time zone", nullable: true })
+	used_date!: Date | null;
 
 	@Column()
 	expired_date!: Date;
 
 	// 외래 키 컬럼 명시적으로 정의
-	@Column({ nullable: true })
-	user_id!: string;
+	@Column({ type: "uuid", nullable: true })
+	user_id!: string | null;
 
 	@Exclude()
 	@ManyToOne(() => User, (user) => user.oneTimeTokens, { nullable: true })
 	@JoinColumn({ name: "user_id" })
-	user?: User;
+	user!: User | null;
 
 	@Column()
 	purpose!: OneTimeTokenPurpose;

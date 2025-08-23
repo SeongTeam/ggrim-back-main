@@ -46,9 +46,7 @@ export class ShowQuizResponse extends ShowQuiz {
 		this.distractor_paintings = quiz.distractor_paintings.map((dp) => new ShowPainting(dp));
 		this.answer_paintings = quiz.answer_paintings.map((ap) => new ShowPainting(ap));
 		this.example_painting =
-			quiz.example_painting !== undefined
-				? new ShowPainting(quiz.example_painting)
-				: undefined;
+			quiz.example_painting !== null ? new ShowPainting(quiz.example_painting) : undefined;
 		this.view_count = quiz.view_count;
 		this.correct_count = quiz.correct_count;
 		this.incorrect_count = quiz.incorrect_count;

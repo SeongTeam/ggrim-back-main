@@ -8,11 +8,11 @@ export class Style extends CustomBaseEntity {
 	@PrimaryGeneratedColumn("uuid")
 	id!: string;
 
-	@Column({ nullable: true }) // need to distinct value
+	@Column({ type: "character varying" }) // need to distinct value
 	name!: string;
 
-	@Column({ nullable: true })
-	info_url!: string;
+	@Column({ type: "character varying", nullable: true })
+	info_url!: string | null;
 
 	@ManyToMany(() => Painting, (painting) => painting.styles)
 	paintings!: Painting[];

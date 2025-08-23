@@ -6,13 +6,13 @@ export class ShowArtist {
 
 	readonly name: string;
 
-	readonly image_url: string;
+	readonly image_url: string | null;
 
-	readonly birth_date: Date;
+	readonly birth_date: Date | null;
 
-	readonly death_date: Date;
+	readonly death_date: Date | null;
 
-	readonly info_url: string;
+	readonly info_url: string | null;
 
 	constructor(artist: Artist) {
 		this.id = artist.id;

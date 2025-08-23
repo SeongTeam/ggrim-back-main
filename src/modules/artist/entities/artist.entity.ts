@@ -15,26 +15,28 @@ export class Artist extends CustomBaseEntity {
 	name!: string;
 
 	@Column({
+		type: "character varying",
 		nullable: true,
 	})
-	image_url!: string;
+	image_url!: string | null;
 
 	@Column({
 		type: "time without time zone",
 		nullable: true,
 	})
-	birth_date!: Date;
+	birth_date!: Date | null;
 
 	@Column({
 		type: "time without time zone",
 		nullable: true,
 	})
-	death_date!: Date;
+	death_date!: Date | null;
 
 	@Column({
+		type: "character varying",
 		nullable: true,
 	})
-	info_url!: string;
+	info_url!: string | null;
 
 	@OneToMany(() => Painting, (painting) => painting.artist, {
 		onDelete: "RESTRICT",
