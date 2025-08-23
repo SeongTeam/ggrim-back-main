@@ -35,8 +35,8 @@ $npm run typeorm:create-migration --name={file_name}
 1) modify entity file on src
 
 2) run script command
-```
-$node migration_action.js generate {file name}
+```sh
+$node migration/migration_action.js generate {file name}
 ```
 - this command generate migration file to update DB based on your newly modified codebase
 - ref : 
