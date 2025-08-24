@@ -50,7 +50,7 @@ $node migration/migration_action.js generate {file name}
 
 2) run script command
 ```
-$node migration_action.js run 
+$node migration/migration_action.js run 
 ```
 
 3) check DB 
@@ -65,7 +65,7 @@ $node migration_action.js run
 2) run script command
 This command will undo only the last executed migration. You can execute this command multiple times to revert multiple migrations
 ```
-$node migration_action.js revert
+$node migration/migration_action.js revert
 ```
 
 
