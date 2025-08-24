@@ -33,4 +33,13 @@ export class DatabaseService {
 
 		return entities;
 	}
+
+	public getManager() {
+		return this.dataSource.manager;
+	}
+
+	public async resetDB() {
+		await this.dataSource.dropDatabase();
+		await this.dataSource.synchronize();
+	}
 }
