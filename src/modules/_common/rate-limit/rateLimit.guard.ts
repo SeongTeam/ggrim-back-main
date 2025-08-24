@@ -2,9 +2,9 @@ import { ExecutionContext, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { RATE_LIMIT_METADATA } from "../const/envKeys";
 import { ServiceException } from "../filter/exception/service/serviceException";
-import { RateLimitService } from "./rateLimit.service.js";
 import { Request, Response } from "express";
 import { RateLimitOptions } from "./types/RateLimitOptions";
+import { RateLimitService } from "./rateLimit.service";
 
 @Injectable()
 export class RateLimitGuard {
