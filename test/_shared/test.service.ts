@@ -36,6 +36,7 @@ export class TestService {
 		await this.databaseService.close();
 	}
 
+	// eslint-disable-next-line @typescript-eslint/require-await
 	private async getEntities() {
 		return this.databaseService.getEntities();
 	}
@@ -58,6 +59,7 @@ export class TestService {
 		try {
 			for (const entity of entities) {
 				try {
+					// eslint-disable-next-line @typescript-eslint/await-thenable
 					const repository = await this.databaseService.getRepository(entity.name);
 					await repository.query(`truncate  table  ${entity.tableName} CASCADE`);
 				} catch (err) {
@@ -78,6 +80,7 @@ export class TestService {
 			throw new ServiceException(
 				"SERVICE_RUN_ERROR",
 				"INTERNAL_SERVER_ERROR",
+				// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
 				`ERROR: Cleaning test db: ${error}`,
 			);
 		}
@@ -86,16 +89,19 @@ export class TestService {
 	private async loadEntity(entities: IEntity[]) {
 		try {
 			for (const entity of entities) {
+				// eslint-disable-next-line @typescript-eslint/await-thenable
 				const repository = await this.databaseService.getRepository(entity.name);
 				const fixtureFile = Path.join(
 					__dirname,
 					`/test/_shared/entity/${entity.name}.json`,
 				);
 				if (fs.existsSync(fixtureFile)) {
+					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					const items = JSON.parse(fs.readFileSync(fixtureFile, "utf8"));
 					await repository
 						.createQueryBuilder(entity.name)
 						.insert()
+						// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 						.values(items)
 						.execute();
 				}
