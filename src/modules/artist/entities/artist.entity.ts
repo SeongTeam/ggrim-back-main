@@ -21,13 +21,13 @@ export class Artist extends CustomBaseEntity {
 	image_url!: string | null;
 
 	@Column({
-		type: "time without time zone",
+		type: "date",
 		nullable: true,
 	})
 	birth_date!: Date | null;
 
 	@Column({
-		type: "time without time zone",
+		type: "date",
 		nullable: true,
 	})
 	death_date!: Date | null;
