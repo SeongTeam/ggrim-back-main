@@ -18,7 +18,7 @@ import {
 } from "@nestjs/common";
 import { QueryRunner } from "typeorm";
 import { LoggerService } from "../logger/logger.service";
-import { AWS_BUCKET_ARTWORK } from "../_common/const/envKeys";
+import { AWS_BUCKET_ARTWORK, NODE_ENV } from "../_common/const/envKeys";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { ArtistService } from "../artist/artist.service";
 import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
@@ -53,6 +53,7 @@ import { UseOwnerGuard } from "../auth/guard/decorator/authorization";
 import { UseTokenAuthGuard } from "../auth/guard/decorator/authentication";
 import { GetQuizQueryDTO } from "./dto/request/getQuiz.query.dto";
 import { ShowQuizReactionResponse } from "./dto/response/showQuizReaction.response";
+import { ConfigService } from "@nestjs/config";
 
 @Crud({
 	model: {
@@ -108,6 +109,7 @@ export class QuizController
 		@Inject(PaintingService) private readonly paintingService: PaintingService,
 		@Inject(S3Service) private readonly s3Service: S3Service,
 		@Inject(LoggerService) private readonly logger: LoggerService,
+		@Inject(ConfigService) private configService: ConfigService,
 	) {}
 
 	async onModuleDestroy() {
@@ -371,6 +373,9 @@ export class QuizController
 	// - [x] : 사용자의 퀴즈 싫어요/ 좋아요 기록
 
 	async onApplicationBootstrap() {
+		if (this.configService.get<string>(NODE_ENV) === "test") {
+			return;
+		}
 		Logger.log(`[onApplicationBootstrap] run`, QuizController.name);
 		const weeklyPaintings = await this.paintingService.getWeeklyPaintings();
 
