@@ -16,8 +16,8 @@ export class CreateUserDTO {
 	username!: string;
 
 	@IsOptionalProperty()
-	oauth_provider!: string;
+	oauth_provider?: string;
 
 	@IsOptionalProperty()
-	oauth_provider_id!: string;
+	oauth_provider_id?: string;
 }
