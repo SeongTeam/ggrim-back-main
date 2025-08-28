@@ -1,117 +1,122 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { DatabaseService, IEntity } from "../../src/modules/db/db.service";
-
-import * as fs from "fs";
-import * as Path from "path";
-import { ServiceException } from "../../src/modules/_common/filter/exception/service/serviceException";
+import { Injectable } from "@nestjs/common";
+import { DatabaseService } from "../../src/modules/db/db.service";
+import { AuthService } from "../../src/modules/auth/auth.service";
+import { UserService } from "../../src/modules/user/user.service";
+import { UserDummy } from "./stub/user.stub";
+import { QuizDummy } from "./stub/quiz.stub";
+import { User } from "../../src/modules/user/entity/user.entity";
+import { OneTimeTokenPurpose } from "../../src/modules/auth/types/oneTimeToken";
+import { OneTimeToken } from "../../src/modules/auth/entity/oneTimeToken.entity";
+import { TagDummy } from "./stub/tag.stub";
+import { Tag } from "../../src/modules/tag/entities/tag.entity";
+import { ArtistDummy } from "./stub/artist.stub";
+import { Artist } from "../../src/modules/artist/entities/artist.entity";
+import { StyleDummy } from "./stub/style.stub";
+import { Style } from "../../src/modules/style/entities/style.entity";
+import { PaintingDummy } from "./stub/painting.stub";
+import { Painting } from "../../src/modules/painting/entities/painting.entity";
 
 @Injectable()
 export class TestService {
-	constructor(private readonly databaseService: DatabaseService) {
+	constructor(
+		private readonly dbService: DatabaseService,
+		private readonly authService: AuthService,
+		private readonly userService: UserService,
+	) {
 		if (process.env.NODE_ENV !== "test") {
 			throw new Error("ERROR-TEST-UTILS-ONLY-FOR-TESTS");
 		}
-		this.databaseService = databaseService;
 	}
 
-	public async initTest() {
-		console.log(`init test`);
-		await this.reloadFixtures();
-		console.log(`init test done`);
+	getAccessToken(user: User): string {
+		return this.authService.signToken({
+			email: user.email,
+			role: user.role,
+			username: user.username,
+			purpose: "access",
+			type: "ACCESS",
+		});
 	}
 
-	public async closeTest() {
-		console.log(`close test`);
-		await this.closeDbConnection();
-		console.log(`close test done`);
-	}
-	public async cleanAll() {
-		console.log(`clean All`);
-		const entities = await this.getEntities();
-		await this.cleanEntity(entities);
-		console.log(`clean All done`);
+	async createSignUpOneTimeToken(email: string): Promise<OneTimeToken> {
+		return await this.authService.signOneTimeJWTWithoutUser(
+			this.dbService.getQueryRunner(),
+			email,
+			"sign-up",
+		);
 	}
 
-	private async closeDbConnection() {
-		await this.databaseService.close();
+	async createOneTimeToken(user: User, purpose: OneTimeTokenPurpose): Promise<OneTimeToken> {
+		return await this.authService.signOneTimeJWTWithUser(
+			this.dbService.getQueryRunner(),
+			user.email,
+			purpose,
+			user,
+		);
 	}
 
-	// eslint-disable-next-line @typescript-eslint/require-await
-	private async getEntities() {
-		return this.databaseService.getEntities();
-	}
-	private async reloadFixtures() {
-		try {
-			const entities = await this.getEntities();
-			await this.cleanEntity(entities);
-			await this.loadEntity(entities);
-		} catch (err) {
-			throw new ServiceException(
-				"SERVICE_RUN_ERROR",
-				"INTERNAL_SERVER_ERROR",
-				`${JSON.stringify(err)}`,
-				{ cause: err },
-			);
-		}
+	async useOneTimeToken(oneTimeToken: OneTimeToken): Promise<OneTimeToken> {
+		await this.authService.markOneTimeJWT(this.dbService.getQueryRunner(), oneTimeToken.id);
+		return oneTimeToken;
 	}
 
-	private async cleanEntity(entities: IEntity[]) {
-		try {
-			for (const entity of entities) {
-				try {
-					// eslint-disable-next-line @typescript-eslint/await-thenable
-					const repository = await this.databaseService.getRepository(entity.name);
-					await repository.query(`truncate  table  ${entity.tableName} CASCADE`);
-				} catch (err) {
-					Logger.error(
-						`entity : ` + JSON.stringify(entity) + JSON.stringify(err),
-						(err as Error).stack,
-					);
-					throw new ServiceException(
-						"EXTERNAL_SERVICE_FAILED",
-						"INTERNAL_SERVER_ERROR",
-						JSON.stringify(err),
-						{ cause: err },
-					);
-				}
-			}
-		} catch (error) {
-			Logger.error(JSON.stringify(error, null, 2));
-			throw new ServiceException(
-				"SERVICE_RUN_ERROR",
-				"INTERNAL_SERVER_ERROR",
-				// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-				`ERROR: Cleaning test db: ${error}`,
-			);
-		}
+	//insert stub data
+	async insertStubUser(
+		userStub: UserDummy,
+		quizzes?: QuizDummy[],
+		oneTimeTokens?: OneTimeToken[],
+	): Promise<User> {
+		userStub.password = await this.authService.hash(userStub.password);
+		const result = await this.userService.createUser(this.dbService.getQueryRunner(), {
+			quizzes,
+			...userStub,
+			oneTimeTokens,
+		});
+
+		return result;
 	}
 
-	private async loadEntity(entities: IEntity[]) {
-		try {
-			for (const entity of entities) {
-				// eslint-disable-next-line @typescript-eslint/await-thenable
-				const repository = await this.databaseService.getRepository(entity.name);
-				const fixtureFile = Path.join(
-					__dirname,
-					`/test/_shared/entity/${entity.name}.json`,
-				);
-				if (fs.existsSync(fixtureFile)) {
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-					const items = JSON.parse(fs.readFileSync(fixtureFile, "utf8"));
-					await repository
-						.createQueryBuilder(entity.name)
-						.insert()
-						// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-						.values(items)
-						.execute();
-				}
-			}
-		} catch (error) {
-			throw new ServiceException(
-				"SERVICE_RUN_ERROR",
-				"INTERNAL_SERVER_ERROR",
-				`ERROR [TestUtils.loadAll()]: Loading fixtures on test db: ${JSON.stringify(error, null, 2)}`,
-			);
-		}
+	async insertTagStub(tagStub: TagDummy, paintings?: Painting[]) {
+		const tag = this.dbService.getManager().create(Tag, {
+			...tagStub,
+			paintings,
+		});
+		await this.dbService.getManager().save(tag);
+
+		return tag;
+	}
+	async insertArtistStub(artistStub: ArtistDummy, paintings?: Painting[]) {
+		const artist = this.dbService.getManager().create(Artist, {
+			...artistStub,
+			paintings,
+		});
+		await this.dbService.getManager().save(artist);
+
+		return artist;
+	}
+	async insertStyleStub(styleStub: StyleDummy, paintings?: Painting[]) {
+		const style = this.dbService.getManager().create(Style, {
+			...styleStub,
+			paintings,
+		});
+		await this.dbService.getManager().save(style);
+
+		return style;
+	}
+	async insertPaintingStub(
+		paintingStub: PaintingDummy,
+		artist: Artist,
+		tags: Tag[],
+		styles: Style[],
+	) {
+		const p = this.dbService.getManager().create(Painting, {
+			...paintingStub,
+			artist,
+			tags,
+			styles,
+		});
+		await this.dbService.getManager().save(p);
+
+		return p;
 	}
 }

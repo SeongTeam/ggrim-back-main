@@ -1,9 +1,11 @@
 import { Module } from "@nestjs/common";
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { DataSource } from "typeorm";
 import { DataBaseModule } from "../../src/modules/db/db.module";
-import { TypeORMConfig } from "../../src/utils/typeormConfig";
 import { TestService } from "./test.service";
+import { UserModule } from "../../src/modules/user/user.module";
+import { AuthModule } from "../../src/modules/auth/auth.module";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { TypeORMConfig } from "../../src/utils/typeormConfig";
+import { DataSource } from "typeorm";
 
 /* TestModule
 ## Purpose:
@@ -23,6 +25,8 @@ import { TestService } from "./test.service";
 			dataSourceFactory: async (options) => new DataSource(options!).initialize(),
 		}),
 		DataBaseModule,
+		UserModule,
+		AuthModule,
 	],
 	providers: [TestService],
 	exports: [TestService],
