@@ -1,8 +1,21 @@
 import { OmitType } from "@nestjs/swagger";
-import { CustomBaseEntityStub } from "../_common/customBaseEntity.stub";
+import { CustomBaseEntityStub, factoryCustomBaseStub } from "./customBaseEntity.stub";
 import { Tag } from "../../../src/modules/tag/entities/tag.entity";
+import { faker } from "@faker-js/faker";
 
-class TagDummy extends OmitType(Tag, ["paintings"]) {}
+export class TagDummy extends OmitType(Tag, ["paintings"]) {}
+
+export const factoryTagStub = (): TagDummy => {
+	const name = faker.book.series();
+
+	return {
+		id: faker.string.uuid(),
+		name,
+		info_url: faker.internet.url(),
+		search_name: name.trim().split(/\s+/).join("_").toUpperCase(),
+		...factoryCustomBaseStub(),
+	};
+};
 
 export const getTagStubList = (): TagDummy[] => {
 	return [

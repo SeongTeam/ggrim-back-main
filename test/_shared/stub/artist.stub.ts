@@ -1,8 +1,24 @@
 import { OmitType } from "@nestjs/swagger";
 import { Artist } from "../../../src/modules/artist/entities/artist.entity";
-import { CustomBaseEntityStub } from "../_common/customBaseEntity.stub";
+import { CustomBaseEntityStub, factoryCustomBaseStub } from "./customBaseEntity.stub";
+import { faker } from "@faker-js/faker";
 
-class ArtistDummy extends OmitType(Artist, ["paintings"]) {}
+export class ArtistDummy extends OmitType(Artist, ["paintings"]) {}
+
+export const FactoryArtistStub = (): ArtistDummy => {
+	const name = faker.person.fullName();
+
+	return {
+		id: faker.string.uuid(),
+		name,
+		image_url: faker.internet.url(),
+		info_url: faker.internet.url(),
+		birth_date: null,
+		death_date: null,
+		search_name: name.trim().split(/\s+/).join("_").toUpperCase(),
+		...factoryCustomBaseStub(),
+	};
+};
 
 export const getArtistStubList = (): ArtistDummy[] => {
 	return [

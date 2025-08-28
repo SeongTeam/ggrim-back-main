@@ -1,8 +1,25 @@
 import { OmitType } from "@nestjs/swagger";
 import { Painting } from "../../../src/modules/painting/entities/painting.entity";
-import { CustomBaseEntityStub } from "../_common/customBaseEntity.stub";
+import { CustomBaseEntityStub, factoryCustomBaseStub } from "./customBaseEntity.stub";
+import { faker } from "@faker-js/faker";
 
-class PaintingDummy extends OmitType(Painting, ["artist", "styles", "tags"]) {}
+export class PaintingDummy extends OmitType(Painting, ["artist", "styles", "tags"]) {}
+
+export const factoryPaintingStub = (): PaintingDummy => {
+	const title = faker.book.title();
+	return {
+		title,
+		id: faker.string.uuid(),
+		description: faker.commerce.productDescription(),
+		completition_year: faker.number.int({ min: 1600, max: 1910 }),
+		width: faker.number.int({ min: 300, max: 1000 }),
+		height: faker.number.int({ min: 300, max: 1000 }),
+		image_url: faker.internet.url(),
+		searchTitle: title.trim().split(/\s+/).join("_").toUpperCase(),
+		image_s3_key: title,
+		...factoryCustomBaseStub(),
+	};
+};
 
 export const getPaintingStubList = (): PaintingDummy[] => {
 	return [

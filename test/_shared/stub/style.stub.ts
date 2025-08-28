@@ -1,8 +1,21 @@
 import { OmitType } from "@nestjs/swagger";
 import { Style } from "../../../src/modules/style/entities/style.entity";
-import { CustomBaseEntityStub } from "../_common/customBaseEntity.stub";
+import { CustomBaseEntityStub, factoryCustomBaseStub } from "./customBaseEntity.stub";
+import { faker } from "@faker-js/faker";
 
-class StyleDummy extends OmitType(Style, ["paintings"]) {}
+export class StyleDummy extends OmitType(Style, ["paintings"]) {}
+
+export const factoryStyleStub = (): StyleDummy => {
+	const name = faker.book.series();
+
+	return {
+		id: faker.string.uuid(),
+		name,
+		info_url: faker.internet.url(),
+		search_name: name.trim().split(/\s+/).join("_").toUpperCase(),
+		...factoryCustomBaseStub(),
+	};
+};
 
 export const getStyleStubList = (): StyleDummy[] => {
 	return [
