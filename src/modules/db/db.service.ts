@@ -42,4 +42,8 @@ export class DatabaseService {
 		await this.dataSource.dropDatabase();
 		await this.dataSource.synchronize();
 	}
+
+	public getQueryRunner() {
+		return this.dataSource.createQueryRunner();
+	}
 }
