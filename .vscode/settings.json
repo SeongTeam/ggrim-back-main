@@ -3,7 +3,7 @@
         "source.fixAll.eslint": "never"
     },
 	"eslint.workingDirectories": ["./"],
-	"eslint.validate": ["javascript", "typescript"],
+	"eslint.validate": ["typescript"],
     "prettier.enable": true,
 	"editor.defaultFormatter": "esbenp.prettier-vscode",
 
