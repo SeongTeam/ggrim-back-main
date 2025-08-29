@@ -15,10 +15,7 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { isNotEmpty } from "class-validator";
 import { QueryRunner } from "typeorm";
-import {
-	ENV_EMAIL_TEST_ADDRESS,
-	FRONT_ROUTE_USER_EMAIL_VERIFICATION,
-} from "../_common/const/envKeys";
+import { FRONT_ROUTE_USER_EMAIL_VERIFICATION } from "../_common/const/envKeys";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner";
 import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
@@ -280,27 +277,6 @@ export class AuthController {
 		const securityToken = await this.createOneTimeToken(qr, email, purpose, user);
 
 		return new ShowOneTimeTokenResponse(securityToken);
-	}
-
-	@Get("emailTest")
-	async sendEmail() {
-		const testCode = `12345`;
-		const email = process.env[ENV_EMAIL_TEST_ADDRESS]!;
-
-		await this.mailService.sendVerificationPinCode(email, testCode);
-
-		return true;
-	}
-
-	@ApiCreatedResponse({})
-	@HttpCode(HttpStatus.CREATED)
-	@UseSecurityTokenGuard("delete-account")
-	@UseInterceptors(QueryRunnerInterceptor)
-	@Post("test/one-time-token-guard")
-	async testSecurityTokenGuard(@DBQueryRunner() qr: QueryRunner, @Req() request: Request) {
-		const SecurityTokenGuardResult: SecurityTokenPayload =
-			request[AUTH_GUARD_PAYLOAD.SECURITY_TOKEN]!;
-		await this.service.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
 	}
 
 	@ApiOkResponse({ type: ShowOneTimeTokenResponse })
