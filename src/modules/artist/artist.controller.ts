@@ -2,7 +2,6 @@ import {
 	Crud,
 	CrudController,
 	CrudRequest,
-	GetManyDefaultResponse,
 	Override,
 	ParsedBody,
 	ParsedRequest,
@@ -16,6 +15,7 @@ import { isArray } from "class-validator";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
+import { Pagination } from "../_common/types";
 @Crud({
 	model: {
 		type: Artist,
@@ -82,7 +82,7 @@ export class ArtistController implements CrudController<Artist> {
 	@ApiOverride("getManyBase", ShowArtistResponse)
 	async getMany(
 		req: CrudRequest,
-	): Promise<GetManyDefaultResponse<ShowArtistResponse> | ShowArtistResponse[]> {
+	): Promise<Pagination<ShowArtistResponse> | ShowArtistResponse[]> {
 		const results = await this.service.getMany(req);
 
 		const ret = isArray(results)
