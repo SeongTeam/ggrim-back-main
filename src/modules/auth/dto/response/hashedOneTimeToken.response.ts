@@ -3,10 +3,9 @@ import { OneTimeToken } from "../../entity/oneTimeToken.entity";
 import { OneTimeTokenPurpose } from "../../types/oneTimeToken";
 import { ONE_TIME_TOKEN_PURPOSE } from "../../const";
 
-export class ShowOneTimeTokenResponse {
+export class HashedOneTimeTokenResponse {
 	readonly id: string;
-	readonly token: string;
-
+	readonly hashedToken: string;
 	readonly used_date: Date | null;
 	readonly expired_date: Date;
 	@ApiProperty({
@@ -17,7 +16,7 @@ export class ShowOneTimeTokenResponse {
 
 	constructor(oneTimeToken: OneTimeToken) {
 		this.id = oneTimeToken.id;
-		this.token = oneTimeToken.token;
+		this.hashedToken = oneTimeToken.token;
 		this.used_date = oneTimeToken.used_date;
 		this.expired_date = oneTimeToken.expired_date;
 		this.purpose = oneTimeToken.purpose;

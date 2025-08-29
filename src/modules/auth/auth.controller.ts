@@ -44,6 +44,7 @@ import { ShowOneTimeTokenResponse } from "./dto/response/showOneTimeToken.respon
 import { UseOwnerGuard } from "./guard/decorator/authorization";
 import { UseBasicAuthGuard, UseSecurityTokenGuard } from "./guard/decorator/authentication";
 import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
+import { HashedOneTimeTokenResponse } from "./dto/response/hashedOneTimeToken.response";
 
 @Controller("auth")
 export class AuthController {
@@ -316,14 +317,14 @@ export class AuthController {
 	@Get("one-time-token/:id")
 	async getOneTimeToken(
 		@Param("id", ParseUUIDPipe) id: string,
-	): Promise<ShowOneTimeTokenResponse> {
+	): Promise<HashedOneTimeTokenResponse> {
 		const findOne = await this.service.findOneTimeToken({ where: { id } });
 
 		if (isFalsy(findOne)) {
 			throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST");
 		}
 
-		return new ShowOneTimeTokenResponse(findOne);
+		return new HashedOneTimeTokenResponse(findOne);
 	}
 
 	private async createOneTimeToken(
