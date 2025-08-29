@@ -6,11 +6,11 @@ import * as fs from "fs";
 import Handlebars from "handlebars";
 import * as nodemailer from "nodemailer";
 import {
+	ENABLE_MAIL_SERVICE_LOG,
 	ENV_MAIL_SERVICE,
 	ENV_SMTP_FROM_EMAIL,
 	ENV_SMTP_ID,
 	ENV_SMTP_PW,
-	NODE_ENV,
 } from "../_common/const/envKeys";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 
@@ -35,14 +35,13 @@ export class MailService {
 	private transporter: nodemailer.Transporter;
 
 	constructor(@Inject(ConfigService) private readonly configService: ConfigService) {
-		const isProduction = this.configService.get(NODE_ENV) === "production";
 		this.transporter = nodemailer.createTransport({
 			service: this.configService.get(ENV_MAIL_SERVICE) || ENV_MAIL_SERVICE,
 			auth: {
 				user: this.configService.get(ENV_SMTP_ID),
 				pass: this.configService.get(ENV_SMTP_PW),
 			},
-			logger: !isProduction,
+			logger: this.configService.get(ENABLE_MAIL_SERVICE_LOG) === "true",
 			secure: true,
 			// debug: !isProduction,
 		});
