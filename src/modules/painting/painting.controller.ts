@@ -4,6 +4,8 @@ import {
 	DefaultValuePipe,
 	Delete,
 	Get,
+	HttpCode,
+	HttpStatus,
 	Inject,
 	Param,
 	ParseBoolPipe,
@@ -29,6 +31,7 @@ import { Pagination } from "../_common/types";
 import { ApiPaginationResponse } from "../_common/decorator/swagger/apiPaginationResponse";
 import { ShowPainting, ShowPaintingResponse } from "./dto/response/showPainting.response";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
+import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
 
 @Controller("painting")
 export class PaintingController {
@@ -46,6 +49,8 @@ export class PaintingController {
 	 * GET backend/painting/by-ids?ids=409ba4c6-0553-4b72-a53a-d9b9857c253d&ids=4f4d9398-b10a-45b8-912c-6ccd0c6700ab
 	 * ```
 	 */
+	@ApiOkResponse({ type: ShowPaintingResponse, isArray: true })
+	@HttpCode(HttpStatus.OK)
 	@Get("/by-ids")
 	async getByIds(@Query() query: GetByIdsQueryDTO): Promise<ShowPaintingResponse[]> {
 		const { ids, isS3Access } = query;
@@ -58,6 +63,8 @@ export class PaintingController {
 		return foundPaintings.map((p) => new ShowPaintingResponse(p));
 	}
 
+	@ApiOkResponse({ type: ShowPaintingResponse, isArray: true })
+	@HttpCode(HttpStatus.OK)
 	@Get("artwork-of-week")
 	async getWeeklyArtworkData(
 		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
@@ -71,6 +78,8 @@ export class PaintingController {
 		return paintings.map((p) => new ShowPaintingResponse(p));
 	}
 
+	@ApiOkResponse({ type: ShowPaintingResponse })
+	@HttpCode(HttpStatus.OK)
 	@Get(":id")
 	async getById(
 		@Param("id", ParseUUIDPipe) id: string,
@@ -86,6 +95,7 @@ export class PaintingController {
 	}
 
 	@ApiPaginationResponse(ShowPainting)
+	@HttpCode(HttpStatus.OK)
 	@Get("/")
 	async searchPainting(@Query() dto: SearchPaintingQueryDTO): Promise<Pagination<ShowPainting>> {
 		const { page, isS3Access } = dto;
@@ -104,6 +114,8 @@ export class PaintingController {
 		return ret;
 	}
 
+	@ApiCreatedResponse({ type: ShowPaintingResponse })
+	@HttpCode(HttpStatus.CREATED)
 	@UseRolesGuard("admin")
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Post()
@@ -129,6 +141,8 @@ export class PaintingController {
 		}
 	}
 
+	@ApiOkResponse({ type: ShowPaintingResponse })
+	@HttpCode(HttpStatus.OK)
 	@UseRolesGuard("admin")
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Put("/:id")
@@ -146,6 +160,7 @@ export class PaintingController {
 		return new ShowPaintingResponse(target);
 	}
 
+	@HttpCode(HttpStatus.OK)
 	@UseRolesGuard("admin")
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Delete("/:id")
