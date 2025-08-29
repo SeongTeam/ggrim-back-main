@@ -1,9 +1,11 @@
-import { Crud, CrudController, CrudRequest, Override, ParsedRequest } from "@dataui/crud";
+import { Crud, CrudController, CrudRequest, ParsedRequest } from "@dataui/crud";
 import {
 	Body,
 	Controller,
 	Delete,
 	Get,
+	HttpCode,
+	HttpStatus,
 	Inject,
 	Logger,
 	OnApplicationBootstrap,
@@ -54,6 +56,8 @@ import { UseTokenAuthGuard } from "../auth/guard/decorator/authentication";
 import { GetQuizQueryDTO } from "./dto/request/getQuiz.query.dto";
 import { ShowQuizReactionResponse } from "./dto/response/showQuizReaction.response";
 import { ConfigService } from "@nestjs/config";
+import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
+import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
 
 @Crud({
 	model: {
@@ -133,12 +137,14 @@ export class QuizController
 		Logger.log(`[OnModuleDestroy] done `, QuizController.name);
 	}
 
+	@HttpCode(HttpStatus.CREATED)
 	@Post("submit/:id")
 	async submitQuiz(@Param("id", ParseUUIDPipe) id: string, @Body() dto: QuizSubmitDTO) {
 		await this.service.insertSubmission(id, dto.isCorrect);
-		return true;
 	}
 
+	@ApiOkResponse({ type: ShowQuizReactionResponse, isArray: true })
+	@HttpCode(HttpStatus.OK)
 	@Get(":id/reactions")
 	async getQuizReactions(
 		@Param("id") id: string,
@@ -168,9 +174,10 @@ export class QuizController
 		return res;
 	}
 
-	@Post(":id/reaction")
+	@HttpCode(HttpStatus.CREATED)
 	@UseTokenAuthGuard()
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Post(":id/reaction")
 	async createQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
@@ -202,9 +209,10 @@ export class QuizController
 		}
 	}
 
-	@Delete(":id/reaction")
+	@HttpCode(HttpStatus.OK)
 	@UseTokenAuthGuard()
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Delete(":id/reaction")
 	async deleteQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
@@ -224,6 +232,8 @@ export class QuizController
 		await this.service.removeReaction(qr, user, quiz);
 	}
 
+	@ApiOkResponse({ type: ScheduleQuizResponse })
+	@HttpCode(HttpStatus.OK)
 	@Get("schedule")
 	async getScheduledQuiz(@Query() dto: ScheduleQuizQueryDTO): Promise<ScheduleQuizResponse> {
 		Logger.log(`context : `, dto.context);
@@ -257,11 +267,12 @@ export class QuizController
 	}
 	// TODO: 응답 객체 개선하기
 	// ? 질문: context 삽입 결과를 요청자에게 알려줄 필요가있는가? 성공할 수도 실패할 수 도 있는데.
+	@HttpCode(HttpStatus.CREATED)
 	@Post("schedule")
 	async addQuizContext(@Body() dto: QuizContextDTO) {
 		await this.validateQuizContextDTO(dto);
 
-		return this.scheduleService.requestAddContext([dto]);
+		await this.scheduleService.requestAddContext([dto]);
 	}
 
 	// TODO: Quiz 변경 로직 개선하기
@@ -269,6 +280,8 @@ export class QuizController
 	// - [x] DB transaction 로직 추가하기
 	// - [x] 삭제 로직 추가
 
+	@ApiCreatedResponse({ type: ShowQuizResponse })
+	@HttpCode(HttpStatus.CREATED)
 	@UseTokenAuthGuard()
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Post()
@@ -284,7 +297,7 @@ export class QuizController
 		return new ShowQuizResponse(quiz);
 	}
 
-	@Override("getOneBase")
+	@ApiOverride("getOneBase", ShowQuizResponse)
 	async getQuizAndIncreaseView(
 		@Param("id") id: string,
 		@Query() query: GetQuizQueryDTO,
@@ -310,6 +323,8 @@ export class QuizController
 		return new DetailQuizResponse(quiz, reactionCount, userReaction);
 	}
 
+	@ApiOkResponse({ type: ShowQuizResponse })
+	@HttpCode(HttpStatus.OK)
 	@UseOwnerGuard(
 		{ guard: TokenAuthGuard },
 		{
@@ -331,6 +346,7 @@ export class QuizController
 		return new ShowQuizResponse(quiz);
 	}
 
+	@HttpCode(HttpStatus.OK)
 	@UseOwnerGuard(
 		{ guard: TokenAuthGuard },
 		{
@@ -343,7 +359,7 @@ export class QuizController
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Delete(":id")
 	async delete(@DBQueryRunner() qr: QueryRunner, @Param("id", ParseUUIDPipe) id: string) {
-		return this.service.softDeleteQuiz(qr, id);
+		await this.service.softDeleteQuiz(qr, id);
 	}
 
 	// TODO: 퀴즈 검색 로직 개선
@@ -354,6 +370,7 @@ export class QuizController
 	// * 참고: <관련 정보나 링크>
 
 	@ApiPaginationResponse(ShowQuiz)
+	@HttpCode(HttpStatus.OK)
 	@Get("")
 	async searchQuiz(@Query() dto: SearchQuizQueryDTO): Promise<Pagination<ShowQuiz>> {
 		const { page, count } = dto;
