@@ -66,10 +66,11 @@ export class TestService {
 		quizzes?: QuizDummy[],
 		oneTimeTokens?: OneTimeToken[],
 	): Promise<User> {
-		userStub.password = await this.authService.hash(userStub.password);
+		const hashedPassword = await this.authService.hash(userStub.password);
 		const result = await this.userService.createUser(this.dbService.getQueryRunner(), {
 			quizzes,
 			...userStub,
+			password: hashedPassword,
 			oneTimeTokens,
 		});
 
