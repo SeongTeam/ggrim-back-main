@@ -3,6 +3,8 @@ import {
 	Controller,
 	forwardRef,
 	Get,
+	HttpCode,
+	HttpStatus,
 	Inject,
 	Param,
 	ParseUUIDPipe,
@@ -41,6 +43,7 @@ import { ShowVerificationResponse } from "./dto/response/showVerfication.respons
 import { ShowOneTimeTokenResponse } from "./dto/response/showOneTimeToken.response";
 import { UseOwnerGuard } from "./guard/decorator/authorization";
 import { UseBasicAuthGuard, UseSecurityTokenGuard } from "./guard/decorator/authentication";
+import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
 
 @Controller("auth")
 export class AuthController {
@@ -55,6 +58,8 @@ export class AuthController {
 	// - [x] : 로그인 성공시, 사용자 정보 응답하기
 	// - [ ] : 로그인 성공 또는 실패에 대한 기록 저장하기
 
+	@ApiCreatedResponse({ type: SignInResponse })
+	@HttpCode(HttpStatus.CREATED)
 	@UseBasicAuthGuard()
 	@Post("sign-in")
 	signin(@Req() request: Request) {
@@ -88,6 +93,8 @@ export class AuthController {
 	// ? 질문: registerMethod에서 이미 인증된 계정인 경우, 어떻게 해야하는가?
 	// * 참고: <관련 정보나 링크>
 
+	@ApiCreatedResponse({ type: ShowVerificationResponse })
+	@HttpCode(HttpStatus.CREATED)
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Post("request-verification")
 	async register(
@@ -125,6 +132,8 @@ export class AuthController {
 	// TODO 이메일 인증 로직 개선
 	// [x] : oneTimeToken을 발행하여 인증 여부 확인하기.
 
+	@ApiCreatedResponse({ type: ShowOneTimeTokenResponse })
+	@HttpCode(HttpStatus.CREATED)
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Post("verify")
 	async verify(
@@ -184,6 +193,8 @@ export class AuthController {
 		return new ShowOneTimeTokenResponse(oneTimeToken);
 	}
 
+	@ApiCreatedResponse({ type: ShowOneTimeTokenResponse })
+	@HttpCode(HttpStatus.CREATED)
 	@UseBasicAuthGuard()
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Post("security-token")
@@ -201,6 +212,8 @@ export class AuthController {
 		return new ShowOneTimeTokenResponse(securityToken);
 	}
 
+	@ApiCreatedResponse({})
+	@HttpCode(HttpStatus.CREATED)
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Post("security-token/email-verification")
 	async sendSecurityActionToken(
@@ -244,6 +257,8 @@ export class AuthController {
 		}
 	}
 
+	@ApiCreatedResponse({ type: ShowOneTimeTokenResponse })
+	@HttpCode(HttpStatus.CREATED)
 	@UseSecurityTokenGuard("email-verification", { withDeleted: true })
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Post("security-token/from-email-verification")
@@ -276,6 +291,8 @@ export class AuthController {
 		return true;
 	}
 
+	@ApiCreatedResponse({})
+	@HttpCode(HttpStatus.CREATED)
 	@UseSecurityTokenGuard("delete-account")
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Post("test/one-time-token-guard")
@@ -285,6 +302,8 @@ export class AuthController {
 		await this.service.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
 	}
 
+	@ApiOkResponse({ type: ShowOneTimeTokenResponse })
+	@HttpCode(HttpStatus.OK)
 	@UseOwnerGuard(
 		{ guard: BasicGuard },
 		{
