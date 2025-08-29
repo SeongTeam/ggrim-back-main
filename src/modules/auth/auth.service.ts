@@ -190,11 +190,6 @@ export class AuthService {
 	): Promise<Verification> {
 		const hashedPinCode = await this.hash(pinCode);
 		const expiredDate = this.getVerificationExpiredTime();
-		const returnedColumns: (keyof Verification)[] = [
-			"email",
-			"pin_code_expired_date",
-			"pin_code",
-		];
 		try {
 			const result = await createTransactionQueryBuilder(queryRunner, Verification)
 				.insert()
@@ -204,7 +199,7 @@ export class AuthService {
 					pin_code: hashedPinCode,
 					pin_code_expired_date: expiredDate,
 				})
-				.returning(returnedColumns)
+				.returning("*")
 				.execute();
 
 			const verification = result.generatedMaps[0] as Verification;
@@ -347,14 +342,6 @@ export class AuthService {
 		const decoded = this.verifyToken(token);
 		const { purpose, exp: expired_date_ms } = decoded;
 		const MS_PER_SECOND = 1000;
-		const returnedColumn: (keyof OneTimeToken)[] = [
-			"email",
-			"expired_date",
-			"token",
-			"user",
-			"user_id",
-			"id",
-		];
 		if (purpose === "access" || purpose === "refresh") {
 			throw new ServiceException(
 				"SERVICE_RUN_ERROR",
@@ -377,7 +364,7 @@ export class AuthService {
 					user,
 					purpose,
 				})
-				.returning(returnedColumn)
+				.returning("*")
 				.execute();
 
 			return result.generatedMaps[0] as OneTimeToken;
