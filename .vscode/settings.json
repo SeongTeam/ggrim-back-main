@@ -53,5 +53,21 @@
         "/^import /",                     // import로 시작하는 구문을 무시
         "/from\\s+['\"](.+)['\"]/i"       // from 절 뒤의 경로도 무시
       ],
-    "cSpell.enabled": true  // Enable the spell checker
+    "cSpell.enabled": true,  // Enable the spell checker
+
+	"jestrunner.jestCommand": "npx jest",
+	// "jestrunner.debugOptions": {
+	// 	"args" : ["--inspect-brk", 
+	// 		"-r", "tsconfig-paths/register" ,
+	// 		"-r" ,"ts-node/register", 
+	// 		"node_modules/.bin/jest", 
+	// 		"--runInBand"]
+	// },
+
+	"jestrunner.configPath": {
+		"**/*.int-spec.ts": "test/integration/jest-integration.json",
+		"**/*.e2e-spec.ts": "test/e2e/jest-e2e.json"
+	},
+	"jestrunner.codeLensSelector" : "**/*.{test,spec,e2e-spec,integration-spec}.{js,jsx,ts,tsx}"
+
 }
