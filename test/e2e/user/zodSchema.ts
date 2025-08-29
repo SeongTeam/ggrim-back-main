@@ -7,7 +7,7 @@ export const zShowUserResponse = z.object({
 	role: z.enum(Object.values(USER_ROLE)),
 	username: z.string(),
 	active: z.enum(Object.values(USER_STATE)),
-	last_login_date: z.iso.date(),
+	last_login_date: z.iso.datetime(),
 	oauth_provider: z.string().nullable(),
 	oauth_provider_id: z.string().nullable(),
 });
