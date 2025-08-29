@@ -12,7 +12,7 @@ export const zSignInResponse = z.object({
 
 export const zShowOneTimeToken = z.object({
 	id: z.uuid(),
-	hashedToken: z.string().regex(bcryptPattern),
+	token: z.jwt(),
 	used_date: z.iso.datetime().nullable(),
 	expired_date: z.iso.datetime(),
 	purpose: z.enum(Object.values(ONE_TIME_TOKEN_PURPOSE)),
@@ -24,4 +24,12 @@ export const zShowVerification = z.object({
 	last_verified_date: z.iso.datetime().nullable(),
 	hashedPinCode: z.string().regex(bcryptPattern),
 	pin_code_expired_date: z.iso.datetime(),
+});
+
+export const zHashedOneTimeToken = z.object({
+	id: z.uuid(),
+	hashedToken: z.string().regex(bcryptPattern),
+	used_date: z.iso.datetime().nullable(),
+	expired_date: z.iso.datetime(),
+	purpose: z.enum(Object.values(ONE_TIME_TOKEN_PURPOSE)),
 });

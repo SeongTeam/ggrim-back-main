@@ -16,7 +16,12 @@ import createClient from "openapi-fetch";
 import { AuthService } from "../../../src/modules/auth/auth.service";
 import { ENV_EMAIL_TEST_ADDRESS } from "../../../src/modules/_common/const/envKeys";
 import { faker } from "@faker-js/faker";
-import { zShowOneTimeToken, zShowVerification, zSignInResponse } from "./zodSchema";
+import {
+	zHashedOneTimeToken,
+	zShowOneTimeToken,
+	zShowVerification,
+	zSignInResponse,
+} from "./zodSchema";
 import { type ZodObject } from "zod";
 
 describe("AuthController (e2e)", () => {
@@ -240,6 +245,6 @@ describe("AuthController (e2e)", () => {
 
 		expect(body).toBeTruthy();
 		expect(body!.purpose).toBe(SEND_ONE_TIME_TOKEN_PURPOSE.update_password);
-		expect(() => zShowOneTimeToken.parse(body)).not.toThrow();
+		expectResponseBody(zHashedOneTimeToken, body);
 	});
 });
