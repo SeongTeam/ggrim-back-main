@@ -2,12 +2,11 @@ import {
 	Crud,
 	CrudController,
 	CrudRequest,
-	GetManyDefaultResponse,
 	Override,
 	ParsedBody,
 	ParsedRequest,
 } from "@dataui/crud";
-import { Controller, Get, Param, ParseUUIDPipe } from "@nestjs/common";
+import { Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe } from "@nestjs/common";
 
 import { CreateStyleDTO } from "./dto/request/createStyle.dto";
 import { ReplaceStyleDTO } from "./dto/request/replaceStyle.dto";
@@ -18,6 +17,8 @@ import { isArray } from "class-validator";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
+import { ApiOkResponse } from "@nestjs/swagger";
+import { Pagination } from "../_common/types";
 
 /*TODO
 - soft-deleted 상태인 데이터가 replace method 사용시 수정되는 것이 위험한지 고민하기
@@ -64,6 +65,8 @@ export class StyleController implements CrudController<Style> {
 	 *
 	 */
 
+	@ApiOkResponse({ type: ShowStyleResponse })
+	@HttpCode(HttpStatus.OK)
 	@Get(":id")
 	async getOne(@Param("id", ParseUUIDPipe) id: string): Promise<ShowStyleResponse> {
 		const style = await this.service.findOne({
@@ -91,7 +94,7 @@ export class StyleController implements CrudController<Style> {
 	@ApiOverride("getManyBase", ShowStyleResponse)
 	async getMany(
 		@ParsedRequest() req: CrudRequest,
-	): Promise<GetManyDefaultResponse<ShowStyleResponse> | ShowStyleResponse[]> {
+	): Promise<Pagination<ShowStyleResponse> | ShowStyleResponse[]> {
 		const results = await this.service.getMany(req);
 
 		const ret = isArray(results)
@@ -129,6 +132,7 @@ export class StyleController implements CrudController<Style> {
 
 		return new ShowStyleResponse(style);
 	}
+
 	@Override("deleteOneBase")
 	@UseRolesGuard("admin")
 	async deleteOne(@ParsedRequest() req: CrudRequest) {

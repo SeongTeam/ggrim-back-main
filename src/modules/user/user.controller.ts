@@ -1,10 +1,11 @@
-import { Crud, CrudController, CrudRequest, GetManyDefaultResponse } from "@dataui/crud";
+import { Crud, CrudController, CrudRequest } from "@dataui/crud";
 import {
 	Body,
 	Controller,
 	Delete,
 	forwardRef,
 	Get,
+	HttpCode,
 	HttpException,
 	HttpStatus,
 	Inject,
@@ -40,6 +41,8 @@ import { ShowUserResponse } from "./dto/request/response/showUser.response";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseOwnerGuard, UseRolesGuard } from "../auth/guard/decorator/authorization";
 import { UseTempUserGuard } from "../auth/guard/decorator/authentication";
+import { Pagination } from "../_common/types";
+import { ApiOkResponse } from "@nestjs/swagger";
 
 @Crud({
 	model: {
@@ -79,6 +82,8 @@ export class UserController implements CrudController<User> {
 	// ? 질문: <의문점 또는 개선 방향>
 	// * 참고: <관련 정보나 링크>
 
+	@ApiOkResponse({ type: ShowUserResponse })
+	@HttpCode(HttpStatus.OK)
 	@Get(":id")
 	async getOne(@Param("id", ParseUUIDPipe) id: string): Promise<ShowUserResponse> {
 		const user = await this.service.findOne({
@@ -89,9 +94,7 @@ export class UserController implements CrudController<User> {
 	}
 
 	@ApiOverride("getManyBase", ShowUserResponse)
-	async getMany(
-		req: CrudRequest,
-	): Promise<GetManyDefaultResponse<ShowUserResponse> | ShowUserResponse[]> {
+	async getMany(req: CrudRequest): Promise<Pagination<ShowUserResponse> | ShowUserResponse[]> {
 		const results = await this.service.getMany(req);
 		const ret = isArray(results)
 			? results.map((usr) => new ShowUserResponse(usr))

@@ -1,12 +1,15 @@
+import { Crud, CrudController, CrudRequest, Override, ParsedRequest } from "@dataui/crud";
 import {
-	Crud,
-	CrudController,
-	CrudRequest,
-	GetManyDefaultResponse,
-	Override,
-	ParsedRequest,
-} from "@dataui/crud";
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Put } from "@nestjs/common";
+	Body,
+	Controller,
+	Get,
+	HttpCode,
+	HttpStatus,
+	Param,
+	ParseUUIDPipe,
+	Post,
+	Put,
+} from "@nestjs/common";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 
 import { CreateTagDTO } from "./dto/request/createTag.dto";
@@ -17,6 +20,8 @@ import { ShowTagResponse } from "./dto/response/showTag.response";
 import { isArray } from "class-validator";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
+import { Pagination } from "../_common/types";
+import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
 /*TODO
 - typeORM 에러 발생시, 특정 에러 메세지는 응답에 포함시켜 보내는 로직 구현 고려
   1) unique constraint 열에 중복된 값을 삽입할 때,
@@ -59,6 +64,8 @@ export class TagController implements CrudController<Tag> {
 		return this;
 	}
 
+	@ApiOkResponse({ type: ShowTagResponse })
+	@HttpCode(HttpStatus.OK)
 	@Get(":id")
 	async getOne(@Param("id", ParseUUIDPipe) id: string): Promise<ShowTagResponse> {
 		const tag = await this.service.findOne({
@@ -85,7 +92,7 @@ export class TagController implements CrudController<Tag> {
 	@ApiOverride("getManyBase", ShowTagResponse)
 	async getMany(
 		@ParsedRequest() req: CrudRequest,
-	): Promise<GetManyDefaultResponse<ShowTagResponse> | ShowTagResponse[]> {
+	): Promise<Pagination<ShowTagResponse> | ShowTagResponse[]> {
 		const results = await this.service.getMany(req);
 
 		const ret = isArray(results)
@@ -98,6 +105,8 @@ export class TagController implements CrudController<Tag> {
 		return ret;
 	}
 
+	@ApiCreatedResponse({ type: ShowTagResponse })
+	@HttpCode(HttpStatus.CREATED)
 	@UseRolesGuard("admin")
 	@Post()
 	async create(@Body() dto: CreateTagDTO): Promise<ShowTagResponse> {
@@ -113,6 +122,8 @@ export class TagController implements CrudController<Tag> {
 		return new ShowTagResponse(newTag);
 	}
 
+	@ApiOkResponse({ type: ShowTagResponse })
+	@HttpCode(HttpStatus.OK)
 	@UseRolesGuard("admin")
 	@Put()
 	async replace(@Body() dto: ReplaceTagDTO): Promise<ShowTagResponse> {
