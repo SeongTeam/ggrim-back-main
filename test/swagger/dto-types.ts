@@ -209,38 +209,6 @@ export type paths = {
 		patch?: never;
 		trace?: never;
 	};
-	"/auth/emailTest": {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get: operations["AuthController_sendEmail"];
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	"/auth/test/one-time-token-guard": {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		put?: never;
-		post: operations["AuthController_testSecurityTokenGuard"];
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
 	"/auth/one-time-token/{id}": {
 		parameters: {
 			query?: never;
@@ -757,7 +725,7 @@ export type components = {
 		ShowOneTimeTokenResponse: {
 			purpose: components["schemas"]["ONE_TIME_TOKEN_PURPOSE"];
 			id: string;
-			hashedToken: string;
+			token: string;
 			/** Format: date-time */
 			used_date: string | null;
 			/** Format: date-time */
@@ -771,6 +739,15 @@ export type components = {
 		SendOneTimeTokenDTO: {
 			purpose: components["schemas"]["SEND_ONE_TIME_TOKEN_PURPOSE"];
 			email: string;
+		};
+		HashedOneTimeTokenResponse: {
+			purpose: components["schemas"]["ONE_TIME_TOKEN_PURPOSE"];
+			id: string;
+			hashedToken: string;
+			/** Format: date-time */
+			used_date: string | null;
+			/** Format: date-time */
+			expired_date: string;
 		};
 		CreateUserDTO: {
 			oauth_provider?: string;
@@ -1020,6 +997,7 @@ export type VerifyDto = components["schemas"]["VerifyDTO"];
 export type ShowOneTimeTokenResponse = components["schemas"]["ShowOneTimeTokenResponse"];
 export type CreateOneTimeTokenDto = components["schemas"]["CreateOneTimeTokenDTO"];
 export type SendOneTimeTokenDto = components["schemas"]["SendOneTimeTokenDTO"];
+export type HashedOneTimeTokenResponse = components["schemas"]["HashedOneTimeTokenResponse"];
 export type CreateUserDto = components["schemas"]["CreateUserDTO"];
 export type ReplacePassWordDto = components["schemas"]["ReplacePassWordDTO"];
 export type ReplaceUsernameDto = components["schemas"]["ReplaceUsernameDTO"];
@@ -1534,60 +1512,6 @@ export interface operations {
 			};
 		};
 	};
-	AuthController_sendEmail: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": boolean;
-				};
-			};
-		};
-	};
-	AuthController_testSecurityTokenGuard: {
-		parameters: {
-			query?: never;
-			header: {
-				/** @description oneTimeToken issued for security purpose */
-				"x-one-time-token-value": string;
-				/** @description oneTimeToken identifier */
-				"x-one-time-token-identifier": string;
-			};
-			path?: never;
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			201: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content?: never;
-			};
-			/** @description Not Authorized oneTimeToken */
-			401: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content?: never;
-			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content?: never;
-			};
-		};
-	};
 	AuthController_getOneTimeToken: {
 		parameters: {
 			query?: never;
@@ -1629,7 +1553,7 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content: {
-					"application/json": components["schemas"]["ShowOneTimeTokenResponse"];
+					"application/json": components["schemas"]["HashedOneTimeTokenResponse"];
 				};
 			};
 		};
@@ -3031,8 +2955,6 @@ export enum ApiPaths {
 	AuthController_generateSecurityActionToken = "/auth/security-token",
 	AuthController_sendSecurityActionToken = "/auth/security-token/email-verification",
 	AuthController_generateSecurityTokenByEmailVerification = "/auth/security-token/from-email-verification",
-	AuthController_sendEmail = "/auth/emailTest",
-	AuthController_testSecurityTokenGuard = "/auth/test/one-time-token-guard",
 	AuthController_getOneTimeToken = "/auth/one-time-token/{id}",
 	UserController_getOne = "/user/{id}",
 	getManyBaseUserControllerUser = "/user",
