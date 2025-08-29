@@ -40,11 +40,11 @@ export class SearchPaintingQueryDTO {
 	@Transform(({ value }) => (value === "true" ? true : false))
 	@IsOptionalProperty()
 	@IsBoolean()
-	isS3Access!: boolean;
+	isS3Access: boolean = false;
 
 	@ApiProperty({ default: 0 })
 	@Transform(({ value }) => (isNaN(Number(value)) ? 0 : Number(value)))
 	@IsOptionalProperty()
 	@IsNumber()
-	page!: number;
+	page: number = 0;
 }

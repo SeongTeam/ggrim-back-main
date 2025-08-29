@@ -14,5 +14,5 @@ export class GetByIdsQueryDTO {
 	@Transform(({ value }) => (value === "true" ? true : false))
 	@IsOptionalProperty()
 	@IsBoolean()
-	isS3Access!: boolean;
+	isS3Access: boolean = false;
 }
