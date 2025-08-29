@@ -38,6 +38,12 @@ export class TestService {
 		});
 	}
 
+	getBasicAuthCredential(email: string, password: string) {
+		const credential = Buffer.from(`${email}:${password}`, "utf-8").toString("base64");
+
+		return `Basic ${credential}`;
+	}
+
 	async createSignUpOneTimeToken(email: string): Promise<OneTimeToken> {
 		return await this.authService.signOneTimeJWTWithoutUser(
 			this.dbService.getQueryRunner(),
