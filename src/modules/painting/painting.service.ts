@@ -47,11 +47,9 @@ export class PaintingService {
 					height: dto.height,
 					completition_year: dto.completition_year,
 					image_s3_key: dto.image_s3_key,
-					artist: undefined,
 				},
-			]);
-
-		Logger.debug(`[create] ${query.getSql()}`);
+			])
+			.returning("*");
 		const result = await query.execute();
 		const newPainting: Painting = result.generatedMaps[0] as Painting;
 		if (isNotFalsy(dto.artistName)) {
@@ -92,7 +90,6 @@ export class PaintingService {
 			})
 			.where("painting.id = :paintingId", { paintingId: painting.id });
 
-		Logger.debug(`[PaintingService][replace] ${query.getSql()}`);
 		await query.execute();
 
 		if (painting.artist && painting.artist.name !== dto.artistName) {
