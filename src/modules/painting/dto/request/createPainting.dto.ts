@@ -17,13 +17,11 @@ export class CreatePaintingDTO {
 	@IsString()
 	artistName?: string;
 
-	@IsOptionalProperty()
 	@IsNumber()
-	width?: number;
+	width!: number;
 
-	@IsOptionalProperty()
 	@IsNumber()
-	height?: number;
+	height!: number;
 
 	@IsOptionalProperty()
 	@IsNumber()
@@ -47,7 +45,6 @@ export class CreatePaintingDTO {
 	})
 	styles?: string[];
 
-	@IsOptionalProperty()
 	@IsString()
-	image_s3_key?: string;
+	image_s3_key!: string;
 }
