@@ -6,7 +6,7 @@ import { faker } from "@faker-js/faker";
 export class StyleDummy extends OmitType(Style, ["paintings"]) {}
 
 export const factoryStyleStub = (): StyleDummy => {
-	const name = faker.book.series();
+	const name = faker.word.adjective();
 
 	return {
 		id: faker.string.uuid(),
