@@ -22,7 +22,7 @@ import {
 	zShowVerification,
 	zSignInResponse,
 } from "./zodSchema";
-import { type ZodObject } from "zod";
+import { expectResponseBody } from "../_common/jest-zod";
 
 describe("AuthController (e2e)", () => {
 	let app: INestApplication;
@@ -31,10 +31,6 @@ describe("AuthController (e2e)", () => {
 	let authService: AuthService;
 	const port = 3001;
 	const client = createClient<paths>({ baseUrl: `http://localhost:${port}` });
-
-	function expectResponseBody<Z extends ZodObject>(zObject: Z, body: unknown) {
-		expect(() => zObject.parse(body)).not.toThrow();
-	}
 
 	beforeAll(async () => {
 		const moduleFixture: TestingModule = await Test.createTestingModule({
