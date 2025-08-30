@@ -1,5 +1,5 @@
-import { type ZodObject } from "zod";
+import z from "zod";
 
-export function expectResponseBody<Z extends ZodObject>(zObject: Z, body: unknown) {
+export function expectResponseBody<Z extends z.ZodType>(zObject: Z, body: unknown) {
 	expect(() => zObject.parse(body)).not.toThrow();
 }
