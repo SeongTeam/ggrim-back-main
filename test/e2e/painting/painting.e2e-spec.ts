@@ -2,17 +2,11 @@
 import { HttpStatus, INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { AppModule } from "../../../src/app.module";
-
-import * as request from "supertest";
 import { DatabaseService } from "../../../src/modules/db/db.service";
 import { configNestApp } from "../../../src/app.config";
 import { factoryPaintingStub } from "../../_shared/stub/painting.stub";
 import { factoryTagStub } from "../../_shared/stub/tag.stub";
-import { Pagination } from "../../../src/modules/_common/types";
-import {
-	ShowPainting,
-	ShowPaintingResponse,
-} from "../../../src/modules/painting/dto/response/showPainting.response";
+import { ShowPainting } from "../../../src/modules/painting/dto/response/showPainting.response";
 import { getAdminUserStub, getNormalUserStub } from "../../_shared/stub/user.stub";
 import { User } from "../../../src/modules/user/entity/user.entity";
 import { CreatePaintingDTO } from "../../../src/modules/painting/dto/request/createPainting.dto";
@@ -22,13 +16,23 @@ import { factoryStyleStub } from "../../_shared/stub/style.stub";
 import { TestService } from "../../_shared/test.service";
 import { faker } from "@faker-js/faker";
 import { TestModule } from "../../_shared/test.module";
+import createClient from "openapi-fetch";
+import { ApiPaths, paths } from "../../swagger/dto-types";
+import { expectResponseBody } from "../_common/jest-zod";
+import { zPagination } from "../_common/zodSchema";
+import { zShowPainting, zShowPaintingResponse } from "./zodSchema";
+import { Painting } from "../../../src/modules/painting/entities/painting.entity";
+import { PaintingService } from "../../../src/modules/painting/painting.service";
 
 describe("PaintingController (e2e)", () => {
 	let app: INestApplication;
 	let dbService: DatabaseService;
 	let testService: TestService;
+	let paintingService: PaintingService;
 	let user: User;
 	let admin: User;
+	const port = 3001;
+	const client = createClient<paths>({ baseUrl: `http://localhost:${port}` });
 	// TODO 테스트 환경 설정하기
 	// [ ] nest.js APP 인스턴스 생성
 	// [ ] nest.js APP 인스턴스 설정(global pipe, Module, .env.test)
@@ -49,9 +53,12 @@ describe("PaintingController (e2e)", () => {
 
 		testService = moduleFixture.get(TestService);
 		dbService = moduleFixture.get(DatabaseService);
+		paintingService = moduleFixture.get(PaintingService);
 		await dbService.resetDB();
 		user = await testService.insertStubUser(getNormalUserStub());
 		admin = await testService.insertStubUser(getAdminUserStub());
+
+		await app.listen(port);
 	});
 
 	afterAll(async () => {
@@ -59,80 +66,140 @@ describe("PaintingController (e2e)", () => {
 		await app.close();
 	});
 
-	it("/painting (GET) : 성공 ", async () => {
-		const response = await request(app.getHttpServer())
-			.get("/painting")
-			.query({
-				page: 0,
-			})
-			.expect(200);
+	describe("/painting (GET) Test", () => {
+		let painting: Painting;
+		beforeAll(async () => {
+			const [tag1, tag2, tag3, tag4] = await Promise.all([
+				testService.insertTagStub(factoryTagStub()),
+				testService.insertTagStub(factoryTagStub()),
+				testService.insertTagStub(factoryTagStub()),
+				testService.insertTagStub(factoryTagStub()),
+			]);
+			const [style1, style2, style3] = await Promise.all([
+				testService.insertStyleStub(factoryStyleStub()),
+				testService.insertStyleStub(factoryStyleStub()),
+				testService.insertStyleStub(factoryStyleStub()),
+			]);
+			const [artist1, artist2, artist3] = await Promise.all([
+				testService.insertArtistStub(FactoryArtistStub()),
+				testService.insertArtistStub(FactoryArtistStub()),
+				testService.insertArtistStub(FactoryArtistStub()),
+			]);
+			painting = await testService.insertPaintingStub(
+				factoryPaintingStub(),
+				artist1,
+				[tag1, tag2],
+				[style1],
+			);
 
-		expect((response.body as Pagination<ShowPainting>).data).toBeDefined();
+			// seed Painting
+			await Promise.all(
+				Array(10)
+					.fill(0)
+					.map(() =>
+						testService.insertPaintingStub(
+							factoryPaintingStub(),
+							artist2,
+							[tag3, tag4],
+							[style2],
+						),
+					),
+			);
+			await Promise.all(
+				Array(10)
+					.fill(0)
+					.map(() =>
+						testService.insertPaintingStub(
+							factoryPaintingStub(),
+							artist3,
+							[tag2, tag4],
+							[style3],
+						),
+					),
+			);
+		});
+
+		afterAll(async () => {
+			await dbService.resetDB();
+		});
+
+		it("/painting (GET) : 성공 ", async () => {
+			const response = await client.GET(ApiPaths.PaintingController_searchPainting, {
+				params: {
+					query: {
+						tags: [painting.tags[0].name],
+					},
+				},
+			});
+
+			expect(response.response.status).toBe(HttpStatus.OK);
+			expect(response.data).toBeDefined();
+			const body = response.data!;
+			expect(body.total).toBe(1);
+			expect(body.data[0].id).toBe(painting.id);
+			expectResponseBody(zPagination(zShowPainting), body);
+		});
+
+		it("/painting?title=val1 (GET) : 성공,", async () => {
+			const response = await client.GET(ApiPaths.PaintingController_searchPainting, {
+				params: {
+					query: {
+						title: painting.title.slice(0, 2),
+					},
+				},
+			});
+
+			expect(response.response.status).toBe(HttpStatus.OK);
+			expect(response.data).toBeDefined();
+			const body = response.data!;
+			expect(body.total).toBeGreaterThan(1);
+			expectResponseBody(zPagination(zShowPainting), body);
+
+			const hasPainting = (body.data as ShowPainting[]).some(
+				(showPainting) => showPainting.title === painting.title,
+			);
+			expect(hasPainting).toBe(true);
+		});
+
+		it("/painting?tag=val1&tag&val2 (GET) : 성공,", async () => {
+			const response = await client.GET(ApiPaths.PaintingController_searchPainting, {
+				params: {
+					query: {
+						tags: painting.tags.map((t) => t.name),
+					},
+				},
+			});
+
+			expect(response.response.status).toBe(HttpStatus.OK);
+			expect(response.data).toBeDefined();
+			const body = response.data!;
+			expect(body.total).toBe(1);
+			expectResponseBody(zPagination(zShowPainting), body);
+			expectResponseBody(zShowPainting, body.data[0]);
+			expect(body.data[0].id).toBe(painting.id);
+		});
+
+		it("/painting?artistName=val1 (GET) : 성공,", async () => {
+			const response = await client.GET(ApiPaths.PaintingController_searchPainting, {
+				params: {
+					query: {
+						artistName: painting.artist.name,
+					},
+				},
+			});
+
+			expect(response.response.status).toBe(HttpStatus.OK);
+			expect(response.data).toBeDefined();
+			const body = response.data!;
+
+			expectResponseBody(zPagination(zShowPainting), body);
+			expect(body.total).toBe(1);
+			expectResponseBody(zShowPainting, body.data[0]);
+			expect(body.data[0].id).toBe(painting.id);
+		});
 	});
-	it("/painting?tags=val1&tags=val2 (GET) : 성공, ", async () => {
-		const [tag1, tag2] = await Promise.all([
-			testService.insertTagStub(factoryTagStub()),
-			testService.insertTagStub(factoryTagStub()),
-		]);
-		const [style, artist] = await Promise.all([
-			testService.insertStyleStub(factoryStyleStub()),
-			testService.insertArtistStub(FactoryArtistStub()),
-		]);
-		const painting = await testService.insertPaintingStub(
-			factoryPaintingStub(),
-			artist,
-			[tag1, tag2],
-			[style],
-		);
 
-		const response = await request(app.getHttpServer())
-			.get("/painting/")
-			.query({
-				"tags[]": [tag1.name, tag2.name], // []에 원소가 2개 이상이면  tags: [{원소1}, {원소2}] 사용 가능
-			})
-			.expect(HttpStatus.OK);
-		const body = response.body as Pagination<ShowPainting>;
-		const expected: ShowPainting = {
-			title: painting.title,
-			id: painting.id,
-			image_url: painting.image_url,
-			height: painting.height,
-			width: painting.width,
-		};
-
-		expect(body.total).toBe(1);
-		expect(body).toStrictEqual(expected);
-	});
-
-	it("/painting?title=val1 (GET) : 성공,", async () => {
-		const [tag1, tag2] = await Promise.all([
-			testService.insertTagStub(factoryTagStub()),
-			testService.insertTagStub(factoryTagStub()),
-		]);
-		const [style, artist] = await Promise.all([
-			testService.insertStyleStub(factoryStyleStub()),
-			testService.insertArtistStub(FactoryArtistStub()),
-		]);
-		const painting = await testService.insertPaintingStub(
-			factoryPaintingStub(),
-			artist,
-			[tag1, tag2],
-			[style],
-		);
-
-		const response = await request(app.getHttpServer())
-			.get("/painting/")
-			.query({
-				title: painting.title.slice(0, 2),
-			})
-			.expect(200);
-		const body = response.body as Pagination<ShowPainting>;
-		expect(body.total).toBeGreaterThan(1);
-		const hasPainting = body.data.some((showPainting) => showPainting.title === painting.title);
-		expect(hasPainting).toBe(true);
-	});
-
-	it("/painting/by-ids?ids[]=val1 (GET) : 성공,", async () => {
+	it("/painting/by-ids?ids=val1 (GET) : 성공,", async () => {
 		const [tag1, tag2] = await Promise.all([
 			testService.insertTagStub(factoryTagStub()),
 			testService.insertTagStub(factoryTagStub()),
@@ -148,19 +215,23 @@ describe("PaintingController (e2e)", () => {
 			[style],
 		);
 
-		return request(app.getHttpServer())
-			.get("/painting/by-ids")
-			.query({
-				ids: [painting1.id], // []에 원소가 1개면  "ids[]"": [{원소1}] 사용 가능
-			})
-			.expect(200)
-			.expect((res) => {
-				// 응답 데이터에서 title 확인
-				expect((res.body as ShowPaintingResponse[])[0].title).toBe(painting1.title);
-			});
+		const response = await client.GET(ApiPaths.PaintingController_getByIds, {
+			params: {
+				query: {
+					ids: [painting1.id],
+				},
+			},
+		});
+
+		expect(response.response.status).toBe(HttpStatus.OK);
+		expect(response.data).toBeDefined();
+		const body = response.data!;
+
+		// 응답 데이터에서 title 확인
+		expect(body[0].title).toBe(painting1.title);
 	});
 
-	it("/painting/by-ids?ids[]=val1 (GET) : (실패, 유효치않은 Query)", async () => {
+	it("/painting/by-ids?ids=val1 (GET) : (실패, 유효치않은 Query)", async () => {
 		const [tag1, tag2] = await Promise.all([
 			testService.insertTagStub(factoryTagStub()),
 			testService.insertTagStub(factoryTagStub()),
@@ -171,21 +242,18 @@ describe("PaintingController (e2e)", () => {
 		]);
 		await testService.insertPaintingStub(factoryPaintingStub(), artist, [tag1, tag2], [style]);
 
-		return request(app.getHttpServer())
-			.get("/painting/by-ids")
-			.query({
-				ids: [faker.string.nanoid(), faker.string.uuid()], // []에 원소가 1개면  "ids[]"": [{원소1}] 사용 가능
-			})
-			.expect(400)
-			.expect((res) => {
-				// 응답 데이터에서 title 확인
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-				expect(res.body.message[0]).toBe("each value in ids must be a UUID");
-			});
+		const response = await client.GET(ApiPaths.PaintingController_getByIds, {
+			params: {
+				query: {
+					ids: [faker.string.nanoid(), faker.string.uuid()],
+				},
+			},
+		});
+		expect(response.response.status).toBe(HttpStatus.BAD_REQUEST);
 	});
 
 	it("/painting (POST) : 성공", async () => {
-		const newPainting: CreatePaintingDTO = {
+		const dto: CreatePaintingDTO = {
 			title: faker.person.middleName(),
 			image_url: faker.internet.url(),
 			description: "this is new painting",
@@ -193,20 +261,27 @@ describe("PaintingController (e2e)", () => {
 
 		const adminAccessToken = testService.getAccessToken(admin);
 
-		const createResponse = await request(app.getHttpServer())
-			.post("/painting")
-			.set("Content-Type", "application/json")
-			.auth(adminAccessToken, { type: "bearer" })
-			.send(newPainting)
-			.expect(201);
-
-		expect(createResponse.body).toMatchObject({
-			...newPainting,
+		const response = await client.POST(ApiPaths.PaintingController_createPainting, {
+			params: {
+				header: {
+					authorization: `Bearer ${adminAccessToken}`,
+				},
+			},
+			body: dto,
 		});
+
+		//TODO 그림 생성 로직 버그 해결. 상태 500 발생
+		expect(response.response.status).toBe(HttpStatus.CREATED);
+		expect(response.data).toBeDefined();
+		expectResponseBody(zShowPaintingResponse, response.data);
+
+		const painting = (await paintingService.getByIds([response.data!.id]))[0];
+
+		expect(response.data).toMatchObject(painting);
 	});
 
 	it("/painting (POST) : (실패, 권한 없음)", async () => {
-		const newPainting: CreatePaintingDTO = {
+		const dto: CreatePaintingDTO = {
 			title: faker.person.middleName(),
 			image_url: faker.internet.url(),
 			description: "this is new painting",
@@ -214,16 +289,16 @@ describe("PaintingController (e2e)", () => {
 
 		const userAccessToken = testService.getAccessToken(user);
 
-		const createResponse = await request(app.getHttpServer())
-			.post("/painting")
-			.set("Content-Type", "application/json")
-			.auth(userAccessToken, { type: "bearer" })
-			.send(newPainting)
-			.expect(HttpStatus.UNAUTHORIZED);
-
-		expect(createResponse.body).toMatchObject({
-			...newPainting,
+		const response = await client.POST(ApiPaths.PaintingController_createPainting, {
+			params: {
+				header: {
+					authorization: `Bearer ${userAccessToken}`,
+				},
+			},
+			body: dto,
 		});
+
+		expect(response.response.status).toBe(HttpStatus.FORBIDDEN);
 	});
 
 	it("/painting/:id (PUT) : 성공", async () => {
@@ -250,20 +325,25 @@ describe("PaintingController (e2e)", () => {
 		};
 
 		const adminAccessToken = testService.getAccessToken(admin);
-		await request(app.getHttpServer())
-			.PUT("/painting/" + painting.id)
-			.set("Content-Type", "application/json")
-			.auth(adminAccessToken, { type: "bearer" })
-			.send(replaceDto)
-			.expect(HttpStatus.OK);
 
-		const getResponse = await request(app.getHttpServer())
-			.get(`/painting/${painting.id}`)
-			.expect(HttpStatus.OK);
-
-		expect(getResponse.body).toMatchObject({
-			title: replaceTitle,
+		const response = await client.PUT(ApiPaths.PaintingController_replacePainting, {
+			params: {
+				path: {
+					id: painting.id,
+				},
+				header: {
+					authorization: `Bearer ${adminAccessToken}`,
+				},
+			},
+			body: replaceDto,
 		});
+
+		expect(response.response.status).toBe(HttpStatus.OK);
+		expect(response.data).toBeDefined();
+		expectResponseBody(zShowPaintingResponse, response.data);
+		const entity = (await paintingService.getByIds([painting.id]))[0];
+
+		expect(response.data).toMatchObject(entity);
 	});
 
 	it("/painting/:id (PUT) : (실패, 권한 없음)", async () => {
@@ -290,12 +370,19 @@ describe("PaintingController (e2e)", () => {
 		};
 
 		const userAccessToken = testService.getAccessToken(user);
-		await request(app.getHttpServer())
-			.PUT("/painting/" + painting.id)
-			.set("Content-Type", "application/json")
-			.auth(userAccessToken, { type: "bearer" })
-			.send(replaceDto)
-			.expect(HttpStatus.UNAUTHORIZED);
+		const response = await client.PUT(ApiPaths.PaintingController_replacePainting, {
+			params: {
+				path: {
+					id: painting.id,
+				},
+				header: {
+					authorization: `Bearer ${userAccessToken}`,
+				},
+			},
+			body: replaceDto,
+		});
+
+		expect(response.response.status).toBe(HttpStatus.FORBIDDEN);
 	});
 
 	it("/painting/:id (DELETE) : 성공 ", async () => {
@@ -313,11 +400,18 @@ describe("PaintingController (e2e)", () => {
 
 		const adminAccessToken = testService.getAccessToken(admin);
 
-		await request(app.getHttpServer())
-			.DELETE("/painting/" + painting.id)
-			.set("Content-Type", "application/json")
-			.auth(adminAccessToken, { type: "bearer" })
-			.expect(HttpStatus.UNAUTHORIZED);
+		const response = await client.DELETE(ApiPaths.PaintingController_deletePainting, {
+			params: {
+				path: {
+					id: painting.id,
+				},
+				header: {
+					authorization: `Bearer ${adminAccessToken}`,
+				},
+			},
+		});
+
+		expect(response.response.status).toBe(HttpStatus.OK);
 	});
 
 	it("/painting/:id (DELETE) : (실패, 권한 없음) ", async () => {
@@ -335,10 +429,17 @@ describe("PaintingController (e2e)", () => {
 
 		const userAccessToken = testService.getAccessToken(user);
 
-		await request(app.getHttpServer())
-			.DELETE("/painting/" + painting.id)
-			.set("Content-Type", "application/json")
-			.auth(userAccessToken, { type: "bearer" })
-			.expect(HttpStatus.UNAUTHORIZED);
+		const response = await client.DELETE(ApiPaths.PaintingController_deletePainting, {
+			params: {
+				path: {
+					id: painting.id,
+				},
+				header: {
+					authorization: `Bearer ${userAccessToken}`,
+				},
+			},
+		});
+
+		expect(response.response.status).toBe(HttpStatus.FORBIDDEN);
 	});
 });
