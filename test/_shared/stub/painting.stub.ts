@@ -6,7 +6,7 @@ import { faker } from "@faker-js/faker";
 export class PaintingDummy extends OmitType(Painting, ["artist", "styles", "tags"]) {}
 
 export const factoryPaintingStub = (): PaintingDummy => {
-	const title = faker.book.title();
+	const title = faker.person.fullName();
 	return {
 		title,
 		id: faker.string.uuid(),
