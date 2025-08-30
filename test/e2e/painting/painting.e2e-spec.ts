@@ -25,7 +25,6 @@ import { Artist } from "../../../src/modules/artist/entities/artist.entity";
 import { Tag } from "../../../src/modules/tag/entities/tag.entity";
 import { Style } from "../../../src/modules/style/entities/style.entity";
 import z from "zod";
-import { ServiceException } from "../../../src/modules/_common/filter/exception/service/serviceException";
 
 describe("PaintingController (e2e)", () => {
 	let app: INestApplication;
@@ -528,7 +527,7 @@ describe("PaintingController (e2e)", () => {
 			});
 
 			expect(response.response.status).toBe(HttpStatus.OK);
-			expect(await paintingService.getByIds([painting.id])).toThrow(ServiceException);
+			expect(await paintingService.findPainting(painting.id)).toBeFalsy();
 		});
 
 		it("/painting/:id (DELETE) : (실패, 권한 없음) ", async () => {

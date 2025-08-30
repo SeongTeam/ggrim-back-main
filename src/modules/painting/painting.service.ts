@@ -408,15 +408,11 @@ export class PaintingService {
 		return result.affected;
 	}
 
-	public async findPaintingOrThrow(id: string): Promise<Painting> {
-		const painting = (await this.getByIds([id]))[0];
-		if (isFalsy(painting)) {
-			throw new ServiceException(
-				"ENTITY_NOT_FOUND",
-				"BAD_REQUEST",
-				`not found painting. id : ${id}\n`,
-			);
-		}
+	public async findPainting(id: string): Promise<Painting | null> {
+		const painting = await this.repo.findOne({
+			where: { id },
+			relations: ["artist", "tags", "styles"],
+		});
 		return painting;
 	}
 
