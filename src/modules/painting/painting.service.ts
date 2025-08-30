@@ -211,47 +211,6 @@ export class PaintingService {
 				Math.floor(total / paginationCount) + (total % paginationCount === 0 ? 0 : 1),
 		};
 	}
-	async getPaintingsByArtist(artistName: string) {
-		const result = await this.repo
-			.createQueryBuilder("p")
-			.innerJoinAndSelect("p.artist", "artist")
-			.innerJoinAndSelect("p.tags", "tag")
-			.innerJoinAndSelect("p.styles", "style")
-			.where("artist.name  = :artist", {
-				artist: artistName,
-			})
-			.getMany();
-		return result;
-	}
-
-	async getPaintingsByTags(tagNames: string[]) {
-		if (tagNames.length === 0) {
-			return []; // 빈 배열이 들어오면 빈 결과 반환
-		}
-
-		const paintings = await this.repo
-			.createQueryBuilder("painting")
-			.innerJoinAndSelect("painting.artist", "artist")
-			.innerJoinAndSelect("painting.tags", "tag")
-			.innerJoinAndSelect("painting.styles", "style")
-			.where((qb) => {
-				// 서브쿼리 사용
-				const subQuery = qb
-					.subQuery()
-					.select("painting_tags.paintingId")
-					.from("painting_tags_tag", "painting_tags") // Many-to-Many 연결 테이블
-					.innerJoin("tag", "tag", "tag.id = painting_tags.tagId") // 연결 테이블과 Tag JOIN
-					.where("tag.name IN (:...tagNames)", { tagNames }) // tagNames 필터링
-					.groupBy("painting_tags.paintingId")
-					.having("COUNT(DISTINCT tag.id) = :tagCount") // 정확한 태그 갯수 매칭
-					.getQuery();
-				return `painting.id IN ${subQuery}`;
-			})
-			.setParameter("tagCount", tagNames.length) // 태그 갯수 설정
-			.getMany();
-
-		return paintings;
-	}
 
 	/**
 	 * - [] 중에서 0번째 index중 큰 순서로 이동 중에 DB에 없는 ID가 있으면 에러 발생
@@ -280,20 +239,6 @@ export class PaintingService {
 			);
 		}
 		return paintings;
-	}
-
-	validatePaintingEntity(painting: Painting): boolean {
-		if (!painting) return false;
-
-		if (!painting.id) return false;
-
-		return true;
-	}
-
-	async validateColumnValue(column: keyof Painting, value: string) {
-		if (column === "artist") {
-			await this.artistService.validateName(value);
-		}
 	}
 
 	async relateToTag(
