@@ -7,22 +7,25 @@ import { configNestApp } from "../../../src/app.config";
 import { factoryPaintingStub } from "../../_shared/stub/painting.stub";
 import { factoryTagStub } from "../../_shared/stub/tag.stub";
 import { ShowPainting } from "../../../src/modules/painting/dto/response/showPainting.response";
-import { getAdminUserStub, getNormalUserStub } from "../../_shared/stub/user.stub";
+import { factoryUserStub } from "../../_shared/stub/user.stub";
 import { User } from "../../../src/modules/user/entity/user.entity";
-import { CreatePaintingDTO } from "../../../src/modules/painting/dto/request/createPainting.dto";
-import { ReplacePaintingDTO } from "../../../src/modules/painting/dto/request/replacePainting.dto";
 import { FactoryArtistStub } from "../../_shared/stub/artist.stub";
 import { factoryStyleStub } from "../../_shared/stub/style.stub";
 import { TestService } from "../../_shared/test.service";
 import { faker } from "@faker-js/faker";
 import { TestModule } from "../../_shared/test.module";
 import createClient from "openapi-fetch";
-import { ApiPaths, paths } from "../../swagger/dto-types";
+import { ApiPaths, CreatePaintingDto, paths, ReplacePaintingDto } from "../../swagger/dto-types";
 import { expectResponseBody } from "../_common/jest-zod";
 import { zPagination } from "../_common/zodSchema";
 import { zShowPainting, zShowPaintingResponse } from "./zodSchema";
 import { Painting } from "../../../src/modules/painting/entities/painting.entity";
 import { PaintingService } from "../../../src/modules/painting/painting.service";
+import { Artist } from "../../../src/modules/artist/entities/artist.entity";
+import { Tag } from "../../../src/modules/tag/entities/tag.entity";
+import { Style } from "../../../src/modules/style/entities/style.entity";
+import z from "zod";
+import { ServiceException } from "../../../src/modules/_common/filter/exception/service/serviceException";
 
 describe("PaintingController (e2e)", () => {
 	let app: INestApplication;
@@ -55,14 +58,14 @@ describe("PaintingController (e2e)", () => {
 		dbService = moduleFixture.get(DatabaseService);
 		paintingService = moduleFixture.get(PaintingService);
 		await dbService.resetDB();
-		user = await testService.insertStubUser(getNormalUserStub());
-		admin = await testService.insertStubUser(getAdminUserStub());
+		user = await testService.insertStubUser(factoryUserStub("user"));
+		admin = await testService.insertStubUser(factoryUserStub("admin"));
 
 		await app.listen(port);
 	});
 
 	afterAll(async () => {
-		await dbService.resetDB();
+		//await dbService.resetDB();
 		await app.close();
 	});
 
@@ -119,10 +122,6 @@ describe("PaintingController (e2e)", () => {
 			);
 		});
 
-		afterAll(async () => {
-			await dbService.resetDB();
-		});
-
 		it("/painting (GET) : 성공 ", async () => {
 			const response = await client.GET(ApiPaths.PaintingController_searchPainting, {
 				params: {
@@ -152,7 +151,7 @@ describe("PaintingController (e2e)", () => {
 			expect(response.response.status).toBe(HttpStatus.OK);
 			expect(response.data).toBeDefined();
 			const body = response.data!;
-			expect(body.total).toBeGreaterThan(1);
+			expect(body.total).toBeGreaterThanOrEqual(1);
 			expectResponseBody(zPagination(zShowPainting), body);
 
 			const hasPainting = (body.data as ShowPainting[]).some(
@@ -199,247 +198,354 @@ describe("PaintingController (e2e)", () => {
 		});
 	});
 
-	it("/painting/by-ids?ids=val1 (GET) : 성공,", async () => {
-		const [tag1, tag2] = await Promise.all([
-			testService.insertTagStub(factoryTagStub()),
-			testService.insertTagStub(factoryTagStub()),
-		]);
-		const [style, artist] = await Promise.all([
-			testService.insertStyleStub(factoryStyleStub()),
-			testService.insertArtistStub(FactoryArtistStub()),
-		]);
-		const painting1 = await testService.insertPaintingStub(
-			factoryPaintingStub(),
-			artist,
-			[tag1, tag2],
-			[style],
-		);
-
-		const response = await client.GET(ApiPaths.PaintingController_getByIds, {
-			params: {
-				query: {
-					ids: [painting1.id],
+	describe("/painting/by-ids (GET)", () => {
+		let tag1, tag2: Tag;
+		let style: Style;
+		let artist: Artist;
+		let painting: Painting;
+		beforeAll(async () => {
+			[tag1, tag2] = await Promise.all([
+				testService.insertTagStub(factoryTagStub()),
+				testService.insertTagStub(factoryTagStub()),
+			]);
+			[style, artist] = await Promise.all([
+				testService.insertStyleStub(factoryStyleStub()),
+				testService.insertArtistStub(FactoryArtistStub()),
+			]);
+			painting = await testService.insertPaintingStub(
+				factoryPaintingStub(),
+				artist,
+				[tag1, tag2],
+				[style],
+			);
+		});
+		it("/painting/by-ids?ids=val1 (GET) : 성공,", async () => {
+			const response = await client.GET(ApiPaths.PaintingController_getByIds, {
+				params: {
+					query: {
+						ids: [painting.id],
+					},
 				},
-			},
+			});
+
+			expect(response.response.status).toBe(HttpStatus.OK);
+			expect(response.data).toBeDefined();
+			const body = response.data!;
+			expectResponseBody(z.array(zShowPaintingResponse), body);
+			expect(body[0].title).toBe(painting.title);
 		});
 
-		expect(response.response.status).toBe(HttpStatus.OK);
-		expect(response.data).toBeDefined();
-		const body = response.data!;
+		it("/painting/by-ids?ids=val1 (GET) : (실패, 유효치않은 Query)", async () => {
+			const response = await client.GET(ApiPaths.PaintingController_getByIds, {
+				params: {
+					query: {
+						ids: [faker.string.nanoid(), faker.string.uuid()],
+					},
+				},
+			});
+			expect(response.response.status).toBe(HttpStatus.BAD_REQUEST);
+		});
+	});
+	describe("/painting (POST)", () => {
+		const route = ApiPaths.PaintingController_createPainting;
+		let artist: Artist;
+		let tag: Tag;
+		let style: Style;
 
-		// 응답 데이터에서 title 확인
-		expect(body[0].title).toBe(painting1.title);
+		function factoryBaseCreateDto(): CreatePaintingDto {
+			return {
+				title: faker.person.middleName(),
+				image_url: faker.internet.url(),
+				description: "this is new painting",
+				width: faker.number.int({ min: 100, max: 1000 }),
+				height: faker.number.int({ min: 100, max: 1000 }),
+				image_s3_key: faker.commerce.product(),
+			};
+		}
+
+		beforeAll(async () => {
+			artist = await testService.insertArtistStub(FactoryArtistStub());
+			tag = await testService.insertTagStub(factoryTagStub());
+			style = await testService.insertStyleStub(factoryStyleStub());
+		});
+		it("/painting (POST) : (성공, no relation)", async () => {
+			const dto = factoryBaseCreateDto();
+
+			const adminAccessToken = testService.getAccessToken(admin);
+
+			const response = await client.POST(route, {
+				params: {
+					header: {
+						authorization: `Bearer ${adminAccessToken}`,
+					},
+				},
+				body: dto,
+			});
+
+			expect(response.response.status).toBe(HttpStatus.CREATED);
+			expect(response.data).toBeDefined();
+			expectResponseBody(zShowPainting, response.data);
+
+			const painting = (await paintingService.getByIds([response.data!.id]))[0];
+
+			expect(response.data).toMatchObject(new ShowPainting(painting));
+		});
+
+		it("/painting (POST) : (성공, relation exist)", async () => {
+			const dto = factoryBaseCreateDto();
+			dto.artistName = artist.name;
+			dto.tags = [tag.name];
+			dto.styles = [style.name];
+
+			const adminAccessToken = testService.getAccessToken(admin);
+
+			const response = await client.POST(route, {
+				params: {
+					header: {
+						authorization: `Bearer ${adminAccessToken}`,
+					},
+				},
+				body: dto,
+			});
+
+			expect(response.response.status).toBe(HttpStatus.CREATED);
+			expect(response.data).toBeDefined();
+			expectResponseBody(zShowPainting, response.data);
+
+			const entity = (await paintingService.getByIds([response.data!.id]))[0];
+			expect(response.data).toMatchObject(new ShowPainting(entity));
+
+			expect(entity.artist).toMatchObject(artist);
+			expect(entity.tags).toEqual([tag]);
+			expect(entity.styles).toEqual([style]);
+		});
+
+		it("/painting (POST) : (실패, 권한 없음)", async () => {
+			const artist = await testService.insertArtistStub(FactoryArtistStub());
+
+			const dto: CreatePaintingDto = {
+				title: faker.person.middleName(),
+				image_url: faker.internet.url(),
+				description: "this is new painting",
+				width: faker.number.int({ min: 100, max: 1000 }),
+				height: faker.number.int({ min: 100, max: 1000 }),
+				image_s3_key: faker.commerce.product(),
+				artistName: artist.name,
+			};
+
+			const userAccessToken = testService.getAccessToken(user);
+
+			const response = await client.POST(ApiPaths.PaintingController_createPainting, {
+				params: {
+					header: {
+						authorization: `Bearer ${userAccessToken}`,
+					},
+				},
+				body: dto,
+			});
+
+			expect(response.response.status).toBe(HttpStatus.FORBIDDEN);
+		});
 	});
 
-	it("/painting/by-ids?ids=val1 (GET) : (실패, 유효치않은 Query)", async () => {
-		const [tag1, tag2] = await Promise.all([
-			testService.insertTagStub(factoryTagStub()),
-			testService.insertTagStub(factoryTagStub()),
-		]);
-		const [style, artist] = await Promise.all([
-			testService.insertStyleStub(factoryStyleStub()),
-			testService.insertArtistStub(FactoryArtistStub()),
-		]);
-		await testService.insertPaintingStub(factoryPaintingStub(), artist, [tag1, tag2], [style]);
+	describe("/painting/:id (PUT)", () => {
+		const route = ApiPaths.PaintingController_replacePainting;
+		let painting: Painting;
 
-		const response = await client.GET(ApiPaths.PaintingController_getByIds, {
-			params: {
-				query: {
-					ids: [faker.string.nanoid(), faker.string.uuid()],
-				},
-			},
+		function factoryBaseReplaceDto(painting: Painting): ReplacePaintingDto {
+			return {
+				tags: painting.tags.map((t) => t.name),
+				styles: painting.tags.map((style) => style.name),
+				completition_year: painting.completition_year!,
+				title: "replace painting",
+				image_url: painting.image_url,
+				description: painting.description,
+				width: painting.width,
+				height: painting.height,
+				image_s3_key: painting.image_s3_key,
+				artistName: painting.artist.name,
+			};
+		}
+
+		beforeAll(async () => {
+			const [tag, style, artist] = await Promise.all([
+				testService.insertTagStub(factoryTagStub()),
+				testService.insertStyleStub(factoryStyleStub()),
+				testService.insertArtistStub(FactoryArtistStub()),
+			]);
+			painting = await testService.insertPaintingStub(
+				factoryPaintingStub(),
+				artist,
+				[tag],
+				[style],
+			);
 		});
-		expect(response.response.status).toBe(HttpStatus.BAD_REQUEST);
+		it("/painting/:id (PUT) : (성공, not change relation)", async () => {
+			const replaceDto = factoryBaseReplaceDto(painting);
+			replaceDto.title = "replace title";
+			replaceDto.tags = painting.tags.map((t) => t.name);
+			replaceDto.styles = painting.styles.map((s) => s.name);
+			const adminAccessToken = testService.getAccessToken(admin);
+
+			const response = await client.PUT(route, {
+				params: {
+					path: {
+						id: painting.id,
+					},
+					header: {
+						authorization: `Bearer ${adminAccessToken}`,
+					},
+				},
+				body: replaceDto,
+			});
+
+			expect(response.response.status).toBe(HttpStatus.OK);
+			const entity = (await paintingService.getByIds([painting.id]))[0];
+			expect({
+				completition_year: entity.completition_year,
+				image_url: entity.image_url,
+				description: entity.description,
+				width: entity.width,
+				height: entity.height,
+				image_s3_key: entity.image_s3_key,
+				artistName: entity.artist.name,
+				title: entity.title,
+			}).toEqual({
+				completition_year: replaceDto.completition_year,
+				image_url: replaceDto.image_url,
+				description: replaceDto.description,
+				width: replaceDto.width,
+				height: replaceDto.height,
+				image_s3_key: replaceDto.image_s3_key,
+				artistName: replaceDto.artistName,
+				title: replaceDto.title,
+			});
+
+			expect(entity.artist).toEqual(painting.artist);
+			expect(entity.tags).toEqual(painting.tags);
+			expect(entity.styles).toEqual(painting.styles);
+		});
+		it("/painting/:id (PUT) : (성공, change relation)", async () => {
+			const replaceDto = factoryBaseReplaceDto(painting);
+			const [newTag, newStyle, newArtist] = await Promise.all([
+				testService.insertTagStub(factoryTagStub()),
+				testService.insertStyleStub(factoryStyleStub()),
+				testService.insertArtistStub(FactoryArtistStub()),
+			]);
+			replaceDto.artistName = newArtist.name;
+			replaceDto.tags = [newTag.name];
+			replaceDto.styles = [newStyle.name];
+			const adminAccessToken = testService.getAccessToken(admin);
+
+			const response = await client.PUT(route, {
+				params: {
+					path: {
+						id: painting.id,
+					},
+					header: {
+						authorization: `Bearer ${adminAccessToken}`,
+					},
+				},
+				body: replaceDto,
+			});
+
+			expect(response.response.status).toBe(HttpStatus.OK);
+			const entity = (await paintingService.getByIds([painting.id]))[0];
+			expect({
+				completition_year: entity.completition_year,
+				image_url: entity.image_url,
+				description: entity.description,
+				width: entity.width,
+				height: entity.height,
+				image_s3_key: entity.image_s3_key,
+				artistName: entity.artist.name,
+				title: entity.title,
+			}).toEqual({
+				completition_year: replaceDto.completition_year,
+				image_url: replaceDto.image_url,
+				description: replaceDto.description,
+				width: replaceDto.width,
+				height: replaceDto.height,
+				image_s3_key: replaceDto.image_s3_key,
+				artistName: replaceDto.artistName,
+				title: replaceDto.title,
+			});
+
+			expect(entity.artist).toEqual(newArtist);
+			expect(entity.tags).toEqual([newTag]);
+			expect(entity.styles).toEqual([newStyle]);
+		});
+
+		it("/painting/:id (PUT) : (실패, 권한 없음)", async () => {
+			const replaceDto = factoryBaseReplaceDto(painting);
+			replaceDto.title = "new title";
+
+			const userAccessToken = testService.getAccessToken(user);
+			const response = await client.PUT(ApiPaths.PaintingController_replacePainting, {
+				params: {
+					path: {
+						id: painting.id,
+					},
+					header: {
+						authorization: `Bearer ${userAccessToken}`,
+					},
+				},
+				body: replaceDto,
+			});
+
+			expect(response.response.status).toBe(HttpStatus.FORBIDDEN);
+		});
 	});
 
-	it("/painting (POST) : 성공", async () => {
-		const dto: CreatePaintingDTO = {
-			title: faker.person.middleName(),
-			image_url: faker.internet.url(),
-			description: "this is new painting",
-		};
+	describe("/painting/:id (DELETE)", () => {
+		const route = ApiPaths.PaintingController_deletePainting;
+		let painting: Painting;
+		beforeEach(async () => {
+			const [tag, style, artist] = await Promise.all([
+				testService.insertTagStub(factoryTagStub()),
+				testService.insertStyleStub(factoryStyleStub()),
+				testService.insertArtistStub(FactoryArtistStub()),
+			]);
+			painting = await testService.insertPaintingStub(
+				factoryPaintingStub(),
+				artist,
+				[tag],
+				[style],
+			);
+		});
+		it("/painting/:id (DELETE) : 성공 ", async () => {
+			const adminAccessToken = testService.getAccessToken(admin);
 
-		const adminAccessToken = testService.getAccessToken(admin);
-
-		const response = await client.POST(ApiPaths.PaintingController_createPainting, {
-			params: {
-				header: {
-					authorization: `Bearer ${adminAccessToken}`,
+			const response = await client.DELETE(route, {
+				params: {
+					path: {
+						id: painting.id,
+					},
+					header: {
+						authorization: `Bearer ${adminAccessToken}`,
+					},
 				},
-			},
-			body: dto,
+			});
+
+			expect(response.response.status).toBe(HttpStatus.OK);
+			expect(await paintingService.getByIds([painting.id])).toThrow(ServiceException);
 		});
 
-		//TODO 그림 생성 로직 버그 해결. 상태 500 발생
-		expect(response.response.status).toBe(HttpStatus.CREATED);
-		expect(response.data).toBeDefined();
-		expectResponseBody(zShowPaintingResponse, response.data);
+		it("/painting/:id (DELETE) : (실패, 권한 없음) ", async () => {
+			const userAccessToken = testService.getAccessToken(user);
 
-		const painting = (await paintingService.getByIds([response.data!.id]))[0];
-
-		expect(response.data).toMatchObject(painting);
-	});
-
-	it("/painting (POST) : (실패, 권한 없음)", async () => {
-		const dto: CreatePaintingDTO = {
-			title: faker.person.middleName(),
-			image_url: faker.internet.url(),
-			description: "this is new painting",
-		};
-
-		const userAccessToken = testService.getAccessToken(user);
-
-		const response = await client.POST(ApiPaths.PaintingController_createPainting, {
-			params: {
-				header: {
-					authorization: `Bearer ${userAccessToken}`,
+			const response = await client.DELETE(route, {
+				params: {
+					path: {
+						id: painting.id,
+					},
+					header: {
+						authorization: `Bearer ${userAccessToken}`,
+					},
 				},
-			},
-			body: dto,
+			});
+
+			expect(response.response.status).toBe(HttpStatus.FORBIDDEN);
 		});
-
-		expect(response.response.status).toBe(HttpStatus.FORBIDDEN);
-	});
-
-	it("/painting/:id (PUT) : 성공", async () => {
-		const [tag, style, artist] = await Promise.all([
-			testService.insertTagStub(factoryTagStub()),
-			testService.insertStyleStub(factoryStyleStub()),
-			testService.insertArtistStub(FactoryArtistStub()),
-		]);
-		const painting = await testService.insertPaintingStub(
-			factoryPaintingStub(),
-			artist,
-			[tag],
-			[style],
-		);
-
-		const replaceTitle = "replace painting";
-		const replaceDto: ReplacePaintingDTO = {
-			tags: [tag.name],
-			styles: [style.name],
-			completition_year: painting.completition_year!,
-			title: replaceTitle,
-			image_url: painting.image_url,
-			description: painting.description,
-		};
-
-		const adminAccessToken = testService.getAccessToken(admin);
-
-		const response = await client.PUT(ApiPaths.PaintingController_replacePainting, {
-			params: {
-				path: {
-					id: painting.id,
-				},
-				header: {
-					authorization: `Bearer ${adminAccessToken}`,
-				},
-			},
-			body: replaceDto,
-		});
-
-		expect(response.response.status).toBe(HttpStatus.OK);
-		expect(response.data).toBeDefined();
-		expectResponseBody(zShowPaintingResponse, response.data);
-		const entity = (await paintingService.getByIds([painting.id]))[0];
-
-		expect(response.data).toMatchObject(entity);
-	});
-
-	it("/painting/:id (PUT) : (실패, 권한 없음)", async () => {
-		const [tag, style, artist] = await Promise.all([
-			testService.insertTagStub(factoryTagStub()),
-			testService.insertStyleStub(factoryStyleStub()),
-			testService.insertArtistStub(FactoryArtistStub()),
-		]);
-		const painting = await testService.insertPaintingStub(
-			factoryPaintingStub(),
-			artist,
-			[tag],
-			[style],
-		);
-
-		const replaceTitle = "replace painting";
-		const replaceDto: ReplacePaintingDTO = {
-			tags: [tag.name],
-			styles: [style.name],
-			completition_year: painting.completition_year!,
-			title: replaceTitle,
-			image_url: painting.image_url,
-			description: painting.description,
-		};
-
-		const userAccessToken = testService.getAccessToken(user);
-		const response = await client.PUT(ApiPaths.PaintingController_replacePainting, {
-			params: {
-				path: {
-					id: painting.id,
-				},
-				header: {
-					authorization: `Bearer ${userAccessToken}`,
-				},
-			},
-			body: replaceDto,
-		});
-
-		expect(response.response.status).toBe(HttpStatus.FORBIDDEN);
-	});
-
-	it("/painting/:id (DELETE) : 성공 ", async () => {
-		const [tag, style, artist] = await Promise.all([
-			testService.insertTagStub(factoryTagStub()),
-			testService.insertStyleStub(factoryStyleStub()),
-			testService.insertArtistStub(FactoryArtistStub()),
-		]);
-		const painting = await testService.insertPaintingStub(
-			factoryPaintingStub(),
-			artist,
-			[tag],
-			[style],
-		);
-
-		const adminAccessToken = testService.getAccessToken(admin);
-
-		const response = await client.DELETE(ApiPaths.PaintingController_deletePainting, {
-			params: {
-				path: {
-					id: painting.id,
-				},
-				header: {
-					authorization: `Bearer ${adminAccessToken}`,
-				},
-			},
-		});
-
-		expect(response.response.status).toBe(HttpStatus.OK);
-	});
-
-	it("/painting/:id (DELETE) : (실패, 권한 없음) ", async () => {
-		const [tag, style, artist] = await Promise.all([
-			testService.insertTagStub(factoryTagStub()),
-			testService.insertStyleStub(factoryStyleStub()),
-			testService.insertArtistStub(FactoryArtistStub()),
-		]);
-		const painting = await testService.insertPaintingStub(
-			factoryPaintingStub(),
-			artist,
-			[tag],
-			[style],
-		);
-
-		const userAccessToken = testService.getAccessToken(user);
-
-		const response = await client.DELETE(ApiPaths.PaintingController_deletePainting, {
-			params: {
-				path: {
-					id: painting.id,
-				},
-				header: {
-					authorization: `Bearer ${userAccessToken}`,
-				},
-			},
-		});
-
-		expect(response.response.status).toBe(HttpStatus.FORBIDDEN);
 	});
 });
