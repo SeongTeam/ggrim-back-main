@@ -12,11 +12,6 @@ export class SearchPaintingQueryDTO {
 	@IsString()
 	artistName: string = "";
 
-	/*형식 
-    JSON 문자열 
-      - 예시) url?tags=["1","2"]
-      - 서버쪽에서 파싱 로직을 사용해야함
-    */
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
 	@IsOptionalProperty()
@@ -24,11 +19,6 @@ export class SearchPaintingQueryDTO {
 	@IsString({ each: true })
 	tags: string[] = [];
 
-	/*형식 
-    JSON 문자열 
-      - 예시) url?tags=["1","2"]
-      - 서버쪽에서 파싱 로직을 사용해야함
-    */
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
 	@IsOptionalProperty()
