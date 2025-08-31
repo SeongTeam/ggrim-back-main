@@ -6,6 +6,8 @@ import { AuthModule } from "../../src/modules/auth/auth.module";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { TypeORMConfig } from "../../src/utils/typeormConfig";
 import { DataSource } from "typeorm";
+import { ConfigModule } from "@nestjs/config";
+import { NODE_ENV } from "../../src/modules/_common/const/envKeys";
 
 /* TestModule
 ## Purpose:
@@ -18,8 +20,13 @@ import { DataSource } from "typeorm";
 - Adapts the module specifically for the test environment.
 */
 
+const ENV = process.env[NODE_ENV];
 @Module({
 	imports: [
+		ConfigModule.forRoot({
+			envFilePath: !ENV ? ".env" : `.env.${ENV}`,
+			isGlobal: true,
+		}),
 		TypeOrmModule.forRootAsync({
 			useClass: TypeORMConfig,
 			dataSourceFactory: async (options) => new DataSource(options!).initialize(),
