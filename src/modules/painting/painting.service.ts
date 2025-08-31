@@ -56,11 +56,11 @@ export class PaintingService {
 			await this.setArtist(queryRunner, newPainting, dto.artistName);
 		}
 
-		if (isNotFalsy(dto.styles) && !isArrayEmpty(dto.styles)) {
+		if (!isArrayEmpty(dto.styles)) {
 			await this.relateToStyle(queryRunner, newPainting, dto.styles);
 		}
 
-		if (isNotFalsy(dto.tags) && !isArrayEmpty(dto.tags)) {
+		if (!isArrayEmpty(dto.tags)) {
 			await this.relateToTag(queryRunner, newPainting, dto.tags);
 		}
 

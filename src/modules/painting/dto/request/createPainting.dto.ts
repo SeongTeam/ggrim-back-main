@@ -39,7 +39,7 @@ export class CreatePaintingDTO {
 	@IsString({
 		each: true,
 	})
-	tags?: string[];
+	tags: string[] = [];
 
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
@@ -48,7 +48,7 @@ export class CreatePaintingDTO {
 	@IsString({
 		each: true,
 	})
-	styles?: string[];
+	styles: string[] = [];
 
 	@IsString()
 	image_s3_key!: string;
