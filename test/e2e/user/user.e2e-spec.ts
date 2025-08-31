@@ -2,28 +2,39 @@
 import { HttpStatus, INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { AppModule } from "../../../src/app.module";
-
-import * as request from "supertest";
 import { DatabaseService } from "../../../src/modules/db/db.service";
 import { configNestApp } from "../../../src/app.config";
 import { User } from "../../../src/modules/user/entity/user.entity";
-import { ShowUserResponse } from "../../../src/modules/user/dto/request/response/showUser.response";
 import { CreateUserDTO } from "../../../src/modules/user/dto/request/createUser.dto";
-import { ONE_TIME_TOKEN_HEADER } from "../../../src/modules/auth/guard/const";
-import { USER_ROLE, USER_STATE } from "../../../src/modules/user/const";
 import { ReplacePassWordDTO } from "../../../src/modules/user/dto/request/replacePw.dto";
-import { ReplaceRoleDTO } from "../../../src/modules/user/dto/request/replaceRole.dto";
 import { TestModule } from "../../_shared/test.module";
 import { TestService } from "../../_shared/test.service";
 import { factoryUserStub, getAdminUserStub, getNormalUserStub } from "../../_shared/stub/user.stub";
 import { faker } from "@faker-js/faker";
+import createClient from "openapi-fetch";
+import {
+	ApiPaths,
+	paths,
+	ReplaceRoleDto,
+	ReplaceUsernameDto,
+	USER_ROLE,
+	USER_STATE,
+} from "../../swagger/dto-types";
+import { expectResponseBody } from "../_common/jest-zod";
+import { zShowUserResponse } from "./zodSchema";
+import { UserService } from "../../../src/modules/user/user.service";
+import { AuthService } from "../../../src/modules/auth/auth.service";
 
 describe("UserController (e2e)", () => {
 	let app: INestApplication;
 	let dbService: DatabaseService;
 	let testService: TestService;
+	let userService: UserService;
+	let authService: AuthService;
 	let user: User;
 	let admin: User;
+	const port = 3001;
+	const client = createClient<paths>({ baseUrl: `http://localhost:${port}` });
 	// TODO 테스트 환경 설정하기
 	// [x] nest.js APP 인스턴스 생성
 	// [x] nest.js APP 인스턴스 설정(global pipe, Module, .env.test)
@@ -44,271 +55,536 @@ describe("UserController (e2e)", () => {
 
 		testService = moduleFixture.get(TestService);
 		dbService = moduleFixture.get(DatabaseService);
+		userService = moduleFixture.get(UserService);
+		authService = moduleFixture.get(AuthService);
 		await dbService.resetDB();
 
 		user = await testService.insertStubUser(getNormalUserStub());
 		admin = await testService.insertStubUser(getAdminUserStub());
+
+		await app.listen(port);
 	});
 
 	afterAll(async () => {
-		await dbService.resetDB();
 		await app.close();
 	});
 
-	it("/user/:id (GET) : 성공", async () => {
-		const response = await request(app.getHttpServer())
-			.get(`/user/${user.id}`)
-			.expect(HttpStatus.OK);
-		const body = response.body as ShowUserResponse;
-		expect(body).toBeDefined();
-		expect(body).toMatchObject({
-			id: user.id,
-			username: user.username,
+	describe("/user/:id (GET) ", () => {
+		const route = ApiPaths.UserController_getOne;
+		it("/user/:id (GET) : 성공", async () => {
+			const response = await client.GET(route, {
+				params: {
+					path: {
+						id: user.id,
+					},
+				},
+			});
+
+			expect(response.response.status).toBe(HttpStatus.OK);
+			const body = response.data!;
+			expect(body).toBeDefined();
+			expectResponseBody(zShowUserResponse, body);
+			expect(body.id).toBe(user.id);
+		});
+
+		it("/user/:id (GET) : (실패, 삭제된 계정)", async () => {
+			const deletedUser = await testService.insertStubUser(factoryUserStub("user"));
+			await userService.softDeleteUser(dbService.getQueryRunner(), deletedUser.id);
+			const response = await client.GET(route, {
+				params: {
+					path: {
+						id: deletedUser.id,
+					},
+				},
+			});
+
+			expect(response.response.status).toBe(HttpStatus.BAD_REQUEST);
+			const body = response.data!;
+			expect(body).toBeFalsy();
 		});
 	});
 
-	it("/user (POST) : 성공", async () => {
-		const email = faker.internet.email();
-		const username = faker.internet.username();
-		const password = faker.internet.password();
+	describe("/user (POST)", () => {
+		const route = ApiPaths.createOneBaseUserControllerUser;
+		it("/user (POST) : 성공", async () => {
+			const email = faker.internet.email();
+			const username = faker.internet.username();
+			const password = faker.internet.password();
 
-		const signUpToken = await testService.createSignUpOneTimeToken(email);
-		const dto: CreateUserDTO = {
-			password,
-			username,
-		};
+			const signUpToken = await testService.createSignUpOneTimeToken(email);
+			const dto = {
+				password,
+				username,
+			};
+			const expected = {
+				role: USER_ROLE.user,
+				active: USER_STATE.active,
+				email,
+				username: dto.username,
+			};
 
-		const response = await request(app.getHttpServer())
-			.post("/user")
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN, signUpToken.token)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID, signUpToken.id)
-			.send(dto)
-			.expect(HttpStatus.CREATED);
+			const response = await client.POST(route, {
+				params: {
+					header: {
+						"x-one-time-token-identifier": signUpToken.id,
+						"x-one-time-token-value": signUpToken.token,
+					},
+				},
+				body: dto,
+			});
 
-		expect(response.body as ShowUserResponse).toMatchObject({
-			role: USER_ROLE.USER,
-			active: USER_STATE.ACTIVE,
-			email,
-			username: dto.username,
+			expect(response.response.status).toBe(HttpStatus.CREATED);
+			const body = response.data;
+			expect(body).toBeDefined();
+			expectResponseBody(zShowUserResponse, body);
+			expect(body!).toMatchObject(expected);
+
+			const entity = await userService.findOne({ where: { id: body!.id } });
+			expect(entity).toBeDefined();
+			expect(entity!).toMatchObject(expected);
+		});
+		it("/user (POST) : (실패, 미유효 OneTimeToken)", async () => {
+			const email = faker.internet.email();
+			const username = faker.internet.username();
+			const password = faker.internet.password();
+
+			const signUpToken = await testService.createSignUpOneTimeToken(email);
+			const dto: CreateUserDTO = {
+				password,
+				username,
+			};
+			await testService.useOneTimeToken(signUpToken);
+
+			const response = await client.POST(route, {
+				params: {
+					header: {
+						"x-one-time-token-identifier": signUpToken.id,
+						"x-one-time-token-value": signUpToken.token,
+					},
+				},
+				body: dto,
+			});
+
+			expect(response.response.status).toBe(HttpStatus.UNAUTHORIZED);
+			const body = response.data;
+			expect(body).toBeFalsy();
+			const entity = await userService.findOne({ where: { email } });
+			expect(entity).toBeNull();
 		});
 	});
-	it("/user (POST) : (실패, 미유효 OneTimeToken)", async () => {
-		const email = faker.internet.email();
-		const username = faker.internet.username();
-		const password = faker.internet.password();
 
-		const signUpToken = await testService.createSignUpOneTimeToken(email);
-		const dto: CreateUserDTO = {
-			password,
-			username,
-		};
-		await testService.useOneTimeToken(signUpToken);
+	describe("/user/:email/password", () => {
+		const route = ApiPaths.UserController_replacePassword;
+		it("/user/:email/password (PUT) : 성공", async () => {
+			const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
+			const oneTimeToken = await testService.createOneTimeToken(fakerUser, "update-password");
+			const dto: ReplacePassWordDTO = {
+				password: faker.internet.password(),
+			};
 
-		await request(app.getHttpServer())
-			.post("/user")
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN, signUpToken.token)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID, signUpToken.id)
-			.send(dto)
-			.expect(HttpStatus.UNAUTHORIZED);
+			const response = await client.PUT(route, {
+				params: {
+					path: {
+						email: fakerUser.email,
+					},
+					header: {
+						"x-one-time-token-identifier": oneTimeToken.id,
+						"x-one-time-token-value": oneTimeToken.token,
+					},
+				},
+				body: dto,
+			});
+
+			expect(response.response.status).toBe(HttpStatus.OK);
+			const body = response.data!;
+			expect(body).toBeUndefined();
+
+			const entity = await userService.findOne({ where: { id: fakerUser.id } });
+			const isChanged = await authService.isHashMatched(dto.password, entity!.password);
+			expect(isChanged).toBe(true);
+		});
+		it("/user/:email/password (PUT) : (실패, 사용자 본인 아님)", async () => {
+			const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
+			const adminOneTimeToken = await testService.createOneTimeToken(
+				admin,
+				"update-password",
+			);
+			const dto: ReplacePassWordDTO = {
+				password: faker.internet.password(),
+			};
+
+			const response = await client.PUT(route, {
+				params: {
+					path: {
+						email: fakerUser.email,
+					},
+					header: {
+						"x-one-time-token-identifier": adminOneTimeToken.id,
+						"x-one-time-token-value": adminOneTimeToken.token,
+					},
+				},
+				body: dto,
+			});
+
+			expect(response.response.status).toBe(HttpStatus.FORBIDDEN);
+			const body = response.data!;
+
+			expect(body).toBeUndefined();
+
+			const entity = await userService.findOne({ where: { id: fakerUser.id } });
+			const isChanged = await authService.isHashMatched(dto.password, entity!.password);
+			expect(isChanged).toBe(false);
+		});
+		it("/user/:email/password (PUT) : (실패, 사용자 본인이지만, 미유효 OneTimeToken)", async () => {
+			const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
+			const usedOneTimeToken = await testService.createOneTimeToken(
+				fakerUser,
+				"update-password",
+			);
+			const dto: ReplacePassWordDTO = {
+				password: faker.internet.password(),
+			};
+			await testService.useOneTimeToken(usedOneTimeToken);
+
+			const response = await client.PUT(route, {
+				params: {
+					path: {
+						email: fakerUser.email,
+					},
+					header: {
+						"x-one-time-token-identifier": usedOneTimeToken.id,
+						"x-one-time-token-value": usedOneTimeToken.token,
+					},
+				},
+				body: dto,
+			});
+
+			expect(response.response.status).toBe(HttpStatus.UNAUTHORIZED);
+			const body = response.data!;
+
+			expect(body).toBeUndefined();
+			const entity = await userService.findOne({ where: { id: fakerUser.id } });
+			const isChanged = await authService.isHashMatched(dto.password, entity!.password);
+			expect(isChanged).toBe(false);
+		});
 	});
 
-	it("/user/:email/password (PUT) : 성공", async () => {
-		const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
-		const oneTimeToken = await testService.createOneTimeToken(fakerUser, "update-password");
-		const dto: ReplacePassWordDTO = {
-			password: faker.internet.password(),
-		};
+	describe("/user/:email/username (PUT)", () => {
+		const route = ApiPaths.UserController_replaceUsername;
+		it("/user/:email/username (PUT) : (성공)", async () => {
+			const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
+			const dto = {
+				username: faker.internet.username(),
+			};
+			const authorization = testService.getBearerAuthCredential(fakerUser);
 
-		const response = await request(app.getHttpServer())
-			.put(`/user/${fakerUser.email}/password`)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN, oneTimeToken.token)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID, oneTimeToken.id)
-			.send(dto)
-			.expect(HttpStatus.OK);
+			const response = await client.PUT(route, {
+				params: {
+					path: {
+						email: fakerUser.email,
+					},
+					header: {
+						authorization,
+					},
+				},
+				body: dto,
+			});
 
-		expect(response.body).toBeUndefined();
-	});
-	it("/user/:email/password (PUT) : (실패, 사용자 본인 아님)", async () => {
-		const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
-		const adminOneTimeToken = await testService.createOneTimeToken(admin, "update-password");
-		const dto: ReplacePassWordDTO = {
-			password: faker.internet.password(),
-		};
+			expect(response.response.status).toBe(HttpStatus.OK);
+			const body = response.data!;
 
-		await request(app.getHttpServer())
-			.put(`/user/${fakerUser.email}/password`)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN, adminOneTimeToken.token)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID, adminOneTimeToken.id)
-			.send(dto)
-			.expect(HttpStatus.FORBIDDEN);
-	});
-	it("/user/:email/password (PUT) : (실패, 사용자 본인이지만, 미유효 OneTimeToken)", async () => {
-		const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
-		const usedOneTimeToken = await testService.createOneTimeToken(fakerUser, "update-password");
-		const dto: ReplacePassWordDTO = {
-			password: faker.internet.password(),
-		};
-		await testService.useOneTimeToken(usedOneTimeToken);
+			expect(body).toBeUndefined();
 
-		await request(app.getHttpServer())
-			.put(`/user/${fakerUser.email}/password`)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN, usedOneTimeToken.token)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID, usedOneTimeToken.id)
-			.send(dto)
-			.expect(HttpStatus.FORBIDDEN);
-	});
+			const entity = await userService.findOne({ where: { id: fakerUser.id } });
+			expect(entity).toEqual(
+				expect.objectContaining({
+					username: dto.username,
+					id: fakerUser.id,
+					email: fakerUser.email,
+					password: fakerUser.password,
+				}),
+			);
+		});
+		it("/user/:email/username (PUT) : (실패, 사용자 본인 아님)", async () => {
+			const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
+			const dto: ReplaceUsernameDto = {
+				username: faker.internet.username(),
+			};
+			const adminAuthorization = testService.getBearerAuthCredential(admin);
 
-	it("/user/:email/email (PUT) : (성공)", async () => {
-		const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
-		const dto: ReplacePassWordDTO = {
-			password: faker.internet.username(),
-		};
-		const accessToken = testService.getAccessToken(fakerUser);
+			const response = await client.PUT(route, {
+				params: {
+					path: {
+						email: fakerUser.email,
+					},
+					header: {
+						authorization: adminAuthorization,
+					},
+				},
+				body: dto,
+			});
 
-		const response = await request(app.getHttpServer())
-			.put(`/user/${user.email}/email`)
-			.auth(accessToken, { type: "bearer" })
-			.send(dto)
-			.expect(HttpStatus.OK);
+			expect(response.response.status).toBe(HttpStatus.FORBIDDEN);
+			const body = response.data!;
 
-		expect(response.body).toBeUndefined();
-	});
-	it("/user/:email/email (PUT) : (실패, 사용자 본인 아님)", async () => {
-		const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
-		const dto: ReplacePassWordDTO = {
-			password: faker.internet.username(),
-		};
-		const adminAccessToken = testService.getAccessToken(admin);
+			expect(body).toBeUndefined();
 
-		const response = await request(app.getHttpServer())
-			.put(`/user/${fakerUser.email}/email`)
-			.auth(adminAccessToken, { type: "bearer" })
-			.send(dto)
-			.expect(HttpStatus.FORBIDDEN);
-
-		expect(response.body).toBeUndefined();
+			const entity = await userService.findOne({ where: { id: fakerUser.id } });
+			expect(entity).toStrictEqual(
+				expect.objectContaining({
+					username: fakerUser.username,
+					id: fakerUser.id,
+					email: fakerUser.email,
+					password: fakerUser.password,
+					role: fakerUser.role,
+				}),
+			);
+		});
 	});
 
-	it("/user/:email/role (PUT) : (성공)", async () => {
-		const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
-		const adminAccessToken = testService.getAccessToken(admin);
+	describe("/user/:email/role", () => {
+		const route = ApiPaths.UserController_replaceRole;
+		it("/user/:email/role (PUT) : (성공)", async () => {
+			const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
+			const adminAuthorization = testService.getBearerAuthCredential(admin);
 
-		const dto: ReplaceRoleDTO = {
-			role: "admin",
-		};
+			const dto: ReplaceRoleDto = {
+				role: USER_ROLE.admin,
+			};
 
-		const response = await request(app.getHttpServer())
-			.put(`/user/${fakerUser.email}/role`)
-			.auth(adminAccessToken, { type: "bearer" })
-			.send(dto)
-			.expect(HttpStatus.OK);
+			const response = await client.PUT(route, {
+				params: {
+					path: {
+						email: fakerUser.email,
+					},
+					header: {
+						authorization: adminAuthorization,
+					},
+				},
+				body: dto,
+			});
 
-		expect(response.body).toBeUndefined();
+			expect(response.response.status).toBe(HttpStatus.OK);
+			const body = response.data!;
+
+			expect(body).toBeUndefined();
+
+			const entity = await userService.findOne({ where: { id: fakerUser.id } });
+			expect(entity).toEqual(
+				expect.objectContaining({
+					username: fakerUser.username,
+					id: fakerUser.id,
+					email: fakerUser.email,
+					password: fakerUser.password,
+					role: fakerUser.role,
+				}),
+			);
+		});
+		it("/user/:email/role (PUT) : (실패, 권한 없음)", async () => {
+			const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
+			const authorization = testService.getBearerAuthCredential(fakerUser);
+
+			const dto: ReplaceRoleDto = {
+				role: USER_ROLE.admin,
+			};
+
+			const response = await client.PUT(route, {
+				params: {
+					path: {
+						email: fakerUser.email,
+					},
+					header: {
+						authorization,
+					},
+				},
+				body: dto,
+			});
+
+			expect(response.response.status).toBe(HttpStatus.FORBIDDEN);
+			const body = response.data!;
+
+			expect(body).toBeUndefined();
+
+			const entity = await userService.findOne({ where: { id: fakerUser.id } });
+			expect(entity).toEqual(
+				expect.objectContaining({
+					username: fakerUser.username,
+					id: fakerUser.id,
+					email: fakerUser.email,
+					password: fakerUser.password,
+					role: fakerUser.role,
+				}),
+			);
+		});
 	});
-	it("/user/:email/role (PUT) : (실패, 권한 없음)", async () => {
-		const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
-		const accessToken = testService.getAccessToken(fakerUser);
 
-		const dto: ReplaceRoleDTO = {
-			role: "admin",
-		};
+	describe("/user/:email (DELETE)", () => {
+		const route = ApiPaths.UserController_deleteUser;
+		it("/user/:email (DELETE) : (성공)", async () => {
+			const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
+			const oneTimeToken = await testService.createOneTimeToken(fakerUser, "delete-account");
 
-		const response = await request(app.getHttpServer())
-			.put(`/user/${fakerUser.email}/role`)
-			.auth(accessToken, { type: "bearer" })
-			.send(dto)
-			.expect(HttpStatus.FORBIDDEN);
+			const response = await client.DELETE(route, {
+				params: {
+					path: {
+						email: fakerUser.email,
+					},
+					header: {
+						"x-one-time-token-identifier": oneTimeToken.id,
+						"x-one-time-token-value": oneTimeToken.token,
+					},
+				},
+			});
 
-		expect(response.body).toBeUndefined();
-	});
+			expect(response.response.status).toBe(HttpStatus.OK);
+			const body = response.data;
+			expect(body).toBeUndefined();
 
-	it("/user/:email (DELETE) : (성공)", async () => {
-		const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
-		const oneTimeToken = await testService.createOneTimeToken(fakerUser, "delete-account");
-
-		const response = await request(app.getHttpServer())
-			.delete(`/user/${fakerUser.email}`)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN, oneTimeToken.token)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID, oneTimeToken.id)
-			.expect(HttpStatus.OK);
-
-		expect(response.body).toBeUndefined();
-	});
-
-	it("/user/:email (DELETE) : (실패, 사용자 본인 아님)", async () => {
-		const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
-		const adminOneTimeToken = await testService.createOneTimeToken(admin, "delete-account");
-
-		const response = await request(app.getHttpServer())
-			.delete(`/user/${fakerUser.email}`)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN, adminOneTimeToken.token)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID, adminOneTimeToken.id)
-			.expect(HttpStatus.OK);
-
-		expect(response.body).toBeUndefined();
-	});
-	it("/user/:email (DELETE) : (실패, 사용자 본인이지만, 미유효 OneTimeToken)", async () => {
-		const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
-		const usedOneTimeToken = await testService.createOneTimeToken(fakerUser, "delete-account");
-
-		await testService.useOneTimeToken(usedOneTimeToken);
-
-		const response = await request(app.getHttpServer())
-			.delete(`/user/${fakerUser.email}`)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN, usedOneTimeToken.token)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID, usedOneTimeToken.id)
-			.expect(HttpStatus.OK);
-
-		expect(response.body).toBeUndefined();
-	});
-
-	it("/user/recover/:email (PATCH) : (성공)", async () => {
-		const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
-		await dbService.getRepository(User).softDelete({
-			id: fakerUser.id,
+			const entity = await userService.findOne({ where: { id: fakerUser.id } });
+			expect(entity).toBeNull();
 		});
 
-		const oneTimeToken = await testService.createOneTimeToken(fakerUser, "recover-account");
+		it("/user/:email (DELETE) : (실패, 사용자 본인 아님)", async () => {
+			const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
+			const adminOneTimeToken = await testService.createOneTimeToken(admin, "delete-account");
 
-		const response = await request(app.getHttpServer())
-			.patch(`/user/recover/${fakerUser.email}`)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN, oneTimeToken.token)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID, oneTimeToken.id)
-			.expect(HttpStatus.OK);
+			const response = await client.DELETE(route, {
+				params: {
+					path: {
+						email: fakerUser.email,
+					},
+					header: {
+						"x-one-time-token-identifier": adminOneTimeToken.id,
+						"x-one-time-token-value": adminOneTimeToken.token,
+					},
+				},
+			});
 
-		expect(response.body).toBeUndefined();
-	});
-	it("/user/recover/:email (PATCH) : (실패, 사용자 본인 아님)", async () => {
-		const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
-		await dbService.getRepository(User).softDelete({
-			id: fakerUser.id,
+			expect(response.response.status).toBe(HttpStatus.FORBIDDEN);
+			const error = response.error;
+			expect(error).toBeDefined();
+
+			const entity = await userService.findOne({ where: { id: fakerUser.id } });
+			expect(entity).toBeDefined();
 		});
+		it("/user/:email (DELETE) : (실패, 사용자 본인이지만, 미유효 OneTimeToken)", async () => {
+			const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
+			const usedOneTimeToken = await testService.createOneTimeToken(
+				fakerUser,
+				"delete-account",
+			);
 
-		const adminOneTimeToken = await testService.createOneTimeToken(admin, "recover-account");
+			await testService.useOneTimeToken(usedOneTimeToken);
 
-		const response = await request(app.getHttpServer())
-			.patch(`/user/recover/${fakerUser.email}`)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN, adminOneTimeToken.token)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID, adminOneTimeToken.id)
-			.expect(HttpStatus.FORBIDDEN);
+			const response = await client.DELETE(route, {
+				params: {
+					path: {
+						email: fakerUser.email,
+					},
+					header: {
+						"x-one-time-token-identifier": usedOneTimeToken.id,
+						"x-one-time-token-value": usedOneTimeToken.token,
+					},
+				},
+			});
 
-		expect(response.body).toBeUndefined();
-	});
-	it("/user/recover/:email (PATCH) : (실패, 사용자 본인이지만, 미유효 OneTimeToken)", async () => {
-		const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
-		await dbService.getRepository(User).softDelete({
-			id: fakerUser.id,
+			expect(response.response.status).toBe(HttpStatus.UNAUTHORIZED);
+			const error = response.error;
+			expect(error).toBeDefined();
+
+			const entity = await userService.findOne({ where: { id: fakerUser.id } });
+			expect(entity).toBeDefined();
 		});
+	});
 
-		const usedOneTimeToken = await testService.createOneTimeToken(fakerUser, "recover-account");
-		await testService.useOneTimeToken(usedOneTimeToken);
+	describe("/user/recover/:email (PATCH)", () => {
+		const route = ApiPaths.UserController_recoverUser;
+		it("/user/recover/:email (PATCH) : (성공)", async () => {
+			const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
+			await dbService.getRepository(User).softDelete({
+				id: fakerUser.id,
+			});
 
-		const response = await request(app.getHttpServer())
-			.patch(`/user/recover/${fakerUser.email}`)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN, usedOneTimeToken.token)
-			.set(ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID, usedOneTimeToken.id)
-			.expect(HttpStatus.FORBIDDEN);
+			const oneTimeToken = await testService.createOneTimeToken(fakerUser, "recover-account");
 
-		expect(response.body).toBeUndefined();
+			const response = await client.PATCH(route, {
+				params: {
+					path: {
+						email: fakerUser.email,
+					},
+					header: {
+						"x-one-time-token-identifier": oneTimeToken.id,
+						"x-one-time-token-value": oneTimeToken.token,
+					},
+				},
+			});
+
+			expect(response.response.status).toBe(HttpStatus.OK);
+			const body = response.data;
+			expect(body).toBeUndefined();
+
+			const entity = await userService.findOne({ where: { id: fakerUser.id } });
+			expect(entity).toBeDefined();
+		});
+		it("/user/recover/:email (PATCH) : (실패, 사용자 본인 아님)", async () => {
+			const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
+			await dbService.getRepository(User).softDelete({
+				id: fakerUser.id,
+			});
+
+			const adminOneTimeToken = await testService.createOneTimeToken(
+				admin,
+				"recover-account",
+			);
+
+			const response = await client.PATCH(route, {
+				params: {
+					path: {
+						email: fakerUser.email,
+					},
+					header: {
+						"x-one-time-token-identifier": adminOneTimeToken.id,
+						"x-one-time-token-value": adminOneTimeToken.token,
+					},
+				},
+			});
+
+			expect(response.response.status).toBe(HttpStatus.FORBIDDEN);
+			const error = response.error;
+			expect(error).toBeDefined();
+
+			const entity = await userService.findOne({ where: { id: fakerUser.id } });
+			expect(entity).toBeNull();
+		});
+		it("/user/recover/:email (PATCH) : (실패, 사용자 본인이지만, 미유효 OneTimeToken)", async () => {
+			const fakerUser = await testService.insertStubUser(factoryUserStub("user"));
+			await dbService.getRepository(User).softDelete({
+				id: fakerUser.id,
+			});
+
+			const usedOneTimeToken = await testService.createOneTimeToken(
+				fakerUser,
+				"recover-account",
+			);
+			await testService.useOneTimeToken(usedOneTimeToken);
+
+			const response = await client.PATCH(route, {
+				params: {
+					path: {
+						email: fakerUser.email,
+					},
+					header: {
+						"x-one-time-token-identifier": usedOneTimeToken.id,
+						"x-one-time-token-value": usedOneTimeToken.token,
+					},
+				},
+			});
+
+			expect(response.response.status).toBe(HttpStatus.UNAUTHORIZED);
+			const error = response.error;
+			expect(error).toBeDefined();
+			const entity = await userService.findOne({ where: { id: fakerUser.id } });
+			expect(entity).toBeNull();
+		});
 	});
 });
