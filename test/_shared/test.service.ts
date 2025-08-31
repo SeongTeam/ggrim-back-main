@@ -31,14 +31,16 @@ export class TestService {
 		}
 	}
 
-	getAccessToken(user: User): string {
-		return this.authService.signToken({
+	getBearerAuthCredential(user: User): string {
+		const token = this.authService.signToken({
 			email: user.email,
 			role: user.role,
 			username: user.username,
 			purpose: "access",
 			type: "ACCESS",
 		});
+
+		return "Bearer " + token;
 	}
 
 	getBasicAuthCredential(email: string, password: string) {
