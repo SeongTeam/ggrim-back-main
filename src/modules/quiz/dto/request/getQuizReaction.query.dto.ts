@@ -8,5 +8,5 @@ export class QuizReactionQueryDTO {
 	@Transform(({ value }) => (isNaN(Number(value)) ? 0 : Number(value)))
 	@IsOptionalProperty()
 	@IsNumber()
-	page?: number;
+	page: number = 0;
 }

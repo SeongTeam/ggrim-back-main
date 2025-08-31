@@ -40,11 +40,11 @@ export class SearchQuizQueryDTO {
 	@Transform(({ value }) => (isNaN(Number(value)) ? 0 : Number(value)))
 	@IsOptionalProperty()
 	@IsNumber()
-	page!: number;
+	page: number = 0;
 
 	@ApiProperty({ default: 20 })
 	@Transform(({ value }) => (isNaN(Number(value)) ? 20 : Number(value)))
 	@IsOptionalProperty()
 	@IsNumber()
-	count!: number;
+	count: number = 20;
 }

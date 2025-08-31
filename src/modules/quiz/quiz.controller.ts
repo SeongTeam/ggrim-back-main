@@ -237,15 +237,14 @@ export class QuizController
 	@Get("schedule")
 	async getScheduledQuiz(@Query() dto: ScheduleQuizQueryDTO): Promise<ScheduleQuizResponse> {
 		Logger.log(`context : `, dto.context);
-		const QUIZ_PAGINATION = 20;
 		const MAX_RETRY = 10;
 		let attempt = 0;
 		for (attempt = 0; attempt < MAX_RETRY; attempt++) {
 			const context: QuizContext = await this.extractContext(dto);
 
-			const search = this.buildSearchDTO(context);
+			const search = this.buildSearchDTO(context, context.page);
 
-			const pagination = await this.service.searchQuiz(search, context.page, QUIZ_PAGINATION);
+			const pagination = await this.service.searchQuiz(search);
 
 			const quizList: ShowQuiz[] = pagination.data.map((q) => new ShowQuiz(q));
 			if (quizList.length === 0) {
@@ -373,8 +372,7 @@ export class QuizController
 	@HttpCode(HttpStatus.OK)
 	@Get("")
 	async searchQuiz(@Query() dto: SearchQuizQueryDTO): Promise<Pagination<ShowQuiz>> {
-		const { page, count } = dto;
-		const result = await this.service.searchQuiz(dto, page, count);
+		const result = await this.service.searchQuiz(dto);
 		const ret = {
 			...result,
 			data: result.data.map((quiz) => new ShowQuiz(quiz)),
@@ -441,11 +439,15 @@ export class QuizController
 
 	private buildSearchDTO(
 		context: QuizContext,
-	): Pick<SearchQuizQueryDTO, "artists" | "tags" | "styles"> {
+		page: number = 0,
+		pageCount: number = 20,
+	): SearchQuizQueryDTO {
 		return {
 			artists: context.artist ? [context.artist] : [],
 			tags: context.tag ? [context.tag] : [],
 			styles: context.style ? [context.style] : [],
+			page,
+			count: pageCount,
 		};
 	}
 
