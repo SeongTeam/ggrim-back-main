@@ -12,7 +12,7 @@ export class CreateUserDTO {
 
 	@IsString()
 	@MinLength(4)
-	@MaxLength(12)
+	@MaxLength(20)
 	username!: string;
 
 	@IsOptionalProperty()
