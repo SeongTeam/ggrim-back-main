@@ -7,17 +7,17 @@ export class CreateArtistDTO {
 
 	@IsOptionalProperty()
 	@IsDate()
-	birth_date!: Date;
+	birth_date?: Date;
 
 	@IsOptionalProperty()
 	@IsDate()
-	death_date!: Date;
+	death_date?: Date;
 
 	@IsOptionalProperty()
 	@IsUrl()
-	info_url!: string;
+	info_url?: string;
 
 	@IsOptionalProperty()
 	@IsUrl()
-	image_url!: string;
+	image_url?: string;
 }
