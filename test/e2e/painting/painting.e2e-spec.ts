@@ -259,6 +259,8 @@ describe("PaintingController (e2e)", () => {
 				width: faker.number.int({ min: 100, max: 1000 }),
 				height: faker.number.int({ min: 100, max: 1000 }),
 				image_s3_key: faker.commerce.product(),
+				tags: [],
+				styles: [],
 			};
 		}
 
@@ -270,12 +272,12 @@ describe("PaintingController (e2e)", () => {
 		it("/painting (POST) : (성공, no relation)", async () => {
 			const dto = factoryBaseCreateDto();
 
-			const adminAccessToken = testService.getAccessToken(admin);
+			const adminAuthorization = testService.getBearerAuthCredential(admin);
 
 			const response = await client.POST(route, {
 				params: {
 					header: {
-						authorization: `Bearer ${adminAccessToken}`,
+						authorization: adminAuthorization,
 					},
 				},
 				body: dto,
@@ -296,12 +298,12 @@ describe("PaintingController (e2e)", () => {
 			dto.tags = [tag.name];
 			dto.styles = [style.name];
 
-			const adminAccessToken = testService.getAccessToken(admin);
+			const adminAuthorization = testService.getBearerAuthCredential(admin);
 
 			const response = await client.POST(route, {
 				params: {
 					header: {
-						authorization: `Bearer ${adminAccessToken}`,
+						authorization: adminAuthorization,
 					},
 				},
 				body: dto,
@@ -330,14 +332,16 @@ describe("PaintingController (e2e)", () => {
 				height: faker.number.int({ min: 100, max: 1000 }),
 				image_s3_key: faker.commerce.product(),
 				artistName: artist.name,
+				tags: [],
+				styles: [],
 			};
 
-			const userAccessToken = testService.getAccessToken(user);
+			const authorization = testService.getBearerAuthCredential(user);
 
 			const response = await client.POST(ApiPaths.PaintingController_createPainting, {
 				params: {
 					header: {
-						authorization: `Bearer ${userAccessToken}`,
+						authorization,
 					},
 				},
 				body: dto,
@@ -384,7 +388,7 @@ describe("PaintingController (e2e)", () => {
 			replaceDto.title = "replace title";
 			replaceDto.tags = painting.tags.map((t) => t.name);
 			replaceDto.styles = painting.styles.map((s) => s.name);
-			const adminAccessToken = testService.getAccessToken(admin);
+			const adminAuthorization = testService.getBearerAuthCredential(admin);
 
 			const response = await client.PUT(route, {
 				params: {
@@ -392,7 +396,7 @@ describe("PaintingController (e2e)", () => {
 						id: painting.id,
 					},
 					header: {
-						authorization: `Bearer ${adminAccessToken}`,
+						authorization: adminAuthorization,
 					},
 				},
 				body: replaceDto,
@@ -434,7 +438,7 @@ describe("PaintingController (e2e)", () => {
 			replaceDto.artistName = newArtist.name;
 			replaceDto.tags = [newTag.name];
 			replaceDto.styles = [newStyle.name];
-			const adminAccessToken = testService.getAccessToken(admin);
+			const adminAuthorization = testService.getBearerAuthCredential(admin);
 
 			const response = await client.PUT(route, {
 				params: {
@@ -442,7 +446,7 @@ describe("PaintingController (e2e)", () => {
 						id: painting.id,
 					},
 					header: {
-						authorization: `Bearer ${adminAccessToken}`,
+						authorization: adminAuthorization,
 					},
 				},
 				body: replaceDto,
@@ -479,14 +483,14 @@ describe("PaintingController (e2e)", () => {
 			const replaceDto = factoryBaseReplaceDto(painting);
 			replaceDto.title = "new title";
 
-			const userAccessToken = testService.getAccessToken(user);
+			const authorization = testService.getBearerAuthCredential(user);
 			const response = await client.PUT(ApiPaths.PaintingController_replacePainting, {
 				params: {
 					path: {
 						id: painting.id,
 					},
 					header: {
-						authorization: `Bearer ${userAccessToken}`,
+						authorization,
 					},
 				},
 				body: replaceDto,
@@ -513,7 +517,7 @@ describe("PaintingController (e2e)", () => {
 			);
 		});
 		it("/painting/:id (DELETE) : 성공 ", async () => {
-			const adminAccessToken = testService.getAccessToken(admin);
+			const adminAuthorization = testService.getBearerAuthCredential(admin);
 
 			const response = await client.DELETE(route, {
 				params: {
@@ -521,7 +525,7 @@ describe("PaintingController (e2e)", () => {
 						id: painting.id,
 					},
 					header: {
-						authorization: `Bearer ${adminAccessToken}`,
+						authorization: adminAuthorization,
 					},
 				},
 			});
@@ -531,7 +535,7 @@ describe("PaintingController (e2e)", () => {
 		});
 
 		it("/painting/:id (DELETE) : (실패, 권한 없음) ", async () => {
-			const userAccessToken = testService.getAccessToken(user);
+			const authorization = testService.getBearerAuthCredential(user);
 
 			const response = await client.DELETE(route, {
 				params: {
@@ -539,7 +543,7 @@ describe("PaintingController (e2e)", () => {
 						id: painting.id,
 					},
 					header: {
-						authorization: `Bearer ${userAccessToken}`,
+						authorization,
 					},
 				},
 			});
