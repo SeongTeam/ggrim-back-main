@@ -827,27 +827,29 @@ export type components = {
 		};
 		CreatePaintingDTO: {
 			artistName?: string;
-			width?: number;
-			height?: number;
 			completition_year?: number;
-			tags?: string[];
-			styles?: string[];
-			image_s3_key?: string;
+			/** @default [] */
+			tags: string[];
+			/** @default [] */
+			styles: string[];
 			title: string;
 			image_url: string;
 			description: string;
+			width: number;
+			height: number;
+			image_s3_key: string;
 		};
 		ReplacePaintingDTO: {
 			artistName?: string;
-			width?: number;
-			height?: number;
 			completition_year?: number;
-			image_s3_key?: string;
 			tags: string[];
 			styles: string[];
 			title: string;
 			image_url: string;
 			description: string;
+			width: number;
+			height: number;
+			image_s3_key: string;
 		};
 		ShowArtistResponse: {
 			id: string;
@@ -950,14 +952,6 @@ export type components = {
 			updated_date: string;
 			showOwner: components["schemas"]["ShowUserResponse"];
 		};
-		GetManyQuizResponseDto: {
-			data: components["schemas"]["Quiz"][];
-			count: number;
-			total: number;
-			page: number;
-			pageCount: number;
-		};
-		Quiz: Record<string, never>;
 		ShowQuizReactionCount: {
 			likeCount: number;
 			dislikeCount: number;
@@ -975,6 +969,14 @@ export type components = {
 			timeLimit: number;
 			description: string;
 		};
+		GetManyQuizResponseDto: {
+			data: components["schemas"]["Quiz"][];
+			count: number;
+			total: number;
+			page: number;
+			pageCount: number;
+		};
+		Quiz: Record<string, never>;
 	};
 	responses: never;
 	parameters: never;
@@ -1028,11 +1030,11 @@ export type ShowQuizContext = components["schemas"]["ShowQuizContext"];
 export type ScheduleQuizResponse = components["schemas"]["ScheduleQuizResponse"];
 export type CreateQuizDto = components["schemas"]["CreateQuizDTO"];
 export type ShowQuizResponse = components["schemas"]["ShowQuizResponse"];
-export type GetManyQuizResponseDto = components["schemas"]["GetManyQuizResponseDto"];
-export type Quiz = components["schemas"]["Quiz"];
 export type ShowQuizReactionCount = components["schemas"]["ShowQuizReactionCount"];
 export type DetailQuizResponse = components["schemas"]["DetailQuizResponse"];
 export type UpdateQuizDto = components["schemas"]["UpdateQuizDTO"];
+export type GetManyQuizResponseDto = components["schemas"]["GetManyQuizResponseDto"];
+export type Quiz = components["schemas"]["Quiz"];
 export type $defs = Record<string, never>;
 export interface operations {
 	AppController_getHello: {
@@ -1116,6 +1118,14 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ShowTagResponse"];
+				};
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -1238,6 +1248,14 @@ export interface operations {
 			};
 		};
 		responses: {
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ShowTagResponse"];
+				};
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -1278,6 +1296,14 @@ export interface operations {
 			};
 		};
 		responses: {
+			201: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ShowTagResponse"];
+				};
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -1569,6 +1595,14 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ShowUserResponse"];
+				};
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -1885,6 +1919,14 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ShowStyleResponse"];
+				};
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -2101,6 +2143,14 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ShowPaintingResponse"][];
+				};
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -2122,6 +2172,14 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ShowPaintingResponse"][];
+				};
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -2145,6 +2203,14 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ShowPaintingResponse"];
+				};
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -2173,6 +2239,14 @@ export interface operations {
 			};
 		};
 		responses: {
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ShowPaintingResponse"];
+				};
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -2287,6 +2361,14 @@ export interface operations {
 			};
 		};
 		responses: {
+			201: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ShowPainting"];
+				};
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -2306,7 +2388,7 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content: {
-					"application/json": components["schemas"]["ShowPaintingResponse"];
+					"application/json": components["schemas"]["ShowPainting"];
 				};
 			};
 		};
@@ -2584,9 +2666,7 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content: {
-					"application/json": boolean;
-				};
+				content?: never;
 			};
 		};
 	};
@@ -2603,6 +2683,14 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ShowQuizReactionResponse"][];
+				};
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -2688,6 +2776,14 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ScheduleQuizResponse"];
+				};
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -2715,9 +2811,7 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content: {
-					"application/json": boolean;
-				};
+				content?: never;
 			};
 		};
 	};
@@ -2774,6 +2868,14 @@ export interface operations {
 			};
 		};
 		responses: {
+			201: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ShowQuizResponse"];
+				};
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -2811,13 +2913,12 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
-			/** @description Get one base response */
 			200: {
 				headers: {
 					[name: string]: unknown;
 				};
 				content: {
-					"application/json": components["schemas"]["Quiz"];
+					"application/json": components["schemas"]["ShowQuizResponse"];
 				};
 			};
 			default: {
@@ -2848,6 +2949,14 @@ export interface operations {
 			};
 		};
 		responses: {
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ShowQuizResponse"];
+				};
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
