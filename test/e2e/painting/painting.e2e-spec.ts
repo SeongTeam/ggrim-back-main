@@ -287,7 +287,7 @@ describe("PaintingController (e2e)", () => {
 			expect(response.data).toBeDefined();
 			expectResponseBody(zShowPainting, response.data);
 
-			const painting = (await paintingService.getByIds([response.data!.id]))[0];
+			const painting = (await paintingService.getManyByIds([response.data!.id]))[0];
 
 			expect(response.data).toMatchObject(new ShowPainting(painting));
 		});
@@ -313,7 +313,7 @@ describe("PaintingController (e2e)", () => {
 			expect(response.data).toBeDefined();
 			expectResponseBody(zShowPainting, response.data);
 
-			const entity = (await paintingService.getByIds([response.data!.id]))[0];
+			const entity = (await paintingService.getManyByIds([response.data!.id]))[0];
 			expect(response.data).toMatchObject(new ShowPainting(entity));
 
 			expect(entity.artist).toMatchObject(artist);
@@ -403,7 +403,7 @@ describe("PaintingController (e2e)", () => {
 			});
 
 			expect(response.response.status).toBe(HttpStatus.OK);
-			const entity = (await paintingService.getByIds([painting.id]))[0];
+			const entity = (await paintingService.getManyByIds([painting.id]))[0];
 			expect({
 				completition_year: entity.completition_year,
 				image_url: entity.image_url,
@@ -453,7 +453,7 @@ describe("PaintingController (e2e)", () => {
 			});
 
 			expect(response.response.status).toBe(HttpStatus.OK);
-			const entity = (await paintingService.getByIds([painting.id]))[0];
+			const entity = (await paintingService.getManyByIds([painting.id]))[0];
 			expect({
 				completition_year: entity.completition_year,
 				image_url: entity.image_url,

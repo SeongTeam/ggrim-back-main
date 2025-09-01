@@ -33,7 +33,7 @@ export class PaintingService {
 	//TODO typeorm 로직 개선
 	// [ ] : returning() 메소드를 사용하여 생성 후 반환되는 열들의 값 명시하기
 	//  -> insertResult.generateMaps[0]은 직접삽입한 값은 포함되지 않기 때문에 returning() 적용필요.
-	async create(queryRunner: QueryRunner, dto: CreatePaintingDTO): Promise<Painting> {
+	async createOne(queryRunner: QueryRunner, dto: CreatePaintingDTO): Promise<Painting> {
 		const query = createTransactionQueryBuilder(queryRunner, Painting)
 			.insert()
 			.into(Painting)
@@ -71,7 +71,7 @@ export class PaintingService {
 	// - [ ] update() 메소드 실행 후, result.generatedMaps[0]은 Painting이 아님
 	//  -> generatedMaps 필드는 쿼리 실행으로 생성된 파일의 집합이므로, 업데이트 쿼리 실행시 Painting은 생성되지 않음.
 
-	async replace(
+	async replaceOne(
 		queryRunner: QueryRunner,
 		painting: Painting,
 		dto: ReplacePaintingDTO,
@@ -120,7 +120,7 @@ export class PaintingService {
     - 함수 동작 사양 주석 양식 만들기
   */
 
-	async searchPainting(
+	async searchMany(
 		dto: Pick<SearchPaintingQueryDTO, "title" | "artistName" | "styles" | "tags">,
 		page: number,
 		paginationCount: number,
@@ -216,7 +216,7 @@ export class PaintingService {
 	 * - [] 중에서 0번째 index중 큰 순서로 이동 중에 DB에 없는 ID가 있으면 에러 발생
 	 * - 에러가 발생 ID를 console에 출력해 줌 (typeorm 자체 기능)
 	 */
-	async getByIds(ids: string[]): Promise<Painting[]> {
+	async getManyByIds(ids: string[]): Promise<Painting[]> {
 		const query = this.repo
 			.createQueryBuilder("p")
 			.leftJoinAndSelect("p.tags", "tags")
@@ -444,7 +444,7 @@ export class PaintingService {
 		}
 
 		//validate set
-		const validPaintings = await this.getByIds([...paintingIdSet.values()]);
+		const validPaintings = await this.getManyByIds([...paintingIdSet.values()]);
 
 		return validPaintings;
 	}

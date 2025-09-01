@@ -22,9 +22,7 @@ import { S3Service } from "../aws/s3.service";
 import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner";
 import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
 import { CreatePaintingDTO } from "./dto/request/createPainting.dto";
-import { GetByIdsQueryDTO } from "./dto/request/getByIds.query.dto";
 import { ReplacePaintingDTO } from "./dto/request/replacePainting.dto";
-import { SearchPaintingQueryDTO } from "./dto/request/searchPainting.query.dto";
 import { Painting } from "./entities/painting.entity";
 import { PaintingService } from "./painting.service";
 import { Pagination } from "../_common/types";
@@ -32,6 +30,8 @@ import { ApiPaginationResponse } from "../_common/decorator/swagger/apiPaginatio
 import { ShowPainting, ShowPaintingResponse } from "./dto/response/showPainting.response";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
+import { GetByIdsQueryDTO } from "./dto/request/getByIds.query.dto";
+import { SearchPaintingQueryDTO } from "./dto/request/searchPainting.query.dto";
 
 @Controller("painting")
 export class PaintingController {
@@ -52,9 +52,9 @@ export class PaintingController {
 	@ApiOkResponse({ type: ShowPaintingResponse, isArray: true })
 	@HttpCode(HttpStatus.OK)
 	@Get("/by-ids")
-	async getByIds(@Query() query: GetByIdsQueryDTO): Promise<ShowPaintingResponse[]> {
+	async getManyByIds(@Query() query: GetByIdsQueryDTO): Promise<ShowPaintingResponse[]> {
 		const { ids, isS3Access } = query;
-		let foundPaintings: Painting[] = await this.service.getByIds(ids);
+		let foundPaintings: Painting[] = await this.service.getManyByIds(ids);
 
 		if (isS3Access) {
 			foundPaintings = await this.replaceImageSrcToS3(foundPaintings);
@@ -85,7 +85,7 @@ export class PaintingController {
 		@Param("id", ParseUUIDPipe) id: string,
 		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
 	): Promise<ShowPaintingResponse> {
-		let paintings = await this.service.getByIds([id]);
+		let paintings = await this.service.getManyByIds([id]);
 
 		if (isS3Access) {
 			paintings = await this.replaceImageSrcToS3([paintings[0]]);
@@ -97,10 +97,10 @@ export class PaintingController {
 	@ApiPaginationResponse(ShowPainting)
 	@HttpCode(HttpStatus.OK)
 	@Get("/")
-	async searchPainting(@Query() dto: SearchPaintingQueryDTO): Promise<Pagination<ShowPainting>> {
+	async searchMany(@Query() dto: SearchPaintingQueryDTO): Promise<Pagination<ShowPainting>> {
 		const { page, isS3Access } = dto;
 		const paginationCount = 50;
-		const result = await this.service.searchPainting(dto, page, paginationCount);
+		const result = await this.service.searchMany(dto, page, paginationCount);
 		if (isS3Access) {
 			const replaced = await this.replaceImageSrcToS3(result.data);
 			result.data = replaced;
@@ -123,7 +123,7 @@ export class PaintingController {
 		@DBQueryRunner() queryRunner: QueryRunner,
 		@Body() body: CreatePaintingDTO,
 	): Promise<ShowPainting> {
-		const newPainting = await this.service.create(queryRunner, body);
+		const newPainting = await this.service.createOne(queryRunner, body);
 		return new ShowPainting(newPainting);
 	}
 
@@ -142,9 +142,9 @@ export class PaintingController {
 			throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST", `not found id(${id})`);
 		}
 
-		await this.service.replace(queryRunner, targetPainting, dto);
+		await this.service.replaceOne(queryRunner, targetPainting, dto);
 
-		const target = (await this.service.getByIds([id]))[0];
+		const target = (await this.service.getManyByIds([id]))[0];
 
 		return new ShowPaintingResponse(target);
 	}

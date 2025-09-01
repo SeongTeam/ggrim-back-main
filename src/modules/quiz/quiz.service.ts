@@ -452,7 +452,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 	private async createPaintingMap(paintingIds: string[]): Promise<Map<string, Painting>> {
 		const resultMap: Map<string, Painting> = new Map();
 		const idSet: Set<string> = new Set(paintingIds);
-		const paintings: Painting[] = await this.paintingService.getByIds([...idSet.values()]);
+		const paintings: Painting[] = await this.paintingService.getManyByIds([...idSet.values()]);
 
 		paintings.forEach((painting) => {
 			if (!resultMap.has(painting.id)) {
