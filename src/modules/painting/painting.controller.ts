@@ -137,7 +137,7 @@ export class PaintingController {
 		@Param("id", ParseUUIDPipe) id: string,
 		@Body() dto: ReplacePaintingDTO,
 	) {
-		const targetPainting = await this.service.findPainting(id);
+		const targetPainting = await this.service.findOne({ where: { id } });
 		if (!targetPainting) {
 			throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST", `not found id(${id})`);
 		}
@@ -157,7 +157,7 @@ export class PaintingController {
 		@DBQueryRunner() queryRunner: QueryRunner,
 		@Param("id", ParseUUIDPipe) id: string,
 	) {
-		const targetPainting = await this.service.findPainting(id);
+		const targetPainting = await this.service.findOne({ where: { id } });
 		if (!targetPainting) {
 			throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST", `not found id(${id})`);
 		}

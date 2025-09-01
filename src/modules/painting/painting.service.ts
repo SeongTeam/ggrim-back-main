@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { existsSync } from "fs";
-import { Brackets, QueryRunner, Repository } from "typeorm";
+import { Brackets, FindOneOptions, QueryRunner, Repository } from "typeorm";
 import { CONFIG_FILE_PATH } from "../_common/const/defaultValue";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { Pagination } from "../_common/types";
@@ -408,9 +408,9 @@ export class PaintingService {
 		return result.affected;
 	}
 
-	public async findPainting(id: string): Promise<Painting | null> {
+	public async findOne(options: FindOneOptions<Painting>): Promise<Painting | null> {
 		const painting = await this.repo.findOne({
-			where: { id },
+			...options,
 			relations: ["artist", "tags", "styles"],
 		});
 		return painting;

@@ -49,7 +49,7 @@ describe("PaintingModule Integration Test", () => {
 			[],
 		);
 
-		const result = await paintingService.findPainting(painting.id);
+		const result = await paintingService.findOne({ where: { id: painting.id } });
 
 		expect(result).toEqual(painting);
 	});

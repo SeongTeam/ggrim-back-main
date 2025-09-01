@@ -531,7 +531,7 @@ describe("PaintingController (e2e)", () => {
 			});
 
 			expect(response.response.status).toBe(HttpStatus.OK);
-			expect(await paintingService.findPainting(painting.id)).toBeFalsy();
+			expect(await paintingService.findOne({ where: { id: painting.id } })).toBeFalsy();
 		});
 
 		it("/painting/:id (DELETE) : (실패, 권한 없음) ", async () => {
