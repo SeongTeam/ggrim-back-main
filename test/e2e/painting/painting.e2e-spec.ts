@@ -40,14 +40,6 @@ describe("PaintingController (e2e)", () => {
 	let admin: User;
 	const port = 3001;
 	const client = createClient<paths>({ baseUrl: `http://localhost:${port}` });
-	// TODO 테스트 환경 설정하기
-	// [ ] nest.js APP 인스턴스 생성
-	// [ ] nest.js APP 인스턴스 설정(global pipe, Module, .env.test)
-	// [ ] 테스트 DB 연결
-	// [ ] 테스트 DB 데이터정의
-	// [ ] 테스트 DB 데이터 삽입 로직 추가
-	// [ ] 테스트 DB 데이터 삭제 로직
-	// [x] 테스트 종료후 APP 인스턴스 종료
 
 	beforeAll(async () => {
 		const moduleFixture: TestingModule = await Test.createTestingModule({
