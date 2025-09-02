@@ -544,6 +544,40 @@ describe("PaintingController (e2e)", () => {
 				expect(error).toBeDefined();
 			});
 		});
+
+		describe("fail because dto miss fields", () => {
+			let error: (typeof response)["error"];
+			beforeAll(async () => {
+				painting = await seedPainting();
+				dto = factoryReplaceDto(painting, { title: "new title" });
+				// eslint-disable-next-line @typescript-eslint/no-unused-vars
+				const { title: _title, ...partialDto } = dto;
+
+				const adminAuthorization = testService.getBearerAuthCredential(admin);
+				response = await requestReplacePainting(
+					painting.id,
+					adminAuthorization,
+					partialDto as ReplacePaintingDto,
+				);
+				entity = (await paintingService.findOne({
+					where: { id: painting.id },
+					relations: { artist: true, tags: true, styles: true },
+				}))!;
+				error = response.error;
+			});
+
+			it("invalidate query receive 400 error", () => {
+				expect(response.response.status).toBe(HttpStatus.BAD_REQUEST);
+			});
+
+			it("entity should be not changed", () => {
+				expect(painting).toEqual(entity);
+			});
+
+			it("error should be received", () => {
+				expect(error).toBeDefined();
+			});
+		});
 	});
 
 	describe("/painting/:id (DELETE)", () => {
