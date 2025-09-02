@@ -25,6 +25,12 @@ import { Artist } from "../../../src/modules/artist/entities/artist.entity";
 import { Tag } from "../../../src/modules/tag/entities/tag.entity";
 import { Style } from "../../../src/modules/style/entities/style.entity";
 import z from "zod";
+import { pick } from "../../../src/utils/object";
+
+if (process.env.VSCODE_INSPECTOR_OPTIONS) {
+	console.log("Set setTimeout for debugging");
+	jest.setTimeout(60 * 1000 * 10); // 10 minutes
+}
 
 describe("PaintingController (e2e)", () => {
 	let app: INestApplication;

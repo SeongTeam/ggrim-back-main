@@ -26,9 +26,6 @@ export class TestService {
 		if (process.env.NODE_ENV !== "test") {
 			throw new Error("ERROR-TEST-UTILS-ONLY-FOR-TESTS");
 		}
-		if (process.env.VSCODE_INSPECTOR_OPTIONS) {
-			jest.setTimeout(60 * 1000 * 10); // 10 minutes
-		}
 	}
 
 	getBearerAuthCredential(user: User): string {
