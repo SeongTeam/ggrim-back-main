@@ -518,7 +518,8 @@ describe("PaintingController (e2e)", () => {
 			});
 		});
 
-		describe("user can't replace painting", () => {
+		describe("fail because user can't to replace painting", () => {
+			let error: (typeof response)["error"];
 			beforeAll(async () => {
 				painting = await seedPainting();
 				dto = factoryReplaceDto(painting, { title: "new title" });
@@ -529,6 +530,7 @@ describe("PaintingController (e2e)", () => {
 					where: { id: painting.id },
 					relations: { artist: true, tags: true, styles: true },
 				}))!;
+				error = response.error;
 			});
 
 			it("response should be FORBIDDEN", () => {
@@ -537,6 +539,10 @@ describe("PaintingController (e2e)", () => {
 
 			it("entity should be not changed", () => {
 				expect(painting).toEqual(entity);
+			});
+
+			it("error should be received", () => {
+				expect(error).toBeDefined();
 			});
 		});
 	});
