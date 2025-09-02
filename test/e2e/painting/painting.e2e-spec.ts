@@ -358,156 +358,192 @@ describe("PaintingController (e2e)", () => {
 	});
 
 	describe("/painting/:id (PUT)", () => {
-		const route = ApiPaths.PaintingController_replacePainting;
+		let dto: ReplacePaintingDto;
 		let painting: Painting;
+		let response: Awaited<ReturnType<typeof requestReplacePainting>>;
+		let entity: Painting;
+		const pickKeys = [
+			"completition_year",
+			"image_url",
+			"description",
+			"width",
+			"height",
+			"image_s3_key",
+			"title",
+		] as const;
+		type ReplaceField =
+			| "tags"
+			| "styles"
+			| "completition_year"
+			| "title"
+			| "image_url"
+			| "description"
+			| "width"
+			| "height"
+			| "image_s3_key"
+			| "artist";
+		function factoryReplaceDto<K extends ReplaceField>(
+			painting: Painting,
+			replaces: Partial<Pick<Painting, K>>,
+		): ReplacePaintingDto {
+			const copied = structuredClone(painting);
 
-		function factoryBaseReplaceDto(painting: Painting): ReplacePaintingDto {
-			return {
-				tags: painting.tags.map((t) => t.name),
-				styles: painting.tags.map((style) => style.name),
-				completition_year: painting.completition_year!,
-				title: "replace painting",
-				image_url: painting.image_url,
-				description: painting.description,
-				width: painting.width,
-				height: painting.height,
-				image_s3_key: painting.image_s3_key,
-				artistName: painting.artist.name,
+			Object.entries(replaces).forEach(([key, v]) => {
+				if (v) {
+					const prop = key as K;
+					copied[prop] = v as Painting[typeof prop];
+				}
+			});
+
+			const dto = {
+				tags: copied.tags.map((t) => t.name),
+				styles: copied.styles.map((style) => style.name),
+				completition_year: copied.completition_year!,
+				title: copied.title,
+				image_url: copied.image_url,
+				description: copied.description,
+				width: copied.width,
+				height: copied.height,
+				image_s3_key: copied.image_s3_key,
+				artistName: copied.artist.name,
 			};
+
+			return dto;
 		}
 
-		beforeAll(async () => {
+		async function seedPainting() {
 			const [tag, style, artist] = await Promise.all([
 				testService.insertTagStub(factoryTagStub()),
 				testService.insertStyleStub(factoryStyleStub()),
 				testService.insertArtistStub(FactoryArtistStub()),
 			]);
-			painting = await testService.insertPaintingStub(
+			const painting = await testService.insertPaintingStub(
 				factoryPaintingStub(),
 				artist,
 				[tag],
 				[style],
 			);
-		});
-		it("/painting/:id (PUT) : (성공, not change relation)", async () => {
-			const replaceDto = factoryBaseReplaceDto(painting);
-			replaceDto.title = "replace title";
-			replaceDto.tags = painting.tags.map((t) => t.name);
-			replaceDto.styles = painting.styles.map((s) => s.name);
-			const adminAuthorization = testService.getBearerAuthCredential(admin);
+			return painting;
+		}
 
-			const response = await client.PUT(route, {
-				params: {
-					path: {
-						id: painting.id,
-					},
-					header: {
-						authorization: adminAuthorization,
-					},
-				},
-				body: replaceDto,
-			});
-
-			expect(response.response.status).toBe(HttpStatus.OK);
-			const entity = (await paintingService.getManyByIds([painting.id]))[0];
-			expect({
-				completition_year: entity.completition_year,
-				image_url: entity.image_url,
-				description: entity.description,
-				width: entity.width,
-				height: entity.height,
-				image_s3_key: entity.image_s3_key,
-				artistName: entity.artist.name,
-				title: entity.title,
-			}).toEqual({
-				completition_year: replaceDto.completition_year,
-				image_url: replaceDto.image_url,
-				description: replaceDto.description,
-				width: replaceDto.width,
-				height: replaceDto.height,
-				image_s3_key: replaceDto.image_s3_key,
-				artistName: replaceDto.artistName,
-				title: replaceDto.title,
-			});
-
-			expect(entity.artist).toEqual(painting.artist);
-			expect(entity.tags).toEqual(painting.tags);
-			expect(entity.styles).toEqual(painting.styles);
-		});
-		it("/painting/:id (PUT) : (성공, change relation)", async () => {
-			const replaceDto = factoryBaseReplaceDto(painting);
-			const [newTag, newStyle, newArtist] = await Promise.all([
-				testService.insertTagStub(factoryTagStub()),
-				testService.insertStyleStub(factoryStyleStub()),
-				testService.insertArtistStub(FactoryArtistStub()),
-			]);
-			replaceDto.artistName = newArtist.name;
-			replaceDto.tags = [newTag.name];
-			replaceDto.styles = [newStyle.name];
-			const adminAuthorization = testService.getBearerAuthCredential(admin);
-
-			const response = await client.PUT(route, {
-				params: {
-					path: {
-						id: painting.id,
-					},
-					header: {
-						authorization: adminAuthorization,
-					},
-				},
-				body: replaceDto,
-			});
-
-			expect(response.response.status).toBe(HttpStatus.OK);
-			const entity = (await paintingService.getManyByIds([painting.id]))[0];
-			expect({
-				completition_year: entity.completition_year,
-				image_url: entity.image_url,
-				description: entity.description,
-				width: entity.width,
-				height: entity.height,
-				image_s3_key: entity.image_s3_key,
-				artistName: entity.artist.name,
-				title: entity.title,
-			}).toEqual({
-				completition_year: replaceDto.completition_year,
-				image_url: replaceDto.image_url,
-				description: replaceDto.description,
-				width: replaceDto.width,
-				height: replaceDto.height,
-				image_s3_key: replaceDto.image_s3_key,
-				artistName: replaceDto.artistName,
-				title: replaceDto.title,
-			});
-
-			expect(entity.artist).toEqual(newArtist);
-			expect(entity.tags).toEqual([newTag]);
-			expect(entity.styles).toEqual([newStyle]);
-		});
-
-		it("/painting/:id (PUT) : (실패, 권한 없음)", async () => {
-			const replaceDto = factoryBaseReplaceDto(painting);
-			replaceDto.title = "new title";
-
-			const authorization = testService.getBearerAuthCredential(user);
+		async function requestReplacePainting(
+			id: string,
+			authorization: string,
+			body: ReplacePaintingDto,
+		) {
 			const response = await client.PUT(ApiPaths.PaintingController_replacePainting, {
 				params: {
 					path: {
-						id: painting.id,
+						id: id,
 					},
 					header: {
 						authorization,
 					},
 				},
-				body: replaceDto,
+				body,
 			});
 
-			expect(response.response.status).toBe(HttpStatus.FORBIDDEN);
+			return response;
+		}
+		describe("success when replace title only by admin", () => {
+			beforeAll(async () => {
+				painting = await seedPainting();
+				dto = factoryReplaceDto(painting, { title: "replace title" });
+				dto.title = "replace title";
+				dto.tags = painting.tags.map((t) => t.name);
+				dto.styles = painting.styles.map((s) => s.name);
+				const adminAuthorization = testService.getBearerAuthCredential(admin);
+
+				response = await requestReplacePainting(painting.id, adminAuthorization, dto);
+				entity = (await paintingService.findOne({
+					where: { id: painting.id },
+					relations: { artist: true, tags: true, styles: true },
+				}))!;
+			});
+
+			it("response is success", () => {
+				expect(response.response.status).toBe(HttpStatus.OK);
+			});
+
+			it("no change fields without title", () => {
+				expect(pick(entity!, pickKeys)).toEqual(pick(dto, pickKeys));
+				expect(entity!.title).toEqual(dto.title);
+			});
+
+			it("no change relations", () => {
+				expect(entity!.artist).toEqual(painting.artist);
+				painting.tags.forEach((expected) => expect(entity!.tags).toContainEqual(expected));
+				painting.styles.forEach((expected) =>
+					expect(entity!.styles).toContainEqual(expected),
+				);
+			});
+		});
+		describe("success when replace relations by admin", () => {
+			let newTag: Tag;
+			let newStyle: Style;
+			let newArtist: Artist;
+			beforeAll(async () => {
+				[newTag, newStyle, newArtist] = await Promise.all([
+					testService.insertTagStub(factoryTagStub()),
+					testService.insertStyleStub(factoryStyleStub()),
+					testService.insertArtistStub(FactoryArtistStub()),
+				]);
+				painting = await seedPainting();
+				dto = factoryReplaceDto(painting, {
+					tags: [newTag],
+					styles: [newStyle],
+					artist: newArtist,
+				});
+
+				const adminAuthorization = testService.getBearerAuthCredential(admin);
+
+				response = await requestReplacePainting(painting.id, adminAuthorization, dto);
+				entity = (await paintingService.findOne({
+					where: { id: painting.id },
+					relations: { artist: true, tags: true, styles: true },
+				}))!;
+			});
+
+			it("only admin role can replace painting", () => {
+				expect(response!.response.status).toBe(HttpStatus.OK);
+			});
+
+			it("no change fields without title", () => {
+				expect(pick(entity, pickKeys)).toEqual(pick(dto, pickKeys));
+			});
+			it("relations should be replaced", () => {
+				expect(entity.artist).toEqual(newArtist);
+				expect(entity.tags).toEqual([newTag]);
+				expect(entity.styles).toEqual([newStyle]);
+			});
+		});
+
+		describe("user can't replace painting", () => {
+			beforeAll(async () => {
+				painting = await seedPainting();
+				dto = factoryReplaceDto(painting, { title: "new title" });
+
+				const authorization = testService.getBearerAuthCredential(user);
+				response = await requestReplacePainting(painting.id, authorization, dto);
+				entity = (await paintingService.findOne({
+					where: { id: painting.id },
+					relations: { artist: true, tags: true, styles: true },
+				}))!;
+			});
+
+			it("response should be FORBIDDEN", () => {
+				expect(response.response.status).toBe(HttpStatus.FORBIDDEN);
+			});
+
+			it("entity should be not changed", () => {
+				expect(painting).toEqual(entity);
+			});
 		});
 	});
 
 	describe("/painting/:id (DELETE)", () => {
 		const route = ApiPaths.PaintingController_deletePainting;
+
 		let painting: Painting;
 		beforeEach(async () => {
 			const [tag, style, artist] = await Promise.all([
@@ -522,7 +558,7 @@ describe("PaintingController (e2e)", () => {
 				[style],
 			);
 		});
-		it("/painting/:id (DELETE) : 성공 ", async () => {
+		it("success delete painting when admin request ", async () => {
 			const adminAuthorization = testService.getBearerAuthCredential(admin);
 
 			const response = await client.DELETE(route, {
@@ -537,7 +573,22 @@ describe("PaintingController (e2e)", () => {
 			});
 
 			expect(response.response.status).toBe(HttpStatus.OK);
-			expect(await paintingService.findOne({ where: { id: painting.id } })).toBeFalsy();
+			expect(await paintingService.findOne({ where: { id: painting.id } })).toBeNull();
+
+			const entity = await paintingService.findOne({
+				where: { id: painting.id },
+				withDeleted: true,
+			});
+
+			expect(entity).toBeDefined();
+
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { deleted_date: dd, updated_date: ud, version: v, ...expected } = painting;
+			const { deleted_date, updated_date, version, ...received } = entity!;
+
+			expect(version).toBe(v! + 1);
+			expect(received).toEqual(expected);
+			expect(deleted_date).toEqual(updated_date);
 		});
 
 		it("/painting/:id (DELETE) : (실패, 권한 없음) ", async () => {
