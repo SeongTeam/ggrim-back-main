@@ -5,7 +5,6 @@ import { DatabaseService } from "../../../src/modules/db/db.service";
 import { configNestApp } from "../../../src/app.config";
 import { factoryPaintingStub } from "../../_shared/stub/painting.stub";
 import { factoryTagStub } from "../../_shared/stub/tag.stub";
-import { ShowPainting } from "../../../src/modules/painting/dto/response/showPainting.response";
 import { factoryUserStub } from "../../_shared/stub/user.stub";
 import { User } from "../../../src/modules/user/entity/user.entity";
 import { FactoryArtistStub } from "../../_shared/stub/artist.stub";
@@ -24,7 +23,11 @@ import { Artist } from "../../../src/modules/artist/entities/artist.entity";
 import { Tag } from "../../../src/modules/tag/entities/tag.entity";
 import { Style } from "../../../src/modules/style/entities/style.entity";
 import z from "zod";
-import { pick } from "../../../src/utils/object";
+import { pick, sortById } from "../../../src/utils/object";
+import {
+	ShowPainting,
+	ShowPaintingResponse,
+} from "../../../src/modules/painting/dto/response/showPainting.response";
 
 if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 	console.log("Set setTimeout for debugging");
@@ -352,7 +355,6 @@ describe("PaintingController (e2e)", () => {
 		let dto: ReplacePaintingDto;
 		let painting: Painting;
 		let response: Awaited<ReturnType<typeof requestReplacePainting>>;
-		let entity: Painting;
 		const pickKeys = [
 			"completition_year",
 			"image_url",
@@ -436,17 +438,18 @@ describe("PaintingController (e2e)", () => {
 
 			return response;
 		}
-		describe("success when replace title only by admin", () => {
+		describe("success when replace title by admin", () => {
+			let expectedPainting: Painting;
+			let receivedPainting: Painting;
 			beforeAll(async () => {
 				painting = await seedPainting();
 				dto = factoryReplaceDto(painting, { title: "replace title" });
 				dto.title = "replace title";
-				dto.tags = painting.tags.map((t) => t.name);
-				dto.styles = painting.styles.map((s) => s.name);
+				expectedPainting = { ...painting, title: dto.title };
 				const adminAuthorization = testService.getBearerAuthCredential(admin);
 
 				response = await requestReplacePainting(painting.id, adminAuthorization, dto);
-				entity = (await paintingService.findOne({
+				receivedPainting = (await paintingService.findOne({
 					where: { id: painting.id },
 					relations: { artist: true, tags: true, styles: true },
 				}))!;
@@ -457,15 +460,15 @@ describe("PaintingController (e2e)", () => {
 			});
 
 			it("no change fields without title", () => {
-				expect(pick(entity!, pickKeys)).toEqual(pick(dto, pickKeys));
-				expect(entity!.title).toEqual(dto.title);
+				expect(pick(receivedPainting!, pickKeys)).toEqual(pick(expectedPainting, pickKeys));
+				expect(receivedPainting!.title).toEqual(expectedPainting.title);
 			});
 
 			it("no change relations", () => {
-				expect(entity!.artist).toEqual(painting.artist);
-				painting.tags.forEach((expected) => expect(entity!.tags).toContainEqual(expected));
-				painting.styles.forEach((expected) =>
-					expect(entity!.styles).toContainEqual(expected),
+				expect(receivedPainting!.artist).toEqual(expectedPainting.artist);
+				expect(sortById(receivedPainting.tags)).toEqual(sortById(expectedPainting.tags));
+				expect(sortById(receivedPainting.styles)).toEqual(
+					sortById(expectedPainting.styles),
 				);
 			});
 		});
@@ -473,6 +476,8 @@ describe("PaintingController (e2e)", () => {
 			let newTag: Tag;
 			let newStyle: Style;
 			let newArtist: Artist;
+			let expectedPainting: Painting;
+			let receivedPainting: Painting;
 			beforeAll(async () => {
 				[newTag, newStyle, newArtist] = await Promise.all([
 					testService.insertTagStub(factoryTagStub()),
@@ -485,11 +490,17 @@ describe("PaintingController (e2e)", () => {
 					styles: [newStyle],
 					artist: newArtist,
 				});
+				expectedPainting = {
+					...painting,
+					tags: [newTag],
+					styles: [newStyle],
+					artist: newArtist,
+				};
 
 				const adminAuthorization = testService.getBearerAuthCredential(admin);
 
 				response = await requestReplacePainting(painting.id, adminAuthorization, dto);
-				entity = (await paintingService.findOne({
+				receivedPainting = (await paintingService.findOne({
 					where: { id: painting.id },
 					relations: { artist: true, tags: true, styles: true },
 				}))!;
@@ -499,25 +510,36 @@ describe("PaintingController (e2e)", () => {
 				expect(response!.response.status).toBe(HttpStatus.OK);
 			});
 
+			it("response should be matched", () => {
+				const receivedRes = response.data;
+				const expectedRes = new ShowPaintingResponse(expectedPainting);
+				expectResponseBody(zShowPaintingResponse, receivedRes);
+				expect(receivedRes).toEqual(expectedRes);
+			});
+
 			it("no change fields without title", () => {
-				expect(pick(entity, pickKeys)).toEqual(pick(dto, pickKeys));
+				expect(pick(receivedPainting, pickKeys)).toEqual(pick(expectedPainting, pickKeys));
 			});
 			it("relations should be replaced", () => {
-				expect(entity.artist).toEqual(newArtist);
-				expect(entity.tags).toEqual([newTag]);
-				expect(entity.styles).toEqual([newStyle]);
+				expect(receivedPainting.artist).toEqual(expectedPainting.artist);
+				expect(sortById(receivedPainting.tags)).toEqual(sortById(expectedPainting.tags));
+				expect(sortById(receivedPainting.styles)).toEqual(
+					sortById(expectedPainting.styles),
+				);
 			});
 		});
 
 		describe("fail because user can't to replace painting", () => {
 			let error: (typeof response)["error"];
+			let expectedPainting: Painting;
+			let receivedPainting: Painting;
 			beforeAll(async () => {
 				painting = await seedPainting();
 				dto = factoryReplaceDto(painting, { title: "new title" });
-
+				expectedPainting = { ...painting };
 				const authorization = testService.getBearerAuthCredential(user);
 				response = await requestReplacePainting(painting.id, authorization, dto);
-				entity = (await paintingService.findOne({
+				receivedPainting = (await paintingService.findOne({
 					where: { id: painting.id },
 					relations: { artist: true, tags: true, styles: true },
 				}))!;
@@ -529,7 +551,7 @@ describe("PaintingController (e2e)", () => {
 			});
 
 			it("entity should be not changed", () => {
-				expect(painting).toEqual(entity);
+				expect(receivedPainting).toEqual(expectedPainting);
 			});
 
 			it("error should be received", () => {
@@ -539,11 +561,14 @@ describe("PaintingController (e2e)", () => {
 
 		describe("fail because dto miss fields", () => {
 			let error: (typeof response)["error"];
+			let expectedPainting: Painting;
+			let receivedPainting: Painting;
 			beforeAll(async () => {
 				painting = await seedPainting();
 				dto = factoryReplaceDto(painting, { title: "new title" });
 				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 				const { title: _title, ...partialDto } = dto;
+				expectedPainting = { ...painting };
 
 				const adminAuthorization = testService.getBearerAuthCredential(admin);
 				response = await requestReplacePainting(
@@ -551,7 +576,7 @@ describe("PaintingController (e2e)", () => {
 					adminAuthorization,
 					partialDto as ReplacePaintingDto,
 				);
-				entity = (await paintingService.findOne({
+				receivedPainting = (await paintingService.findOne({
 					where: { id: painting.id },
 					relations: { artist: true, tags: true, styles: true },
 				}))!;
@@ -563,7 +588,7 @@ describe("PaintingController (e2e)", () => {
 			});
 
 			it("entity should be not changed", () => {
-				expect(painting).toEqual(entity);
+				expect(receivedPainting).toEqual(expectedPainting);
 			});
 
 			it("error should be received", () => {
