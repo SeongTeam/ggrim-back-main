@@ -142,11 +142,9 @@ export class PaintingController {
 			throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST", `not found id(${id})`);
 		}
 
-		await this.service.replaceOne(queryRunner, targetPainting, dto);
+		const replacedPainting = await this.service.replaceOne(queryRunner, targetPainting, dto);
 
-		const target = (await this.service.getManyByIds([id]))[0];
-
-		return new ShowPaintingResponse(target);
+		return new ShowPaintingResponse(replacedPainting);
 	}
 
 	@HttpCode(HttpStatus.OK)

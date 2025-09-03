@@ -75,7 +75,7 @@ export class PaintingService {
 		queryRunner: QueryRunner,
 		painting: Painting,
 		dto: ReplacePaintingDTO,
-	): Promise<void> {
+	): Promise<Painting> {
 		const query = createTransactionQueryBuilder(queryRunner, Painting)
 			.update(Painting)
 			.set({
@@ -113,7 +113,15 @@ export class PaintingService {
 			await this.notRelateToStyle(queryRunner, painting, styleNamesToOmit);
 		}
 
-		return;
+		const replacedPainting = await this.repo
+			.createQueryBuilder("p", queryRunner)
+			.leftJoinAndSelect("p.tags", "tags")
+			.leftJoinAndSelect("p.styles", "styles")
+			.leftJoinAndSelect("p.artist", "artist")
+			.where("p.id = :paintingId", { paintingId: painting.id })
+			.getOne();
+
+		return replacedPainting!;
 	}
 
 	/*TODO
