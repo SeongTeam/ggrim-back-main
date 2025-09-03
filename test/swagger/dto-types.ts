@@ -415,7 +415,7 @@ export type paths = {
 		 *     GET backend/painting/by-ids?ids=409ba4c6-0553-4b72-a53a-d9b9857c253d&ids=4f4d9398-b10a-45b8-912c-6ccd0c6700ab
 		 *     ```
 		 */
-		get: operations["PaintingController_getByIds"];
+		get: operations["PaintingController_getManyByIds"];
 		put?: never;
 		post?: never;
 		delete?: never;
@@ -465,7 +465,7 @@ export type paths = {
 			path?: never;
 			cookie?: never;
 		};
-		get: operations["PaintingController_searchPainting"];
+		get: operations["PaintingController_searchMany"];
 		put?: never;
 		post: operations["PaintingController_createPainting"];
 		delete?: never;
@@ -693,7 +693,10 @@ export type components = {
 			id: string;
 			email: string;
 			username: string;
-			/** Format: date-time */
+			/**
+			 * @description @format IsoDateTime
+			 * @example 2011-10-05T14:48:00.000Z
+			 */
 			last_login_date: string;
 			oauth_provider: string | null;
 			oauth_provider_id: string | null;
@@ -807,9 +810,15 @@ export type components = {
 			id: string;
 			name: string;
 			image_url: string | null;
-			/** Format: date-time */
+			/**
+			 * @description @format IsoDateTime
+			 * @example 2011-10-05T14:48:00.000Z
+			 */
 			birth_date: string | null;
-			/** Format: date-time */
+			/**
+			 * @description @format IsoDateTime
+			 * @example 2011-10-05T14:48:00.000Z
+			 */
 			death_date: string | null;
 			info_url: string | null;
 		};
@@ -855,9 +864,15 @@ export type components = {
 			id: string;
 			name: string;
 			image_url: string | null;
-			/** Format: date-time */
+			/**
+			 * @description @format IsoDateTime
+			 * @example 2011-10-05T14:48:00.000Z
+			 */
 			birth_date: string | null;
-			/** Format: date-time */
+			/**
+			 * @description @format IsoDateTime
+			 * @example 2011-10-05T14:48:00.000Z
+			 */
 			death_date: string | null;
 			info_url: string | null;
 			shortPaintings: components["schemas"]["ShowPainting"][];
@@ -2131,7 +2146,7 @@ export interface operations {
 			};
 		};
 	};
-	PaintingController_getByIds: {
+	PaintingController_getManyByIds: {
 		parameters: {
 			query: {
 				isS3Access?: boolean;
@@ -2307,7 +2322,7 @@ export interface operations {
 			};
 		};
 	};
-	PaintingController_searchPainting: {
+	PaintingController_searchMany: {
 		parameters: {
 			query?: {
 				title?: string;
@@ -3078,12 +3093,12 @@ export enum ApiPaths {
 	deleteOneBaseStyleControllerStyle = "/painting/style/{id}",
 	getManyBaseStyleControllerStyle = "/painting/style",
 	createOneBaseStyleControllerStyle = "/painting/style",
-	PaintingController_getByIds = "/painting/by-ids",
+	PaintingController_getManyByIds = "/painting/by-ids",
 	PaintingController_getWeeklyArtworkData = "/painting/artwork-of-week",
 	PaintingController_getById = "/painting/{id}",
 	PaintingController_replacePainting = "/painting/{id}",
 	PaintingController_deletePainting = "/painting/{id}",
-	PaintingController_searchPainting = "/painting",
+	PaintingController_searchMany = "/painting",
 	PaintingController_createPainting = "/painting",
 	ArtistController_getOne = "/artist/{id}",
 	replaceOneBaseArtistControllerArtist = "/artist/{id}",
