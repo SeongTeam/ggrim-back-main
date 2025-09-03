@@ -7,7 +7,7 @@ import { factoryPaintingStub } from "../../_shared/stub/painting.stub";
 import { factoryTagStub } from "../../_shared/stub/tag.stub";
 import { factoryUserStub } from "../../_shared/stub/user.stub";
 import { User } from "../../../src/modules/user/entity/user.entity";
-import { FactoryArtistStub } from "../../_shared/stub/artist.stub";
+import { factoryArtistStub } from "../../_shared/stub/artist.stub";
 import { factoryStyleStub } from "../../_shared/stub/style.stub";
 import { TestService } from "../../_shared/test.service";
 import { faker } from "@faker-js/faker";
@@ -83,9 +83,9 @@ describe("PaintingController (e2e)", () => {
 				testService.insertStyleStub(factoryStyleStub()),
 			]);
 			const [artist1, artist2, artist3] = await Promise.all([
-				testService.insertArtistStub(FactoryArtistStub()),
-				testService.insertArtistStub(FactoryArtistStub()),
-				testService.insertArtistStub(FactoryArtistStub()),
+				testService.insertArtistStub(factoryArtistStub()),
+				testService.insertArtistStub(factoryArtistStub()),
+				testService.insertArtistStub(factoryArtistStub()),
 			]);
 			painting = await testService.insertPaintingStub(
 				factoryPaintingStub(),
@@ -122,7 +122,7 @@ describe("PaintingController (e2e)", () => {
 		});
 
 		it("/painting (GET) : 성공 ", async () => {
-			const response = await client.GET(ApiPaths.PaintingController_searchPainting, {
+			const response = await client.GET(ApiPaths.PaintingController_searchMany, {
 				params: {
 					query: {
 						tags: [painting.tags[0].name],
@@ -139,7 +139,7 @@ describe("PaintingController (e2e)", () => {
 		});
 
 		it("/painting?title=val1 (GET) : 성공,", async () => {
-			const response = await client.GET(ApiPaths.PaintingController_searchPainting, {
+			const response = await client.GET(ApiPaths.PaintingController_searchMany, {
 				params: {
 					query: {
 						title: painting.title.slice(0, 2),
@@ -160,7 +160,7 @@ describe("PaintingController (e2e)", () => {
 		});
 
 		it("/painting?tag=val1&tag&val2 (GET) : 성공,", async () => {
-			const response = await client.GET(ApiPaths.PaintingController_searchPainting, {
+			const response = await client.GET(ApiPaths.PaintingController_searchMany, {
 				params: {
 					query: {
 						tags: painting.tags.map((t) => t.name),
@@ -178,7 +178,7 @@ describe("PaintingController (e2e)", () => {
 		});
 
 		it("/painting?artistName=val1 (GET) : 성공,", async () => {
-			const response = await client.GET(ApiPaths.PaintingController_searchPainting, {
+			const response = await client.GET(ApiPaths.PaintingController_searchMany, {
 				params: {
 					query: {
 						artistName: painting.artist.name,
@@ -209,7 +209,7 @@ describe("PaintingController (e2e)", () => {
 			]);
 			[style, artist] = await Promise.all([
 				testService.insertStyleStub(factoryStyleStub()),
-				testService.insertArtistStub(FactoryArtistStub()),
+				testService.insertArtistStub(factoryArtistStub()),
 			]);
 			painting = await testService.insertPaintingStub(
 				factoryPaintingStub(),
@@ -219,7 +219,7 @@ describe("PaintingController (e2e)", () => {
 			);
 		});
 		it("/painting/by-ids?ids=val1 (GET) : 성공,", async () => {
-			const response = await client.GET(ApiPaths.PaintingController_getByIds, {
+			const response = await client.GET(ApiPaths.PaintingController_getManyByIds, {
 				params: {
 					query: {
 						ids: [painting.id],
@@ -235,7 +235,7 @@ describe("PaintingController (e2e)", () => {
 		});
 
 		it("/painting/by-ids?ids=val1 (GET) : (실패, 유효치않은 Query)", async () => {
-			const response = await client.GET(ApiPaths.PaintingController_getByIds, {
+			const response = await client.GET(ApiPaths.PaintingController_getManyByIds, {
 				params: {
 					query: {
 						ids: [faker.string.nanoid(), faker.string.uuid()],
@@ -265,7 +265,7 @@ describe("PaintingController (e2e)", () => {
 		}
 
 		beforeAll(async () => {
-			artist = await testService.insertArtistStub(FactoryArtistStub());
+			artist = await testService.insertArtistStub(factoryArtistStub());
 			tag = await testService.insertTagStub(factoryTagStub());
 			style = await testService.insertStyleStub(factoryStyleStub());
 		});
@@ -322,7 +322,7 @@ describe("PaintingController (e2e)", () => {
 		});
 
 		it("/painting (POST) : (실패, 권한 없음)", async () => {
-			const artist = await testService.insertArtistStub(FactoryArtistStub());
+			const artist = await testService.insertArtistStub(factoryArtistStub());
 
 			const dto: CreatePaintingDto = {
 				title: faker.person.middleName(),
@@ -408,7 +408,7 @@ describe("PaintingController (e2e)", () => {
 			const [tag, style, artist] = await Promise.all([
 				testService.insertTagStub(factoryTagStub()),
 				testService.insertStyleStub(factoryStyleStub()),
-				testService.insertArtistStub(FactoryArtistStub()),
+				testService.insertArtistStub(factoryArtistStub()),
 			]);
 			const painting = await testService.insertPaintingStub(
 				factoryPaintingStub(),
@@ -482,7 +482,7 @@ describe("PaintingController (e2e)", () => {
 				[newTag, newStyle, newArtist] = await Promise.all([
 					testService.insertTagStub(factoryTagStub()),
 					testService.insertStyleStub(factoryStyleStub()),
-					testService.insertArtistStub(FactoryArtistStub()),
+					testService.insertArtistStub(factoryArtistStub()),
 				]);
 				painting = await seedPainting();
 				dto = factoryReplaceDto(painting, {
@@ -605,7 +605,7 @@ describe("PaintingController (e2e)", () => {
 			const [tag, style, artist] = await Promise.all([
 				testService.insertTagStub(factoryTagStub()),
 				testService.insertStyleStub(factoryStyleStub()),
-				testService.insertArtistStub(FactoryArtistStub()),
+				testService.insertArtistStub(factoryArtistStub()),
 			]);
 			painting = await testService.insertPaintingStub(
 				factoryPaintingStub(),

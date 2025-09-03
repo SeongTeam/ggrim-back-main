@@ -4,7 +4,7 @@ import { PaintingService } from "../../src/modules/painting/painting.service";
 import { TestModule } from "../_shared/test.module";
 import { TestService } from "../_shared/test.service";
 import { DatabaseService } from "../../src/modules/db/db.service";
-import { FactoryArtistStub } from "../_shared/stub/artist.stub";
+import { factoryArtistStub } from "../_shared/stub/artist.stub";
 import { factoryPaintingStub } from "../_shared/stub/painting.stub";
 import { QuizModule } from "../../src/modules/quiz/quiz.module";
 import { ClsModule } from "nestjs-cls";
@@ -41,7 +41,7 @@ describe("PaintingModule Integration Test", () => {
 	});
 
 	it("insert painting : 성공", async () => {
-		const artist = await testService.insertArtistStub(FactoryArtistStub());
+		const artist = await testService.insertArtistStub(factoryArtistStub());
 		const painting = await testService.insertPaintingStub(
 			factoryPaintingStub(),
 			artist,
