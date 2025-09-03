@@ -67,3 +67,9 @@ export function omit<T extends object, K extends keyof T>(
 
 	return ret as Omit<T, K>;
 }
+
+export function sortById<O extends object & { id: string }>(objs: O[]) {
+	const clones = structuredClone(objs);
+
+	return clones.sort((o1, o2) => o1.id.localeCompare(o2.id));
+}
