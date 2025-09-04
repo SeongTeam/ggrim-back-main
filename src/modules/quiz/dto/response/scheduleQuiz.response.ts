@@ -1,5 +1,5 @@
 import { randomInt } from "node:crypto";
-import { QuizContext } from "../../types/quiz";
+import { QuizContext } from "../../schedule/type";
 import { ShowQuiz } from "./showQuiz.response";
 
 class ShowQuizContext implements QuizContext {

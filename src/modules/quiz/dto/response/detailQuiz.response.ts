@@ -1,5 +1,5 @@
 import { Quiz } from "../../entities/quiz.entity";
-import { QuizReactionCount } from "../../types/reaction";
+import { QuizReactionCount } from "../../type";
 import { QUIZ_REACTION, QuizReactionType } from "../../const";
 import { ShowQuizResponse } from "./showQuiz.response";
 import { ApiProperty } from "@nestjs/swagger";

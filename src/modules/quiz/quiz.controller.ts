@@ -44,8 +44,8 @@ import { ScheduleQuizQueryDTO } from "./dto/request/scheduleQuiz.query.dto";
 import { QuizSubmitDTO } from "./dto/request/quizSubmit.dto";
 import { UpdateQuizDTO } from "./dto/request/updateQuiz.dto";
 import { Quiz } from "./entities/quiz.entity";
-import { QuizContext } from "./types/quiz";
-import { QuizScheduleService } from "./quizSchedule.service";
+import { QuizContext } from "./schedule/type";
+import { QuizScheduleService } from "./schedule/quizSchedule.service";
 import { QuizService } from "./quiz.service";
 import { Request } from "express";
 import { Pagination } from "../_common/types";
@@ -58,6 +58,7 @@ import { ShowQuizReactionResponse } from "./dto/response/showQuizReaction.respon
 import { ConfigService } from "@nestjs/config";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
+import { QuizBatchService } from "./batch/quiz.batch.service";
 
 @Crud({
 	model: {
@@ -114,25 +115,26 @@ export class QuizController
 		@Inject(S3Service) private readonly s3Service: S3Service,
 		@Inject(LoggerService) private readonly logger: LoggerService,
 		@Inject(ConfigService) private configService: ConfigService,
+		@Inject(QuizBatchService) private batchService: QuizBatchService,
 	) {}
 
 	async onModuleDestroy() {
 		Logger.log(`[OnModuleDestroy] run `, QuizController.name);
 		const MAX_RETRY = 3;
 		for (let i = 0; i < MAX_RETRY; i++) {
-			const isEmpty = await this.service.isViewMapEmpty();
+			const isEmpty = await this.batchService.isViewMapEmpty();
 			if (isEmpty) {
 				break;
 			}
-			await this.service.flushViewMap();
+			await this.batchService.flushViewMap();
 		}
 
 		for (let i = 0; i < MAX_RETRY; i++) {
-			const isEmpty = await this.service.isSubmissionMapEmpty();
+			const isEmpty = await this.batchService.isSubmissionMapEmpty();
 			if (isEmpty) {
 				break;
 			}
-			await this.service.flushSubmissionMap();
+			await this.batchService.flushSubmissionMap();
 		}
 		Logger.log(`[OnModuleDestroy] done `, QuizController.name);
 	}
@@ -140,7 +142,7 @@ export class QuizController
 	@HttpCode(HttpStatus.CREATED)
 	@Post("submit/:id")
 	async submitQuiz(@Param("id", ParseUUIDPipe) id: string, @Body() dto: QuizSubmitDTO) {
-		await this.service.insertSubmission(id, dto.isCorrect);
+		await this.batchService.insertSubmission(id, dto.isCorrect);
 	}
 
 	@ApiOkResponse({ type: ShowQuizReactionResponse, isArray: true })
@@ -310,7 +312,7 @@ export class QuizController
 		}
 
 		const [, reactionCount] = await Promise.all([
-			this.service.increaseView(id),
+			this.batchService.insertView(id),
 			this.service.getQuizReactionCounts(id),
 		]);
 

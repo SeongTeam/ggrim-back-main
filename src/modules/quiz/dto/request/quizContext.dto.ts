@@ -1,6 +1,6 @@
 import { Expose, Transform, Type } from "class-transformer";
 import { ArrayNotEmpty, IsNumber, IsString } from "class-validator";
-import { QuizContext } from "../../types/quiz";
+import { QuizContext } from "../../schedule/type";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 import { ApiHideProperty } from "@nestjs/swagger";
 

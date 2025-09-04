@@ -1,7 +1,7 @@
 import { ArrayNotEmpty, IsArray, IsNumber, IsString, IsUUID } from "class-validator";
 import { IsInArray } from "../../../../utils/classValidator";
 import { QUIZ_TYPE } from "../../const";
-import { QuizType } from "../../types/quiz";
+import { QuizType } from "../../type";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 import { ApiProperty } from "@nestjs/swagger";
 

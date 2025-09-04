@@ -2,7 +2,7 @@ import { Quiz } from "../../entities/quiz.entity";
 import { ShowUserResponse } from "../../../user/dto/request/response/showUser.response";
 import { ApiProperty } from "@nestjs/swagger";
 import { ShowPainting } from "../../../painting/dto/response/showPainting.response";
-import { QuizType } from "../../types/quiz";
+import { QuizType } from "../../type";
 import { ShowTag } from "../../../tag/dto/response/showTag.response";
 import { ShowStyle } from "../../../style/dto/response/showStyle.response";
 import { ShowArtist } from "../../../artist/dto/response/showArtist.response";
