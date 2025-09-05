@@ -12,16 +12,25 @@ export class ShowQuiz {
 	readonly id: string;
 	readonly title: string;
 	readonly time_limit: number;
-	readonly created_date: Date;
-	readonly updated_date: Date;
+	/**
+	 * @format IsoDateTime
+	 * @example 2011-10-05T14:48:00.000Z
+	 */
+	readonly created_date: string;
+
+	/**
+	 * @format IsoDateTime
+	 * @example 2011-10-05T14:48:00.000Z
+	 */
+	readonly updated_date: string;
 	readonly showOwner: ShowUserResponse;
 
 	constructor(quiz: Quiz) {
 		this.id = quiz.id;
 		this.title = quiz.title;
 		this.time_limit = quiz.time_limit;
-		this.created_date = quiz.created_date;
-		this.updated_date = quiz.created_date;
+		this.created_date = quiz.created_date.toISOString();
+		this.updated_date = quiz.created_date.toISOString();
 		this.showOwner = new ShowUserResponse(quiz.owner);
 	}
 }
