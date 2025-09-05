@@ -6,7 +6,7 @@ import { faker } from "@faker-js/faker";
 export class TagDummy extends OmitType(Tag, ["paintings"]) {}
 
 export const factoryTagStub = (): TagDummy => {
-	const name = faker.book.title();
+	const name = faker.location.city();
 
 	return {
 		id: faker.string.uuid(),
