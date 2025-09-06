@@ -2,22 +2,30 @@ import { OmitType } from "@nestjs/swagger";
 import { QuizDislike } from "../../../src/modules/quiz/entities/quizDislike.entity";
 import { CustomBaseEntityStub } from "../../_shared/stub/customBaseEntity.stub";
 import { QuizLike } from "../../../src/modules/quiz/entities/quizLike.entity";
+import { faker } from "@faker-js/faker";
+import { QuizReactionType } from "../../../src/modules/quiz/const";
 
-class QuizDislikeDummy extends OmitType(QuizDislike, ["quiz", "quiz_id", "user", "user_id"]) {}
-class QuizLikeDummy extends OmitType(QuizLike, ["quiz", "quiz_id", "user", "user_id"]) {}
+export class QuizDislikeDummy extends OmitType(QuizDislike, [
+	"quiz",
+	"quiz_id",
+	"user",
+	"user_id",
+]) {}
+export class QuizLikeDummy extends OmitType(QuizLike, ["quiz", "quiz_id", "user", "user_id"]) {}
 
-export const getQuizDislike = (): QuizDislikeDummy => {
+type QuizReactionDummy<Type extends QuizReactionType> = Type extends "dislike"
+	? QuizDislikeDummy
+	: QuizLikeDummy;
+
+// 오버로드 시그니처
+export function factoryQuizReaction(type: "dislike"): QuizDislikeDummy;
+export function factoryQuizReaction(type: "like"): QuizLikeDummy;
+
+// 구현 시그니처 (함수 본문)
+export function factoryQuizReaction(type: QuizReactionType): QuizReactionDummy<typeof type> {
 	return {
-		_type: "dislike",
-		id: "kcd11a06-5a66-4dfe-aad5-d1bc3dffc7b3",
+		_type: type,
+		id: faker.string.uuid(),
 		...CustomBaseEntityStub(),
 	};
-};
-
-export const getQuizLike = (): QuizLikeDummy => {
-	return {
-		_type: "like",
-		id: "k3d1gam6-5a66-4dfe-aad5-d1bc3dffc7b3",
-		...CustomBaseEntityStub(),
-	};
-};
+}
