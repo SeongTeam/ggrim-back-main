@@ -85,30 +85,46 @@ export class TestService {
 		return result;
 	}
 
-	async insertTagStub(tagStub: TagDummy, paintings?: Painting[]) {
-		const tag = this.dbService.getManager().create(Tag, {
+	async insertTagStub(tagStub: TagDummy) {
+		const result = await this.dbService.getManager().insert(Tag, {
 			...tagStub,
-			paintings,
 		});
-		await this.dbService.getManager().save(tag);
+
+		const id = (result.generatedMaps[0] as Tag).id;
+
+		const tag = this.dbService.getManager().findOneOrFail(Tag, {
+			where: {
+				id,
+			},
+		});
 
 		return tag;
 	}
-	async insertArtistStub(artistStub: ArtistDummy, paintings?: Painting[]) {
-		const artist = this.dbService.getManager().create(Artist, {
+	async insertArtistStub(artistStub: ArtistDummy) {
+		const result = await this.dbService.getManager().insert(Artist, {
 			...artistStub,
-			paintings,
 		});
-		await this.dbService.getManager().save(artist);
+		const id = (result.generatedMaps[0] as Artist).id;
+
+		const artist = await this.dbService.getManager().findOneOrFail(Artist, {
+			where: {
+				id,
+			},
+		});
 
 		return artist;
 	}
-	async insertStyleStub(styleStub: StyleDummy, paintings?: Painting[]) {
-		const style = this.dbService.getManager().create(Style, {
+	async insertStyleStub(styleStub: StyleDummy) {
+		const result = await this.dbService.getManager().insert(Style, {
 			...styleStub,
-			paintings,
 		});
-		await this.dbService.getManager().save(style);
+		const id = (result.generatedMaps[0] as Style).id;
+
+		const style = await this.dbService.getManager().findOneOrFail(Style, {
+			where: {
+				id,
+			},
+		});
 
 		return style;
 	}
@@ -118,14 +134,27 @@ export class TestService {
 		tags: Tag[],
 		styles: Style[],
 	) {
-		const p = this.dbService.getManager().create(Painting, {
+		const manager = this.dbService.getManager();
+		const result = await manager.insert(Painting, {
 			...paintingStub,
-			artist,
-			tags,
-			styles,
 		});
-		await this.dbService.getManager().save(p);
+		const painting = result.generatedMaps[0] as Painting;
 
-		return p;
+		await manager.createQueryBuilder().relation(Painting, "artist").of(painting).set(artist);
+		await manager.createQueryBuilder().relation(Painting, "tags").of(painting).add(tags);
+		await manager.createQueryBuilder().relation(Painting, "styles").of(painting).add(styles);
+
+		const paintingWithRelation = await manager.findOneOrFail(Painting, {
+			where: {
+				id: painting.id,
+			},
+			relations: {
+				artist: true,
+				tags: true,
+				styles: true,
+			},
+		});
+
+		return paintingWithRelation;
 	}
 }
