@@ -1,4 +1,3 @@
-import { Crud, CrudController, CrudRequest, ParsedRequest } from "@dataui/crud";
 import {
 	Body,
 	Controller,
@@ -56,55 +55,12 @@ import { UseTokenAuthGuard } from "../auth/guard/decorator/authentication";
 import { GetQuizQueryDTO } from "./dto/request/getQuiz.query.dto";
 import { ShowQuizReactionResponse } from "./dto/response/showQuizReaction.response";
 import { ConfigService } from "@nestjs/config";
-import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
 import { QuizBatchService } from "./batch/quiz.batch.service";
 
-@Crud({
-	model: {
-		type: Quiz,
-	},
-	routes: {
-		only: ["getOneBase"],
-	},
-	params: {
-		id: {
-			field: "id",
-			type: "uuid",
-			primary: true,
-		},
-	},
-	query: {
-		join: {
-			distractor_paintings: {
-				eager: true,
-			},
-			answer_paintings: {
-				eager: true,
-			},
-			example_paintings: {
-				eager: true,
-			},
-			styles: {
-				eager: true,
-			},
-			artists: {
-				eager: true,
-			},
-			tags: {
-				eager: true,
-			},
-			owner: {
-				eager: true,
-			},
-		},
-	},
-})
 //TODO whitelist 옵션 추가하여 보안강화 고려하기
 @Controller("quiz")
-export class QuizController
-	implements CrudController<Quiz>, OnApplicationBootstrap, OnModuleDestroy
-{
+export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	constructor(
 		public service: QuizService,
 		@Inject(QuizScheduleService) private readonly scheduleService: QuizScheduleService,
@@ -200,14 +156,8 @@ export class QuizController
 		const { type } = dto;
 		if (type === "like") {
 			await this.service.likeQuiz(qr, user, quiz);
-		} else if (type === "dislike") {
-			await this.service.dislikeQuiz(qr, user, quiz);
 		} else {
-			throw new ServiceException(
-				"NOT_IMPLEMENTED",
-				"NOT_IMPLEMENTED",
-				"access not implemented logic",
-			);
+			await this.service.dislikeQuiz(qr, user, quiz);
 		}
 	}
 
@@ -238,7 +188,6 @@ export class QuizController
 	@HttpCode(HttpStatus.OK)
 	@Get("schedule")
 	async getScheduledQuiz(@Query() dto: ScheduleQuizQueryDTO): Promise<ScheduleQuizResponse> {
-		Logger.log(`context : `, dto.context);
 		const MAX_RETRY = 10;
 		let attempt = 0;
 		for (attempt = 0; attempt < MAX_RETRY; attempt++) {
@@ -298,13 +247,15 @@ export class QuizController
 		return new ShowQuizResponse(quiz);
 	}
 
-	@ApiOverride("getOneBase", ShowQuizResponse)
-	async getQuizAndIncreaseView(
+	async getDetailQuiz(
 		@Param("id") id: string,
 		@Query() query: GetQuizQueryDTO,
-		@ParsedRequest() req: CrudRequest,
 	): Promise<DetailQuizResponse> {
-		let quiz = await this.service.getOne(req);
+		let quiz = await this.service.findOne({ where: { id } });
+		if (!quiz) {
+			throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST");
+		}
+
 		const { isS3Access, userId } = query;
 
 		if (isS3Access) {
