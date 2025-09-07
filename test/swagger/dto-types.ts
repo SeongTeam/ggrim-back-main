@@ -634,8 +634,7 @@ export type paths = {
 			};
 			cookie?: never;
 		};
-		/** Retrieve a single Quiz */
-		get: operations["getOneBaseQuizControllerQuiz"];
+		get: operations["QuizController_getDetailQuiz"];
 		put: operations["QuizController_update"];
 		post?: never;
 		delete: operations["QuizController_delete"];
@@ -916,9 +915,15 @@ export type components = {
 			id: string;
 			title: string;
 			time_limit: number;
-			/** Format: date-time */
+			/**
+			 * @description @format IsoDateTime
+			 * @example 2011-10-05T14:48:00.000Z
+			 */
 			created_date: string;
-			/** Format: date-time */
+			/**
+			 * @description @format IsoDateTime
+			 * @example 2011-10-05T14:48:00.000Z
+			 */
 			updated_date: string;
 			showOwner: components["schemas"]["ShowUserResponse"];
 		};
@@ -961,9 +966,15 @@ export type components = {
 			id: string;
 			title: string;
 			time_limit: number;
-			/** Format: date-time */
+			/**
+			 * @description @format IsoDateTime
+			 * @example 2011-10-05T14:48:00.000Z
+			 */
 			created_date: string;
-			/** Format: date-time */
+			/**
+			 * @description @format IsoDateTime
+			 * @example 2011-10-05T14:48:00.000Z
+			 */
 			updated_date: string;
 			showOwner: components["schemas"]["ShowUserResponse"];
 		};
@@ -984,14 +995,6 @@ export type components = {
 			timeLimit: number;
 			description: string;
 		};
-		GetManyQuizResponseDto: {
-			data: components["schemas"]["Quiz"][];
-			count: number;
-			total: number;
-			page: number;
-			pageCount: number;
-		};
-		Quiz: Record<string, never>;
 	};
 	responses: never;
 	parameters: never;
@@ -1048,8 +1051,6 @@ export type ShowQuizResponse = components["schemas"]["ShowQuizResponse"];
 export type ShowQuizReactionCount = components["schemas"]["ShowQuizReactionCount"];
 export type DetailQuizResponse = components["schemas"]["DetailQuizResponse"];
 export type UpdateQuizDto = components["schemas"]["UpdateQuizDTO"];
-export type GetManyQuizResponseDto = components["schemas"]["GetManyQuizResponseDto"];
-export type Quiz = components["schemas"]["Quiz"];
 export type $defs = Record<string, never>;
 export interface operations {
 	AppController_getHello: {
@@ -2908,17 +2909,11 @@ export interface operations {
 			};
 		};
 	};
-	getOneBaseQuizControllerQuiz: {
+	QuizController_getDetailQuiz: {
 		parameters: {
 			query?: {
 				isS3Access?: boolean;
 				userId?: string;
-				/** @description Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a> */
-				fields?: string[];
-				/** @description Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a> */
-				join?: string[];
-				/** @description Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a> */
-				cache?: number;
 			};
 			header?: never;
 			path: {
@@ -2933,7 +2928,7 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content: {
-					"application/json": components["schemas"]["ShowQuizResponse"];
+					"application/json": components["schemas"]["DetailQuizResponse"];
 				};
 			};
 			default: {
@@ -3114,7 +3109,7 @@ export enum ApiPaths {
 	QuizController_addQuizContext = "/quiz/schedule",
 	QuizController_create = "/quiz",
 	QuizController_searchQuiz = "/quiz",
-	getOneBaseQuizControllerQuiz = "/quiz/{id}",
+	QuizController_getDetailQuiz = "/quiz/{id}",
 	QuizController_update = "/quiz/{id}",
 	QuizController_delete = "/quiz/{id}",
 }
