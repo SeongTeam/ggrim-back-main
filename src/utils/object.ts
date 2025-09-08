@@ -73,3 +73,15 @@ export function sortById<O extends object & { id: string }>(objs: O[]) {
 
 	return clones.sort((o1, o2) => o1.id.localeCompare(o2.id));
 }
+
+export function deduplicate<O extends object & { id: string }>(objs: O[]) {
+	const map = new Map<string, O>();
+
+	for (const obj of objs) {
+		if (!map.has(obj.id)) {
+			map.set(obj.id, obj);
+		}
+	}
+
+	return [...map.values()];
+}
