@@ -13,10 +13,10 @@ import { Tag } from "../tag/entities/tag.entity";
 import { User } from "../user/entity/user.entity";
 import { updateProperty } from "../../utils/object";
 import { isArrayEmpty, isNotFalsy } from "../../utils/validator";
-import { SearchQuizQueryDTO } from "./dto/request/SearchQuiz.query.dto";
+import { SearchQuizQueryDTO } from "./dto/request/searchQuiz.query.dto";
 import { CreateQuizDTO } from "./dto/request/createQuiz.dto";
 import { QuizReactionType } from "./const";
-import { UpdateQuizDTO } from "./dto/request/updateQuiz.dto";
+import { ReplaceQuizDTO } from "./dto/request/replaceQuiz.dto";
 import { QuizDislike } from "./entities/quizDislike.entity";
 import { QuizLike } from "./entities/quizLike.entity";
 import { Quiz } from "./entities/quiz.entity";
@@ -53,7 +53,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		return this.insertQuiz(queryRunner, newQuiz);
 	}
 
-	async updateQuiz(queryRunner: QueryRunner, id: string, dto: UpdateQuizDTO) {
+	async updateQuiz(queryRunner: QueryRunner, id: string, dto: ReplaceQuizDTO) {
 		const quiz = await this.repo.findOneByOrFail({ id });
 		if (!isNotFalsy(quiz)) {
 			throw new ServiceException(

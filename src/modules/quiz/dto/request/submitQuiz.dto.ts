@@ -1,6 +1,6 @@
 import { IsBoolean, IsNotEmpty } from "class-validator";
 
-export class QuizSubmitDTO {
+export class SubmitQuizDTO {
 	@IsBoolean()
 	@IsNotEmpty()
 	isCorrect!: boolean;

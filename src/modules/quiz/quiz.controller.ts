@@ -31,17 +31,17 @@ import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.intercept
 import { PaintingService } from "../painting/painting.service";
 import { StyleService } from "../style/style.service";
 import { TagService } from "../tag/tag.service";
-import { SearchQuizQueryDTO } from "./dto/request/SearchQuiz.query.dto";
+import { SearchQuizQueryDTO } from "./dto/request/searchQuiz.query.dto";
 import { CreateQuizDTO } from "./dto/request/createQuiz.dto";
 import { DetailQuizResponse } from "./dto/response/detailQuiz.response";
 import { ScheduleQuizResponse } from "./dto/response/scheduleQuiz.response";
 import { QuizContextDTO } from "./dto/request/quizContext.dto";
-import { QuizReactionDTO } from "./dto/request/quizReaction.dto";
+import { CreateQuizReactionDTO } from "./dto/request/createQuizReaction.dto";
 import { QuizReactionType } from "./const";
 import { QuizReactionQueryDTO } from "./dto/request/getQuizReaction.query.dto";
 import { ScheduleQuizQueryDTO } from "./dto/request/scheduleQuiz.query.dto";
-import { QuizSubmitDTO } from "./dto/request/quizSubmit.dto";
-import { UpdateQuizDTO } from "./dto/request/updateQuiz.dto";
+import { SubmitQuizDTO } from "./dto/request/submitQuiz.dto";
+import { ReplaceQuizDTO } from "./dto/request/replaceQuiz.dto";
 import { Quiz } from "./entities/quiz.entity";
 import { QuizContext } from "./schedule/type";
 import { QuizScheduleService } from "./schedule/quizSchedule.service";
@@ -97,7 +97,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 
 	@HttpCode(HttpStatus.CREATED)
 	@Post("submit/:id")
-	async submitQuiz(@Param("id", ParseUUIDPipe) id: string, @Body() dto: QuizSubmitDTO) {
+	async submitQuiz(@Param("id", ParseUUIDPipe) id: string, @Body() dto: SubmitQuizDTO) {
 		await this.batchService.insertSubmission(id, dto.isCorrect);
 	}
 
@@ -140,7 +140,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
 		@Param("id") id: string,
-		@Body() dto: QuizReactionDTO,
+		@Body() dto: CreateQuizReactionDTO,
 	): Promise<void> {
 		const userPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = userPayload;
@@ -295,7 +295,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
 		@Param("id", ParseUUIDPipe) id: string,
-		@Body() dto: UpdateQuizDTO,
+		@Body() dto: ReplaceQuizDTO,
 	): Promise<ShowQuizResponse> {
 		const quiz = await this.service.updateQuiz(qr, id, dto);
 		return new ShowQuizResponse(quiz);
