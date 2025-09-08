@@ -1,4 +1,9 @@
-import { INestApplication, ValidationPipe, ClassSerializerInterceptor } from "@nestjs/common";
+import {
+	INestApplication,
+	ValidationPipe,
+	ClassSerializerInterceptor,
+	HttpStatus,
+} from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { ShowArtistResponse } from "./modules/artist/dto/response/showArtist.response";
@@ -32,6 +37,14 @@ export function configSwagger<T extends INestApplication>(app: T): void {
 		.setVersion("1.0")
 		.addBasicAuth()
 		.addBearerAuth()
+		.addGlobalResponse({
+			status: HttpStatus.BAD_REQUEST,
+			description: "when invalid path(route) or url query or dto body",
+		})
+		.addGlobalResponse({
+			status: HttpStatus.INTERNAL_SERVER_ERROR,
+			description: "when server logic throw unexpected exception",
+		})
 		.build();
 
 	const document = SwaggerModule.createDocument(app, rootOptions, {
