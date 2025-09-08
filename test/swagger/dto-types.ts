@@ -893,7 +893,7 @@ export type components = {
 			pageCount: number;
 		};
 		Artist: Record<string, never>;
-		QuizSubmitDTO: {
+		SubmitQuizDTO: {
 			isCorrect: boolean;
 		};
 		/** @enum {string} */
@@ -902,7 +902,7 @@ export type components = {
 			type: components["schemas"]["QUIZ_REACTION"];
 			user: components["schemas"]["ShowUserResponse"];
 		};
-		QuizReactionDTO: {
+		CreateQuizReactionDTO: {
 			type: components["schemas"]["QUIZ_REACTION"];
 		};
 		QuizContextDTO: {
@@ -987,7 +987,7 @@ export type components = {
 			quiz: components["schemas"]["ShowQuizResponse"];
 			reactionCount: components["schemas"]["ShowQuizReactionCount"];
 		};
-		UpdateQuizDTO: {
+		ReplaceQuizDTO: {
 			examplePaintingId?: string;
 			answerPaintingIds: string[];
 			distractorPaintingIds: string[];
@@ -1039,9 +1039,9 @@ export type ShowArtistResponse = components["schemas"]["ShowArtistResponse"];
 export type CreateArtistDto = components["schemas"]["CreateArtistDTO"];
 export type GetManyArtistResponseDto = components["schemas"]["GetManyArtistResponseDto"];
 export type Artist = components["schemas"]["Artist"];
-export type QuizSubmitDto = components["schemas"]["QuizSubmitDTO"];
+export type SubmitQuizDto = components["schemas"]["SubmitQuizDTO"];
 export type ShowQuizReactionResponse = components["schemas"]["ShowQuizReactionResponse"];
-export type QuizReactionDto = components["schemas"]["QuizReactionDTO"];
+export type CreateQuizReactionDto = components["schemas"]["CreateQuizReactionDTO"];
 export type QuizContextDto = components["schemas"]["QuizContextDTO"];
 export type ShowQuiz = components["schemas"]["ShowQuiz"];
 export type ShowQuizContext = components["schemas"]["ShowQuizContext"];
@@ -1050,7 +1050,7 @@ export type CreateQuizDto = components["schemas"]["CreateQuizDTO"];
 export type ShowQuizResponse = components["schemas"]["ShowQuizResponse"];
 export type ShowQuizReactionCount = components["schemas"]["ShowQuizReactionCount"];
 export type DetailQuizResponse = components["schemas"]["DetailQuizResponse"];
-export type UpdateQuizDto = components["schemas"]["UpdateQuizDTO"];
+export type ReplaceQuizDto = components["schemas"]["ReplaceQuizDTO"];
 export type $defs = Record<string, never>;
 export interface operations {
 	AppController_getHello: {
@@ -1062,6 +1062,20 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -1081,6 +1095,20 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -1098,6 +1126,20 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -1115,6 +1157,20 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -1141,6 +1197,20 @@ export interface operations {
 				content: {
 					"application/json": components["schemas"]["ShowTagResponse"];
 				};
+			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
 			};
 			default: {
 				headers: {
@@ -1172,6 +1242,13 @@ export interface operations {
 				};
 				content?: never;
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -1181,6 +1258,13 @@ export interface operations {
 			};
 			/** @description Not allowed User's role */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -1236,6 +1320,20 @@ export interface operations {
 					};
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -1272,6 +1370,13 @@ export interface operations {
 					"application/json": components["schemas"]["ShowTagResponse"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -1281,6 +1386,13 @@ export interface operations {
 			};
 			/** @description Not allowed User's role */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -1320,6 +1432,13 @@ export interface operations {
 					"application/json": components["schemas"]["ShowTagResponse"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -1329,6 +1448,13 @@ export interface operations {
 			};
 			/** @description Not allowed User's role */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -1364,8 +1490,22 @@ export interface operations {
 					"application/json": components["schemas"]["SignInResponse"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Account */
 			401: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -1402,6 +1542,20 @@ export interface operations {
 					"application/json": components["schemas"]["ShowVerificationResponse"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -1432,6 +1586,20 @@ export interface operations {
 				content: {
 					"application/json": components["schemas"]["ShowOneTimeTokenResponse"];
 				};
+			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
 			};
 			default: {
 				headers: {
@@ -1467,8 +1635,22 @@ export interface operations {
 					"application/json": components["schemas"]["ShowOneTimeTokenResponse"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Account */
 			401: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -1498,6 +1680,20 @@ export interface operations {
 		};
 		responses: {
 			201: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -1537,8 +1733,22 @@ export interface operations {
 					"application/json": components["schemas"]["ShowOneTimeTokenResponse"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized oneTimeToken */
 			401: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -1576,6 +1786,13 @@ export interface operations {
 					"application/json": components["schemas"]["ShowOneTimeTokenResponse"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Account */
 			401: {
 				headers: {
@@ -1585,6 +1802,13 @@ export interface operations {
 			};
 			/** @description User does not own the resource. */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -1618,6 +1842,20 @@ export interface operations {
 				content: {
 					"application/json": components["schemas"]["ShowUserResponse"];
 				};
+			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
 			};
 			default: {
 				headers: {
@@ -1671,6 +1909,20 @@ export interface operations {
 					};
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -1709,8 +1961,22 @@ export interface operations {
 					"application/json": components["schemas"]["ShowUserResponse"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized oneTimeToken for temp user */
 			401: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -1746,6 +2012,13 @@ export interface operations {
 			};
 		};
 		responses: {
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized oneTimeToken */
 			401: {
 				headers: {
@@ -1755,6 +2028,13 @@ export interface operations {
 			};
 			/** @description User does not own the resource. */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -1786,6 +2066,13 @@ export interface operations {
 			};
 		};
 		responses: {
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -1795,6 +2082,13 @@ export interface operations {
 			};
 			/** @description User does not own the resource. */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -1826,6 +2120,13 @@ export interface operations {
 			};
 		};
 		responses: {
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -1835,6 +2136,13 @@ export interface operations {
 			};
 			/** @description Not allowed User's role */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -1864,6 +2172,13 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized oneTimeToken */
 			401: {
 				headers: {
@@ -1873,6 +2188,13 @@ export interface operations {
 			};
 			/** @description User does not own the resource. */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -1902,6 +2224,13 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized oneTimeToken */
 			401: {
 				headers: {
@@ -1911,6 +2240,13 @@ export interface operations {
 			};
 			/** @description User does not own the resource. */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -1942,6 +2278,20 @@ export interface operations {
 				content: {
 					"application/json": components["schemas"]["ShowStyleResponse"];
 				};
+			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
 			};
 			default: {
 				headers: {
@@ -1979,6 +2329,13 @@ export interface operations {
 					"application/json": components["schemas"]["ShowStyleResponse"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -1988,6 +2345,13 @@ export interface operations {
 			};
 			/** @description Not allowed User's role */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -2023,6 +2387,13 @@ export interface operations {
 				};
 				content?: never;
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -2032,6 +2403,13 @@ export interface operations {
 			};
 			/** @description Not allowed User's role */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -2087,6 +2465,20 @@ export interface operations {
 					};
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -2123,6 +2515,13 @@ export interface operations {
 					"application/json": components["schemas"]["ShowStyleResponse"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -2132,6 +2531,13 @@ export interface operations {
 			};
 			/** @description Not allowed User's role */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -2167,6 +2573,20 @@ export interface operations {
 					"application/json": components["schemas"]["ShowPaintingResponse"][];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -2195,6 +2615,20 @@ export interface operations {
 				content: {
 					"application/json": components["schemas"]["ShowPaintingResponse"][];
 				};
+			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
 			};
 			default: {
 				headers: {
@@ -2226,6 +2660,20 @@ export interface operations {
 				content: {
 					"application/json": components["schemas"]["ShowPaintingResponse"];
 				};
+			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
 			};
 			default: {
 				headers: {
@@ -2263,6 +2711,13 @@ export interface operations {
 					"application/json": components["schemas"]["ShowPaintingResponse"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -2272,6 +2727,13 @@ export interface operations {
 			};
 			/** @description Not allowed User's role */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -2301,6 +2763,13 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -2310,6 +2779,13 @@ export interface operations {
 			};
 			/** @description Not allowed User's role */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -2349,6 +2825,20 @@ export interface operations {
 					};
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -2385,6 +2875,13 @@ export interface operations {
 					"application/json": components["schemas"]["ShowPainting"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -2394,6 +2891,13 @@ export interface operations {
 			};
 			/** @description Not allowed User's role */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -2420,6 +2924,20 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -2456,6 +2974,13 @@ export interface operations {
 					"application/json": components["schemas"]["ShowArtistResponse"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -2465,6 +2990,13 @@ export interface operations {
 			};
 			/** @description Not allowed User's role */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -2500,6 +3032,13 @@ export interface operations {
 				};
 				content?: never;
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -2509,6 +3048,13 @@ export interface operations {
 			};
 			/** @description Not allowed User's role */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -2564,6 +3110,20 @@ export interface operations {
 					};
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -2600,6 +3160,13 @@ export interface operations {
 					"application/json": components["schemas"]["ShowArtistResponse"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -2609,6 +3176,13 @@ export interface operations {
 			};
 			/** @description Not allowed User's role */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -2641,6 +3215,13 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -2650,6 +3231,13 @@ export interface operations {
 			};
 			/** @description Not allowed User's role */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -2674,10 +3262,24 @@ export interface operations {
 		};
 		requestBody: {
 			content: {
-				"application/json": components["schemas"]["QuizSubmitDTO"];
+				"application/json": components["schemas"]["SubmitQuizDTO"];
 			};
 		};
 		responses: {
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -2707,6 +3309,20 @@ export interface operations {
 					"application/json": components["schemas"]["ShowQuizReactionResponse"][];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -2731,12 +3347,26 @@ export interface operations {
 		};
 		requestBody: {
 			content: {
-				"application/json": components["schemas"]["QuizReactionDTO"];
+				"application/json": components["schemas"]["CreateQuizReactionDTO"];
 			};
 		};
 		responses: {
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -2764,8 +3394,22 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -2800,6 +3444,20 @@ export interface operations {
 					"application/json": components["schemas"]["ScheduleQuizResponse"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -2823,6 +3481,20 @@ export interface operations {
 			};
 		};
 		responses: {
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -2855,6 +3527,20 @@ export interface operations {
 						data?: components["schemas"]["ShowQuiz"][];
 					};
 				};
+			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
 			};
 			default: {
 				headers: {
@@ -2892,8 +3578,22 @@ export interface operations {
 					"application/json": components["schemas"]["ShowQuizResponse"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -2931,6 +3631,20 @@ export interface operations {
 					"application/json": components["schemas"]["DetailQuizResponse"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			default: {
 				headers: {
 					[name: string]: unknown;
@@ -2955,7 +3669,7 @@ export interface operations {
 		};
 		requestBody: {
 			content: {
-				"application/json": components["schemas"]["UpdateQuizDTO"];
+				"application/json": components["schemas"]["ReplaceQuizDTO"];
 			};
 		};
 		responses: {
@@ -2967,6 +3681,13 @@ export interface operations {
 					"application/json": components["schemas"]["ShowQuizResponse"];
 				};
 			};
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -2976,6 +3697,13 @@ export interface operations {
 			};
 			/** @description User does not own the resource. */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
@@ -3005,6 +3733,13 @@ export interface operations {
 		};
 		requestBody?: never;
 		responses: {
+			/** @description when invalid path(route) or url query or dto body */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
 			/** @description Not Authorized Token */
 			401: {
 				headers: {
@@ -3014,6 +3749,13 @@ export interface operations {
 			};
 			/** @description User does not own the resource. */
 			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description when server logic throw unexpected exception */
+			500: {
 				headers: {
 					[name: string]: unknown;
 				};
