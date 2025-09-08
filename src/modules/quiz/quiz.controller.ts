@@ -247,6 +247,9 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		return new ShowQuizResponse(quiz);
 	}
 
+	@ApiOkResponse({ type: DetailQuizResponse })
+	@HttpCode(HttpStatus.OK)
+	@Get(":id")
 	async getDetailQuiz(
 		@Param("id") id: string,
 		@Query() query: GetQuizQueryDTO,
