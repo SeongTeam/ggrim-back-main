@@ -8,6 +8,8 @@ import { TypeORMConfig } from "../../src/utils/typeormConfig";
 import { DataSource } from "typeorm";
 import { ConfigModule } from "@nestjs/config";
 import { NODE_ENV } from "../../src/modules/_common/const/envKeys";
+import { QuizModule } from "../../src/modules/quiz/quiz.module";
+import { ClsModule } from "nestjs-cls";
 
 /* TestModule
 ## Purpose:
@@ -34,6 +36,13 @@ const ENV = process.env[NODE_ENV];
 		DataBaseModule,
 		UserModule,
 		AuthModule,
+		QuizModule,
+		ClsModule.forRoot({
+			global: true,
+			interceptor: {
+				mount: true,
+			},
+		}),
 	],
 	providers: [TestService],
 	exports: [TestService],
