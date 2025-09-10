@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { DatabaseService } from "../../src/modules/db/db.service";
 import { AuthService } from "../../src/modules/auth/auth.service";
-import { UserService } from "../../src/modules/user/user.service";
 import { factoryUserStub, UserDummy } from "./stub/user.stub";
 import { factoryQuizStub, QuizDummy } from "./stub/quiz.stub";
 import { User } from "../../src/modules/user/entity/user.entity";
@@ -31,7 +30,6 @@ export class TestService {
 	constructor(
 		private readonly dbService: DatabaseService,
 		private readonly authService: AuthService,
-		private readonly userService: UserService,
 	) {
 		if (process.env.NODE_ENV !== "test") {
 			throw new Error("ERROR-TEST-UTILS-ONLY-FOR-TESTS");
@@ -79,20 +77,18 @@ export class TestService {
 	}
 
 	//insert stub data
-	async insertStubUser(
-		userStub: UserDummy,
-		quizzes?: QuizDummy[],
-		oneTimeTokens?: OneTimeToken[],
-	): Promise<User> {
+	async insertStubUser(userStub: UserDummy): Promise<User> {
 		const hashedPassword = await this.authService.hash(userStub.password);
-		const result = await this.userService.createUser(this.dbService.getQueryRunner(), {
-			quizzes,
+		const repo = this.dbService.getRepository(User);
+		await repo.insert({
 			...userStub,
 			password: hashedPassword,
-			oneTimeTokens,
 		});
 
-		return result;
+		const id = userStub.id;
+		const user = await repo.findOne({ where: { id } });
+
+		return user as User;
 	}
 
 	async insertTagStub(tagStub: TagDummy) {
