@@ -392,26 +392,38 @@ export class TestService {
 		}
 
 		const paintingSelectCount = 4;
+		const quizPromise = Array(count)
+			.fill(0)
+			.map(() => {
+				const selectedPainting = selectRandomElements(paintings, paintingSelectCount);
+				const selectedOwner = getRandomElement(owners)!;
+				const answerIdx = faker.number.int({
+					min: 0,
+					max: paintingSelectCount - 1,
+				});
+				const answer = selectedPainting[answerIdx];
+				const distractors = selectedPainting.filter((v, idx) => idx !== answerIdx);
 
-		const quizzes = await Promise.all(
-			Array(count)
-				.fill(0)
-				.map(() => {
-					const selectedPainting = selectRandomElements(paintings, paintingSelectCount);
-					const selectedOwner = getRandomElement(owners)!;
-					const answerIdx = faker.number.int({ min: 0, max: paintingSelectCount - 1 });
-					const answer = selectedPainting[answerIdx];
-					const distractors = selectedPainting.filter((v, idx) => idx !== answerIdx);
+				return this.insertOneChoiceQuizStub(
+					factoryQuizStub(),
+					selectedOwner,
+					answer,
+					distractors,
+				);
+			});
 
-					return this.insertOneChoiceQuizStub(
-						factoryQuizStub(),
-						selectedOwner,
-						answer,
-						distractors,
-					);
-				}),
-		);
-
+		const quizzes: Quiz[] = [];
+		try {
+			quizzes.push(...(await Promise.all(quizPromise)));
+		} catch (reason) {
+			if (reason instanceof Error) {
+				const { message, stack, name } = reason;
+				console.log(
+					"seeding quiz fail. \n" + `reason :` + JSON.stringify({ name, message, stack }),
+					`params :` + JSON.stringify({ count, relations }),
+				);
+			}
+		}
 		return quizzes;
 	}
 	async seedReaction(type: "like", user: User, quiz: Quiz): Promise<QuizLike>;
