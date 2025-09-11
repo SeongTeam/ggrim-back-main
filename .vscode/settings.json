@@ -65,6 +65,7 @@
 	// },
 
 	"jestrunner.configPath": {
+		"**/*.{test,spec}.ts": "test/unit/jest-unit.json",
 		"**/*.int-spec.ts": "test/integration/jest-integration.json",
 		"**/*.e2e-spec.ts": "test/e2e/jest-e2e.json"
 	},
