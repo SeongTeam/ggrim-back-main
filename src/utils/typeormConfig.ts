@@ -36,7 +36,7 @@ export class TypeORMConfig implements TypeOrmOptionsFactory {
 			maxQueryExecutionTime: 1000,
 			entities: [__dirname + "src/**/{entity,entities}/*.entity.{ts,js}"], //엔티티 클래스 경로
 			extra: {
-				max: 100,
+				max: 20,
 			},
 		} as TypeOrmModuleOptions;
 	}
