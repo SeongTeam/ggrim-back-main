@@ -25,6 +25,17 @@ import { QuizDislike } from "../../src/modules/quiz/entities/quizDislike.entity"
 import { faker } from "@faker-js/faker";
 import { getRandomElement, selectRandomElements } from "../../src/utils/random";
 
+// TODO: 데이터 시딩 로직 개선하기
+// - [ ] connection pool 최대한 활용하기
+// - [ ] relation 생성 로직 성능 개선하기
+// - [ ] TypeOrm save() api 대신, insert() api 또는 QueryBuilder API 사용하기
+//  -> save API는 오버헤드가 크므로, SQL 쿼리를 직접 수행하는 API를 사용해야함
+// - [ ] 외부 라이브러리typeOrm, node-postgresql) 실패 및 에러 예외처리 로직 추가하기
+// - [ ] <추가 작업>
+// ! 주의: <경고할 사항>
+// ? 질문: <의문점 또는 개선 방향>
+// * 참고: <관련 정보나 링크>
+
 @Injectable()
 export class TestService {
 	constructor(
