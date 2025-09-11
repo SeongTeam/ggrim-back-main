@@ -3,9 +3,6 @@ import { DataBaseModule } from "../../src/modules/db/db.module";
 import { TestService } from "./test.service";
 import { UserModule } from "../../src/modules/user/user.module";
 import { AuthModule } from "../../src/modules/auth/auth.module";
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { TypeORMConfig } from "../../src/utils/typeormConfig";
-import { DataSource } from "typeorm";
 import { ConfigModule } from "@nestjs/config";
 import { NODE_ENV } from "../../src/modules/_common/const/envKeys";
 import { QuizModule } from "../../src/modules/quiz/quiz.module";
@@ -28,10 +25,6 @@ const ENV = process.env[NODE_ENV];
 		ConfigModule.forRoot({
 			envFilePath: !ENV ? ".env" : `.env.${ENV}`,
 			isGlobal: true,
-		}),
-		TypeOrmModule.forRootAsync({
-			useClass: TypeORMConfig,
-			dataSourceFactory: async (options) => new DataSource(options!).initialize(),
 		}),
 		DataBaseModule,
 		UserModule,
