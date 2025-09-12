@@ -4,6 +4,10 @@ import { TestService } from "../_shared/test.service";
 import { DatabaseService } from "../../src/modules/db/db.service";
 import { factoryUserStub } from "../_shared/stub/user.stub";
 import { omit } from "../../src/utils/object";
+import { factoryTagStub } from "../_shared/stub/tag.stub";
+import { factoryArtistStub } from "../_shared/stub/artist.stub";
+import { factoryStyleStub } from "../_shared/stub/style.stub";
+import { factoryPaintingStub } from "../_shared/stub/painting.stub";
 
 describe("TestModule Integration Test", () => {
 	let module: TestingModule;
@@ -36,20 +40,79 @@ describe("TestModule Integration Test", () => {
 
 	describe("test data insert", () => {
 		test("insert user data", async () => {
-			const userStub = factoryUserStub("user");
-			const user = await testService.insertStubUser(userStub);
-
+			const stub = factoryUserStub("user");
+			const users = await testService.insertUserStubs([stub]);
+			const user = users[0];
 			expect(user).toBeDefined();
-			expect(userStub).toMatchObject(omit(user, ["password"]));
+			expect(stub).toMatchObject(omit(user, ["password"]));
+		});
+		test("insert tag data", async () => {
+			const stub = factoryTagStub();
+			const tags = await testService.insertTagStubs([stub]);
+
+			const received = tags[0];
+			expect(received).toBeDefined();
+			expect(stub).toMatchObject(omit(received, ["paintings"]));
+		});
+		test("insert artist data", async () => {
+			const stub = factoryArtistStub();
+			const artists = await testService.insertArtistStubs([stub]);
+
+			const received = artists[0];
+			expect(received).toBeDefined();
+			expect(stub).toMatchObject(omit(received, ["paintings"]));
+		});
+		test("insert style data", async () => {
+			const stub = factoryStyleStub();
+			const styles = await testService.insertStyleStubs([stub]);
+
+			const received = styles[0];
+			expect(received).toBeDefined();
+			expect(stub).toMatchObject(omit(received, ["paintings"]));
+		});
+
+		test("insert painting data", async () => {
+			const tags = await testService.seedTags(3);
+			const artists = await testService.seedArtists(1);
+			const styles = await testService.seedStyles(1);
+
+			const paintingDummy = factoryPaintingStub();
+			const paintings = await testService.insertPaintingStub([
+				{
+					paintingDummy,
+					tags,
+					artist: artists[0],
+					styles,
+				},
+			]);
+
+			const received = paintings[0];
+
+			const updatedColumn = ["updated_date", "version"] as const;
+
+			expect(received).toBeDefined();
+			expect(received).toMatchObject(omit(paintingDummy, updatedColumn));
+			expect(received.tags).toMatchObject(tags);
+			expect(received.artist).toMatchObject(artists[0]);
+			expect(received.styles).toMatchObject(styles);
 		});
 	});
 
 	describe("test seed limitation", () => {
-		it.each([{ count: 5 }, { count: 10 }, { count: 20 }, { count: 40 }, { count: 80 }])(
-			"should seed user limitation",
-			async ({ count }) => {
-				const users = await testService.seedUsers(count);
-				expect(users.length).toBe(count);
+		describe.each([{ count: 5 }, { count: 10 }, { count: 20 }, { count: 40 }, { count: 80 }])(
+			"should seed user limitation  : [$count]",
+			({ count }) => {
+				it("call seedUsersMultipleInsert()", async () => {
+					console.log(`seed data count : ${count}`);
+					const users = await testService.seedUsersMultipleInsert(count);
+					expect(users.length).toBe(count);
+				});
+
+				it("call seedUsersSingleInsert()", async () => {
+					console.log(`seed data count : ${count}`);
+					const users = await testService.seedUsersSingleInsert(count);
+					expect(users.length).toBe(count);
+				});
 			},
 		);
 
@@ -62,7 +125,8 @@ describe("TestModule Integration Test", () => {
 			{ count: 160 },
 			{ count: 320 },
 			{ count: 640 },
-		])("should seed painting limitation", async ({ count }) => {
+		])("test seed painting limitation : [$count]", async ({ count }) => {
+			console.log(`seed data count : ${count}`);
 			const paintings = await testService.seedPaintings(count);
 			expect(paintings.length).toBe(count);
 		});
@@ -74,8 +138,9 @@ describe("TestModule Integration Test", () => {
 			{ count: 80 },
 			{ count: 160 },
 		])(
-			"test seed quiz limitation",
+			"test seed quiz limitation [$count]",
 			async ({ count }) => {
+				console.log(`seed data count : ${count}`);
 				const quizzes = await testService.seedOneChoiceQuizzes(count);
 				expect(quizzes.length).toBe(count);
 			},
