@@ -109,7 +109,20 @@ export class TestService {
 		return oneTimeToken;
 	}
 
-	//insert stub data
+	async insertStubUser(userStub: UserDummy): Promise<User> {
+		const hashedPassword = await this.authService.hash(userStub.password);
+		const repo = this.dbService.getRepository(User);
+		await repo.insert({
+			...userStub,
+			password: hashedPassword,
+		});
+
+		const id = userStub.id;
+		const user = await repo.findOne({ where: { id } });
+
+		return user as User;
+	}
+
 	async insertUserStubs(userStubs: UserDummy[]): Promise<User[]> {
 		const repo = this.dbService.getRepository(User);
 		const stubs = structuredClone(userStubs);
@@ -450,11 +463,21 @@ export class TestService {
 		return paintings;
 	}
 
-	async seedUsers(count: number) {
+	async seedUsersMultipleInsert(count: number) {
 		const stubs = Array(count)
 			.fill(0)
 			.map(() => factoryUserStub("user"));
 		const users = await this.insertUserStubs(stubs);
+		return users;
+	}
+
+	async seedUsersSingleInsert(count: number) {
+		const users = await Promise.all(
+			Array(count)
+				.fill(0)
+				.map(() => this.insertStubUser(factoryUserStub("user"))),
+		);
+
 		return users;
 	}
 
@@ -476,11 +499,11 @@ export class TestService {
 		let paintings: Painting[] = [];
 		let owners: User[] = [];
 		if (!relations) {
-			const userCount = Math.min(5, count);
+			const userCount = Math.min(10, count);
 			const paintingCount = Math.min(30, count * 4);
 			[paintings, owners] = await Promise.all([
 				this.seedPaintings(paintingCount),
-				this.seedUsers(userCount),
+				this.seedUsersSingleInsert(userCount),
 			]);
 		} else {
 			paintings = relations.paintings;
