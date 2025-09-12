@@ -48,8 +48,8 @@ describe("TestModule Integration Test", () => {
 		it.each([{ count: 5 }, { count: 10 }, { count: 20 }, { count: 40 }, { count: 80 }])(
 			"should seed user limitation",
 			async ({ count }) => {
-				const quizzes = await testService.seedUsers(count);
-				expect(quizzes.length).toBe(count);
+				const users = await testService.seedUsers(count);
+				expect(users.length).toBe(count);
 			},
 		);
 
@@ -63,8 +63,8 @@ describe("TestModule Integration Test", () => {
 			{ count: 320 },
 			{ count: 640 },
 		])("should seed painting limitation", async ({ count }) => {
-			const quizzes = await testService.seedPaintings(count);
-			expect(quizzes.length).toBe(count);
+			const paintings = await testService.seedPaintings(count);
+			expect(paintings.length).toBe(count);
 		});
 		it.each([
 			{ count: 5 },
