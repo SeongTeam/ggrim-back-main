@@ -24,6 +24,10 @@ import { QuizLike } from "../../src/modules/quiz/entities/quizLike.entity";
 import { QuizDislike } from "../../src/modules/quiz/entities/quizDislike.entity";
 import { faker } from "@faker-js/faker";
 import { getRandomElement, selectRandomElements } from "../../src/utils/random";
+import { assert } from "node:console";
+import { deduplicate } from "../../src/utils/object";
+import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
+import { EntityTarget, TypeORMError } from "typeorm";
 
 // TODO: 데이터 시딩 로직 개선하기
 // - [x] connection pool 최대한 활용하기
@@ -36,26 +40,32 @@ import { getRandomElement, selectRandomElements } from "../../src/utils/random";
 // ? 질문: <의문점 또는 개선 방향>
 // * 참고: <관련 정보나 링크>
 
-type PaintingRelations = { artist: Artist; tags: Tag[]; styles: Style[] };
+export type PaintingRelations = { artist: Artist; tags: Tag[]; styles: Style[] };
 
-type InsertPaintingArgs = {
+export type InsertPaintingArgs = {
 	paintingDummy: PaintingDummy;
 } & PaintingRelations;
 
-type OneChoiceQuizzesRelations = {
+export type OneChoiceQuizzesRelations = {
 	owner: User;
 	answer: Painting;
-	distractors: Painting[];
+	distractors: [Painting, Painting, Painting];
 	tags: Tag[];
 	styles: Style[];
 	artists: Artist[];
 };
 
-type InsertOneChoiceQuizzesArgs = {
+export type InsertOneChoiceQuizzesArgs = {
 	quizStub: QuizDummy;
 	owner: User;
 	answer: Painting;
-	distractors: Painting[];
+	distractors: [Painting, Painting, Painting];
+};
+
+export type InsertQuizReaction<T extends QuizLikeDummy | QuizDislikeDummy> = {
+	reactionStub: T;
+	quiz: Quiz;
+	user: User;
 };
 
 @Injectable()
@@ -88,114 +98,168 @@ export class TestService {
 	}
 
 	async createSignUpOneTimeToken(email: string): Promise<OneTimeToken> {
-		return await this.authService.signOneTimeJWTWithoutUser(
-			this.dbService.getQueryRunner(),
-			email,
-			"sign-up",
-		);
+		let jwt = new OneTimeToken();
+		try {
+			jwt = await this.authService.signOneTimeJWTWithoutUser(
+				this.dbService.getQueryRunner(),
+				email,
+				"sign-up",
+			);
+		} catch (e) {
+			this.handleInsertError(e, { email });
+		}
+
+		assert(jwt.id !== undefined);
+
+		return jwt;
 	}
 
 	async createOneTimeToken(user: User, purpose: OneTimeTokenPurpose): Promise<OneTimeToken> {
-		return await this.authService.signOneTimeJWTWithUser(
-			this.dbService.getQueryRunner(),
-			user.email,
-			purpose,
-			user,
-		);
+		let jwt = new OneTimeToken();
+
+		try {
+			jwt = await this.authService.signOneTimeJWTWithUser(
+				this.dbService.getQueryRunner(),
+				user.email,
+				purpose,
+				user,
+			);
+		} catch (e) {
+			this.handleInsertError(e, { user, purpose });
+		}
+
+		assert(jwt.id !== undefined);
+
+		return jwt;
 	}
 
 	async useOneTimeToken(oneTimeToken: OneTimeToken): Promise<OneTimeToken> {
-		await this.authService.markOneTimeJWT(this.dbService.getQueryRunner(), oneTimeToken.id);
+		try {
+			await this.authService.markOneTimeJWT(this.dbService.getQueryRunner(), oneTimeToken.id);
+		} catch (e) {
+			this.handleInsertError(e, oneTimeToken);
+		}
 		return oneTimeToken;
 	}
 
 	async insertStubUser(userStub: UserDummy): Promise<User> {
-		const hashedPassword = await this.authService.hash(userStub.password);
 		const repo = this.dbService.getRepository(User);
-		await repo.insert({
-			...userStub,
-			password: hashedPassword,
-		});
+		let user = new User();
+		try {
+			const hashedPassword = await this.authService.hash(userStub.password);
+			await repo.insert({
+				...userStub,
+				password: hashedPassword,
+			});
 
-		const id = userStub.id;
-		const user = await repo.findOne({ where: { id } });
+			const id = userStub.id;
+			user = await repo.findOneOrFail({ where: { id } });
+		} catch (e) {
+			this.handleInsertError(e, userStub);
+		}
+		assert(user.id !== undefined);
 
-		return user as User;
+		return user;
 	}
 
 	async insertUserStubs(userStubs: UserDummy[]): Promise<User[]> {
+		assert(userStubs.length > 0);
+
 		const repo = this.dbService.getRepository(User);
 		const stubs = structuredClone(userStubs);
-		for (const stub of stubs) {
-			const hashedPassword = await this.authService.hash(stub.password);
-			stub.password = hashedPassword;
+		let users: User[] = [];
+
+		try {
+			for (const stub of stubs) {
+				const hashedPassword = await this.authService.hash(stub.password);
+				stub.password = hashedPassword;
+			}
+
+			const result = await repo.insert(stubs);
+
+			const ids = result.generatedMaps.map((val) => (val as User).id);
+			users = await repo
+				.createQueryBuilder()
+				.select("user")
+				.from(User, "user")
+				.where("user.id IN (:...ids)", { ids })
+				.getMany();
+		} catch (e) {
+			this.handleInsertError(e, userStubs);
 		}
-
-		const result = await repo.insert(stubs);
-
-		const ids = result.generatedMaps.map((val) => (val as User).id);
-		const users = await repo
-			.createQueryBuilder()
-			.select("user")
-			.from(User, "user")
-			.where("user.id IN (:...ids)", { ids })
-			.getMany();
+		assert(users.length === userStubs.length);
 
 		return users;
 	}
 
 	async insertTagStubs(tagStubs: TagDummy[]) {
+		assert(tagStubs.length > 0);
 		const manager = this.dbService.getManager();
-		const result = await manager.insert(Tag, tagStubs);
 
-		const ids = result.generatedMaps.map((t) => (t as Tag).id);
+		let tags: Tag[] = [];
+		try {
+			const result = await manager.insert(Tag, tagStubs);
+			const ids = result.generatedMaps.map((t) => (t as Tag).id);
 
-		const tags = await manager
-			.createQueryBuilder()
-			.select("tag")
-			.from(Tag, "tag")
-			.where("tag.id IN (:...ids)", { ids })
-			.getMany();
+			tags = await manager
+				.createQueryBuilder()
+				.select("tag")
+				.from(Tag, "tag")
+				.where("tag.id IN (:...ids)", { ids })
+				.getMany();
+		} catch (e) {
+			this.handleInsertError(e, tagStubs);
+		}
+		assert(tags.length === tagStubs.length);
 
 		return tags;
 	}
 	async insertArtistStubs(artistStubs: ArtistDummy[]) {
+		assert(artistStubs.length > 0);
 		const manager = this.dbService.getManager();
-		const result = await manager.insert(Artist, artistStubs);
-		const ids = result.generatedMaps.map((a) => (a as Artist).id);
+		let artists: Artist[] = [];
 
-		const artists = await manager
-			.createQueryBuilder()
-			.select("artist")
-			.from(Artist, "artist")
-			.where("artist.id IN (:...ids)", { ids })
-			.getMany();
+		try {
+			const result = await manager.insert(Artist, artistStubs);
+			const ids = result.generatedMaps.map((a) => (a as Artist).id);
+
+			artists = await manager
+				.createQueryBuilder()
+				.select("artist")
+				.from(Artist, "artist")
+				.where("artist.id IN (:...ids)", { ids })
+				.getMany();
+		} catch (e) {
+			this.handleInsertError(e, artistStubs);
+		}
+		assert(artists.length === artistStubs.length);
 
 		return artists;
 	}
 	async insertStyleStubs(styleStubs: StyleDummy[]) {
-		let ret: Style[] = [];
+		assert(styleStubs.length > 0);
+		let styles: Style[] = [];
 		const manager = this.dbService.getManager();
 		try {
 			const result = await manager.insert(Style, styleStubs);
 			const ids = result.generatedMaps.map((s) => (s as Style).id);
 
-			const styles = await manager
+			styles = await manager
 				.createQueryBuilder()
 				.select("style")
 				.from(Style, "style")
 				.where("style.id IN (:...ids)", { ids })
 				.getMany();
-			ret = styles;
 		} catch (error) {
 			this.handleInsertError(error, { styleStubs });
 		}
 
-		return ret;
+		return styles;
 	}
 
 	async insertPaintingStub(paintingStubs: InsertPaintingArgs[]) {
 		const manager = this.dbService.getManager();
+		let paintingWithRelation: Painting[] = [];
 		const insertRelations = async (painting: Painting, relations: PaintingRelations) => {
 			const { artist, tags, styles } = relations;
 			await manager
@@ -210,78 +274,46 @@ export class TestService {
 				.of(painting)
 				.add(styles);
 		};
+		try {
+			const relationMap: Map<string, PaintingRelations> = new Map();
 
-		// const mapRelations = (
-		// 	painting: Painting,
-		// 	relations: {
-		// 		artist: Artist;
-		// 		tags: Tag[];
-		// 		styles: Style[];
-		// 	},
-		// ) => {
-		// 	painting.artist = relations.artist;
-		// 	painting.tags = relations.tags;
-		// 	painting.styles = relations.styles;
-
-		// 	return painting;
-		// };
-
-		const relationMap: Map<string, PaintingRelations> = new Map();
-
-		for (const stub of paintingStubs) {
-			const { artist, tags, styles, paintingDummy } = stub;
-			const id = paintingDummy.id;
-			if (!relationMap.has(id)) {
-				relationMap.set(id, { artist, tags, styles });
+			for (const stub of paintingStubs) {
+				const { artist, tags, styles, paintingDummy } = stub;
+				const id = paintingDummy.id;
+				if (!relationMap.has(id)) {
+					relationMap.set(id, { artist, tags, styles });
+				}
 			}
+
+			const paintingDummies = paintingStubs.map((stub) => stub.paintingDummy);
+			const result = await manager.insert(Painting, paintingDummies);
+			const paintings = result.generatedMaps.map((val) => val as Painting);
+			await Promise.all(paintings.map((p) => insertRelations(p, relationMap.get(p.id)!)));
+
+			const ids = paintings.map((p) => p.id);
+			paintingWithRelation = await manager
+				.createQueryBuilder()
+				.select("painting")
+				.from(Painting, "painting")
+				.where("painting.id IN (:...ids)", { ids })
+				.leftJoinAndSelect("painting.tags", "tag")
+				.leftJoinAndSelect("painting.styles", "style")
+				.leftJoinAndSelect("painting.artist", "artist")
+				.getMany();
+		} catch (e) {
+			this.handleInsertError(e, { paintingStubs });
 		}
-
-		const paintingDummies = paintingStubs.map((stub) => stub.paintingDummy);
-		const result = await manager.insert(Painting, paintingDummies);
-		const paintings = result.generatedMaps.map((val) => val as Painting);
-		await Promise.all(paintings.map((p) => insertRelations(p, relationMap.get(p.id)!)));
-
-		const ids = paintings.map((p) => p.id);
-		const paintingWithRelation = await manager
-			.createQueryBuilder()
-			.select("painting")
-			.from(Painting, "painting")
-			.where("painting.id IN (:...ids)", { ids })
-			.leftJoinAndSelect("painting.tags", "tag")
-			.leftJoinAndSelect("painting.styles", "style")
-			.leftJoinAndSelect("painting.artist", "artist")
-			.getMany();
-
+		assert(paintingStubs.length === paintingWithRelation.length);
 		return paintingWithRelation;
 	}
 
 	async insertOneChoiceQuizStubs(quizStubs: InsertOneChoiceQuizzesArgs[]) {
 		const extractRelations = (stub: InsertOneChoiceQuizzesArgs) => {
 			const { answer, distractors, owner } = stub;
-			const tagMap: Map<string, Tag> = new Map();
-			const styleMap: Map<string, Style> = new Map();
-			const artistMap: Map<string, Artist> = new Map();
-			const relationPaintings = [answer, ...distractors];
-
-			relationPaintings.forEach((painting) => {
-				painting.tags.forEach((tag) => {
-					if (!tagMap.has(tag.id)) {
-						tagMap.set(tag.id, tag);
-					}
-				});
-				painting.styles.forEach((style) => {
-					if (!styleMap.has(style.id)) {
-						styleMap.set(style.id, style);
-					}
-				});
-				if (!artistMap.has(painting.artist.id)) {
-					artistMap.set(painting.artist.id, painting.artist);
-				}
-			});
-
-			const tags = [...tagMap.values()];
-			const styles = [...styleMap.values()];
-			const artists = [...artistMap.values()];
+			const paintings = [answer, ...distractors];
+			const tags = deduplicate(paintings.flatMap((p) => p.tags));
+			const styles = deduplicate(paintings.flatMap((p) => p.styles));
+			const artists = deduplicate(paintings.map((p) => p.artist));
 			return { owner, answer, distractors, tags, styles, artists };
 		};
 
@@ -307,6 +339,9 @@ export class TestService {
 
 		const relationMap: Map<string, OneChoiceQuizzesRelations> = new Map();
 
+		let quizWithRelations: Quiz[] = [];
+		assert(quizStubs.length > 0);
+
 		for (const stub of quizStubs) {
 			const id = stub.quizStub.id;
 
@@ -321,64 +356,96 @@ export class TestService {
 			...stub.quizStub,
 			owner_id: stub.owner.id,
 		}));
-		const result = await manager.insert(Quiz, insertDataList);
 
-		const quizzes = result.generatedMaps.map((val) => val as Quiz);
-		const ids = quizzes.map((q) => q.id);
+		try {
+			const result = await manager.insert(Quiz, insertDataList);
 
-		await Promise.all(quizzes.map((q) => insertRelations(q, relationMap.get(q.id)!)));
+			const quizzes = result.generatedMaps.map((val) => val as Quiz);
+			const ids = quizzes.map((q) => q.id);
 
-		const quizWithRelations = await manager
-			.createQueryBuilder()
-			.select("quiz")
-			.from(Quiz, "quiz")
-			.where("quiz.id IN (:...ids)", { ids })
-			.leftJoinAndSelect("quiz.tags", "tag")
-			.leftJoinAndSelect("quiz.styles", "style")
-			.leftJoinAndSelect("quiz.artists", "artist")
-			.leftJoinAndSelect("quiz.answer_paintings", "quiz_answer_painting")
-			.leftJoinAndSelect("quiz.distractor_paintings", "quiz_distractor_painting")
-			.getMany();
+			await Promise.all(quizzes.map((q) => insertRelations(q, relationMap.get(q.id)!)));
 
+			quizWithRelations = await manager
+				.createQueryBuilder()
+				.select("quiz")
+				.from(Quiz, "quiz")
+				.where("quiz.id IN (:...ids)", { ids })
+				.leftJoinAndSelect("quiz.tags", "tag")
+				.leftJoinAndSelect("quiz.styles", "style")
+				.leftJoinAndSelect("quiz.artists", "artist")
+				.leftJoinAndSelect("quiz.answer_paintings", "quiz_answer_painting")
+				.leftJoinAndSelect("quiz.distractor_paintings", "quiz_distractor_painting")
+				.leftJoinAndSelect("quiz.owner", "quiz_user")
+				.getMany();
+		} catch (error) {
+			this.handleInsertError(error, quizStubs);
+		}
+
+		assert(quizStubs.length === quizWithRelations.length);
 		return quizWithRelations;
 	}
 
-	async insertQuizLike(quizLikeStub: QuizLikeDummy, quiz: Quiz, user: User) {
-		const quizLike = this.dbService.getManager().create(QuizLike, {
-			...quizLikeStub,
-			quiz,
-			user,
-		});
-		await this.dbService.getManager().save(quizLike);
+	async insertQuizReaction(stubs: InsertQuizReaction<QuizLikeDummy>[]): Promise<QuizLike[]>;
+	async insertQuizReaction(stubs: InsertQuizReaction<QuizDislikeDummy>[]): Promise<QuizDislike[]>;
+	async insertQuizReaction<
+		Arg extends InsertQuizReaction<QuizLikeDummy>[] | InsertQuizReaction<QuizDislikeDummy>[],
+	>(stubs: Arg): Promise<QuizLike[] | QuizDislike[]> {
+		const insertToDB = async <T extends { id: string }>(
+			entity: EntityTarget<T>,
+			insertDataList: QueryDeepPartialEntity<T>[],
+		) => {
+			let reactions: T[] = [];
+			try {
+				const result = await manager.insert(entity, insertDataList);
 
-		const ret = await this.dbService.getManager().findOneOrFail(QuizLike, {
-			where: { id: quizLike.id },
-			relations: {
-				quiz: true,
-				user: true,
-			},
-		});
+				const ids = result.generatedMaps.map((val) => (val as T).id);
 
-		return ret;
-	}
+				reactions = await manager
+					.createQueryBuilder()
+					.select("reaction")
+					.from(entity, "reaction")
+					.where("reaction.id IN (:...ids)", { ids })
+					.leftJoinAndSelect("reaction.user", "user")
+					.leftJoinAndSelect("reaction.quiz", "quiz")
+					.getMany();
+			} catch (e) {
+				this.handleInsertError(e, stubs);
+			}
 
-	async insertQuizDisLike(quizDislikeStub: QuizDislikeDummy, quiz: Quiz, user: User) {
-		const quizDislike = this.dbService.getManager().create(QuizDislike, {
-			...quizDislikeStub,
-			quiz,
-			user,
-		});
-		await this.dbService.getManager().save(quizDislike);
+			return reactions;
+		};
 
-		const ret = await this.dbService.getManager().findOneOrFail(QuizDislike, {
-			where: { id: quizDislike.id },
-			relations: {
-				quiz: true,
-				user: true,
-			},
-		});
+		const manager = this.dbService.getManager();
 
-		return ret;
+		assert(stubs.length > 0);
+
+		let reactions: QuizLike[] | QuizDislike[] = [];
+
+		const type = stubs[0].reactionStub._type;
+
+		if (type === "dislike") {
+			const insertDataList = (stubs as InsertQuizReaction<QuizDislikeDummy>[]).map(
+				(like) => ({
+					...like.reactionStub,
+					user_id: like.user.id,
+					quiz_id: like.quiz.id,
+				}),
+			);
+			reactions = await insertToDB(QuizDislike, insertDataList);
+		} else {
+			const insertDataList = (stubs as InsertQuizReaction<QuizLikeDummy>[]).map((like) => ({
+				...like.reactionStub,
+				user_id: like.user.id,
+				quiz_id: like.quiz.id,
+			}));
+			reactions = await insertToDB(QuizLike, insertDataList);
+		}
+
+		assert(reactions.length === stubs.length);
+		assert(reactions[0].quiz);
+		assert(reactions[0].user);
+
+		return reactions;
 	}
 
 	async seedTags(count: number) {
@@ -411,8 +478,6 @@ export class TestService {
 		return artists;
 	}
 
-	async seedPaintings(count: number): Promise<Painting[]>;
-
 	async seedPaintings(
 		count: number,
 		relations?: {
@@ -421,6 +486,8 @@ export class TestService {
 			artists: Artist[];
 		},
 	): Promise<Painting[]> {
+		assert(count > 0);
+		assert(count < 1000);
 		const tags: Tag[] = [];
 		const styles: Style[] = [];
 		const artists: Artist[] = [];
@@ -464,6 +531,8 @@ export class TestService {
 	}
 
 	async seedUsersMultipleInsert(count: number) {
+		assert(count > 0);
+		assert(count < 1000);
 		const stubs = Array(count)
 			.fill(0)
 			.map(() => factoryUserStub("user"));
@@ -472,6 +541,8 @@ export class TestService {
 	}
 
 	async seedUsersSingleInsert(count: number) {
+		assert(count > 0);
+		assert(count < 1000);
 		const users = await Promise.all(
 			Array(count)
 				.fill(0)
@@ -482,6 +553,8 @@ export class TestService {
 	}
 
 	async seedAdmins(count: number) {
+		assert(count > 0);
+		assert(count < 1000);
 		const stubs = Array(count)
 			.fill(0)
 			.map(() => factoryUserStub("admin"));
@@ -496,6 +569,8 @@ export class TestService {
 			paintings: [Painting, Painting, Painting, Painting, ...Painting[]];
 		},
 	) {
+		assert(count > 0);
+		assert(count < 1000);
 		let paintings: Painting[] = [];
 		let owners: User[] = [];
 		if (!relations) {
@@ -520,7 +595,11 @@ export class TestService {
 					max: paintingSelectCount - 1,
 				});
 				const answer = selectedPainting[answerIdx];
-				const distractors = selectedPainting.filter((v, idx) => idx !== answerIdx);
+				const distractors = selectedPainting.filter((v, idx) => idx !== answerIdx) as [
+					Painting,
+					Painting,
+					Painting,
+				];
 				const owner = getRandomElement(owners)!;
 
 				return {
@@ -534,29 +613,82 @@ export class TestService {
 		const quizzes = await this.insertOneChoiceQuizStubs(seedQuizArgs);
 		return quizzes;
 	}
-	async seedReaction(type: "like", user: User, quiz: Quiz): Promise<QuizLike>;
-	async seedReaction(type: "dislike", user: User, quiz: Quiz): Promise<QuizDislike>;
-	async seedReaction(
+	async seedQuizReaction(count: number, type: "like"): Promise<QuizLike[]>;
+	async seedQuizReaction(count: number, type: "dislike"): Promise<QuizDislike[]>;
+	async seedQuizReaction(
+		count: number,
 		type: "like" | "dislike",
-		user: User,
-		quiz: Quiz,
-	): Promise<QuizDislike | QuizLike> {
-		const funcMap = {
-			like: () => this.insertQuizLike(factoryQuizReaction("like"), quiz, user),
-			dislike: () => this.insertQuizDisLike(factoryQuizReaction("dislike"), quiz, user),
-		};
+	): Promise<QuizDislike[] | QuizLike[]> {
+		assert(count > 0);
+		assert(count < 1000);
 
-		const ret = await funcMap[type]();
-		return ret;
+		const root = Math.ceil(Math.sqrt(count));
+		const quizCount = root;
+		const userCount = root;
+
+		assert(count <= quizCount * userCount);
+
+		const [quizzes, users] = await Promise.all([
+			this.seedOneChoiceQuizzes(quizCount),
+			this.seedUsersSingleInsert(userCount),
+		]);
+		let reactions: QuizLike[] | QuizDislike[] = [];
+
+		if (type === "dislike") {
+			const insertDataList: InsertQuizReaction<QuizDislikeDummy>[] = [];
+
+			for (let i = 0; i < quizCount; i++) {
+				for (let ii = 0; ii < userCount; ii++) {
+					const reactionStub = factoryQuizReaction(type);
+					insertDataList.push({
+						reactionStub,
+						quiz: quizzes[i],
+						user: users[ii],
+					});
+				}
+			}
+
+			reactions = await this.insertQuizReaction(insertDataList);
+		} else {
+			const insertDataList: InsertQuizReaction<QuizLikeDummy>[] = [];
+
+			for (let i = 0; i < quizCount; i++) {
+				for (let ii = 0; ii < userCount; ii++) {
+					const reactionStub = factoryQuizReaction(type);
+					insertDataList.push({
+						reactionStub,
+						quiz: quizzes[i],
+						user: users[ii],
+					});
+				}
+			}
+
+			reactions = await this.insertQuizReaction(insertDataList);
+		}
+
+		assert(reactions.length === quizCount * userCount);
+
+		return reactions.slice(0, count);
 	}
 
 	private handleInsertError(error: unknown, params: unknown) {
-		if (error instanceof Error) {
+		if (error instanceof TypeORMError) {
+			const { name, message } = error;
+			// 데이터베이스 쿼리 에러 처리
+			console.error(`typeOrm error: ${name}`, message);
+
+			throw new Error("typeOrm failed error");
+		} else if (error instanceof Error) {
 			const { message, stack, name } = error;
 			console.log(
 				"insert data. \n" + `reason :` + JSON.stringify({ name, message, stack }),
 				`params :` + JSON.stringify(params),
 			);
+		} else {
+			console.error("Unknown error:", error);
+			throw new Error("알 수 없는 서버 오류");
 		}
+
+		throw error;
 	}
 }
