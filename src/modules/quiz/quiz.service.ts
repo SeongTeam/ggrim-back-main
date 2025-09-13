@@ -1,7 +1,12 @@
-import { TypeOrmCrudService } from "@dataui/crud-typeorm";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { FindManyOptions, QueryRunner, Repository } from "typeorm";
+import {
+	FindManyOptions,
+	FindOneOptions,
+	FindOptionsRelations,
+	QueryRunner,
+	Repository,
+} from "typeorm";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { Pagination } from "../_common/types";
 import { Artist } from "../artist/entities/artist.entity";
@@ -25,15 +30,13 @@ import { RelatedPaintings } from "./type";
 import { RelatedPaintingIds } from "./type";
 import { QuizSubmission } from "./batch/type";
 @Injectable()
-export class QuizService extends TypeOrmCrudService<Quiz> {
+export class QuizService {
 	constructor(
-		@InjectRepository(Quiz) repo: Repository<Quiz>,
+		@InjectRepository(Quiz) private repo: Repository<Quiz>,
 		@Inject(PaintingService) private readonly paintingService: PaintingService,
 		@InjectRepository(QuizDislike) private readonly dislikeRepo: Repository<QuizDislike>,
 		@InjectRepository(QuizLike) private readonly likeRepo: Repository<QuizLike>,
-	) {
-		super(repo);
-	}
+	) {}
 
 	async createQuiz(queryRunner: QueryRunner, dto: CreateQuizDTO, owner: User) {
 		const { answerPaintings, distractorPaintings, examplePainting } =
@@ -174,8 +177,33 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		};
 	}
 
+	/**
+	 *
+	 * @param findOptions
+	 * @returns quiz with all relations when you no config relations
+	 */
+	async findOne(findOptions: FindOneOptions<Quiz>): Promise<Quiz | null> {
+		const defaultRelations: FindOptionsRelations<Quiz> = {
+			answer_paintings: true,
+			distractor_paintings: true,
+			artists: true,
+			example_painting: true,
+			tags: true,
+			styles: true,
+			owner: true,
+		};
+
+		if (!findOptions.relations) {
+			findOptions.relations = defaultRelations;
+		}
+
+		const quiz = await this.repo.findOne(findOptions);
+
+		return quiz;
+	}
+
 	async getQuizById(id: string): Promise<Quiz | null> {
-		const quiz = await this.findOne({ where: { id } });
+		const quiz = await this.repo.findOne({ where: { id } });
 
 		return quiz;
 	}
