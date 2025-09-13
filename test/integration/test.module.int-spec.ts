@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { TestModule } from "../_shared/test.module";
-import { TestService } from "../_shared/test.service";
+import { InsertOneChoiceQuizzesArgs, TestService } from "../_shared/test.service";
 import { DatabaseService } from "../../src/modules/db/db.service";
 import { factoryUserStub } from "../_shared/stub/user.stub";
 import { omit } from "../../src/utils/object";
@@ -8,6 +8,11 @@ import { factoryTagStub } from "../_shared/stub/tag.stub";
 import { factoryArtistStub } from "../_shared/stub/artist.stub";
 import { factoryStyleStub } from "../_shared/stub/style.stub";
 import { factoryPaintingStub } from "../_shared/stub/painting.stub";
+import { factoryQuizStub } from "../_shared/stub/quiz.stub";
+import { USER_ROLE } from "../swagger/dto-types";
+import { Painting } from "../../src/modules/painting/entities/painting.entity";
+import { expectQuizEqual } from "../e2e/_common/expect";
+import { factoryQuizReaction } from "../e2e/quiz/quiz-reaction.stub";
 
 describe("TestModule Integration Test", () => {
 	let module: TestingModule;
@@ -96,6 +101,98 @@ describe("TestModule Integration Test", () => {
 			expect(received.artist).toMatchObject(artists[0]);
 			expect(received.styles).toMatchObject(styles);
 		});
+
+		test.each([{ userRole: USER_ROLE.admin }, { userRole: USER_ROLE.user }])(
+			"insert quiz data by $userRole",
+			async ({ userRole }) => {
+				const paintings = await testService.seedPaintings(4);
+				const answer = paintings.slice(0, 1)[0];
+				const distractors = paintings.slice(1) as [Painting, Painting, Painting];
+				const owner = await testService.insertStubUser(factoryUserStub(userRole));
+				const quizStub = factoryQuizStub();
+				const stub: InsertOneChoiceQuizzesArgs = {
+					quizStub,
+					answer,
+					distractors,
+					owner,
+				};
+				const quizzes = await testService.insertOneChoiceQuizStubs([stub]);
+				const received = quizzes[0];
+
+				const updatedColumn = ["updated_date", "version"] as const;
+				const excludedColumn = "example_painting";
+
+				expect(received).toBeDefined();
+				expect(received).toMatchObject(omit(quizStub, [...updatedColumn, excludedColumn]));
+				expectQuizEqual(received, {
+					answer_paintings: [answer],
+					distractor_paintings: distractors,
+					description: quizStub.description,
+					time_limit: quizStub.time_limit,
+					title: quizStub.title,
+					owner,
+				});
+			},
+		);
+
+		test.each([{ userRole: USER_ROLE.admin }, { userRole: USER_ROLE.user }])(
+			"insert quiz like by $userRole",
+			async ({ userRole }) => {
+				const user = await testService.insertStubUser(factoryUserStub(userRole));
+				const quizzes = await testService.seedOneChoiceQuizzes(1);
+				const targetQuiz = quizzes[0];
+
+				const quizLikeStub = factoryQuizReaction("like");
+				const quizLikes = await testService.insertQuizReaction([
+					{ reactionStub: quizLikeStub, quiz: targetQuiz, user },
+				]);
+
+				const receivedQuizLike = quizLikes[0];
+				const quizRelationsField = [
+					"answer_paintings",
+					"distractor_paintings",
+					"artists",
+					"tags",
+					"styles",
+					"owner",
+				] as const;
+
+				expect(receivedQuizLike).toBeDefined();
+				expect(receivedQuizLike).toMatchObject(quizLikeStub);
+				expect(receivedQuizLike.user).toEqual(user);
+				expect(receivedQuizLike.quiz).toEqual(omit(targetQuiz, quizRelationsField));
+			},
+		);
+
+		test.each([{ userRole: USER_ROLE.admin }, { userRole: USER_ROLE.user }])(
+			"insert quiz dislike by $userRole",
+			async ({ userRole }) => {
+				const user = await testService.insertStubUser(factoryUserStub(userRole));
+				const quizzes = await testService.seedOneChoiceQuizzes(1);
+				const targetQuiz = quizzes[0];
+
+				const quizDislikeStub = factoryQuizReaction("like");
+				const quizDislikes = await testService.insertQuizReaction([
+					{ reactionStub: quizDislikeStub, quiz: targetQuiz, user },
+				]);
+
+				const quizDislike = quizDislikes[0];
+
+				const quizRelationsField = [
+					"answer_paintings",
+					"distractor_paintings",
+					"artists",
+					"tags",
+					"styles",
+					"owner",
+				] as const;
+
+				expect(quizDislike).toBeDefined();
+				expect(quizDislike).toMatchObject(quizDislikeStub);
+				expect(quizDislike.user).toEqual(user);
+				expect(quizDislike.quiz).toEqual(omit(targetQuiz, quizRelationsField));
+			},
+		);
 	});
 
 	describe("test seed limitation", () => {
@@ -142,6 +239,40 @@ describe("TestModule Integration Test", () => {
 			async ({ count }) => {
 				console.log(`seed data count : ${count}`);
 				const quizzes = await testService.seedOneChoiceQuizzes(count);
+				expect(quizzes.length).toBe(count);
+			},
+			//50 * 1000,
+		);
+
+		it.each([
+			{ count: 5 },
+			{ count: 10 },
+			{ count: 20 },
+			{ count: 40 },
+			{ count: 80 },
+			{ count: 160 },
+		])(
+			"test seed quiz reaction limitation [$count]",
+			async ({ count }) => {
+				console.log(`seed data count : ${count}`);
+				const quizzes = await testService.seedQuizReaction(count, "like");
+				expect(quizzes.length).toBe(count);
+			},
+			//50 * 1000,
+		);
+
+		it.each([
+			{ count: 5 },
+			{ count: 10 },
+			{ count: 20 },
+			{ count: 40 },
+			{ count: 80 },
+			{ count: 160 },
+		])(
+			"test seed quiz reaction limitation [$count]",
+			async ({ count }) => {
+				console.log(`seed data count : ${count}`);
+				const quizzes = await testService.seedQuizReaction(count, "dislike");
 				expect(quizzes.length).toBe(count);
 			},
 			//50 * 1000,
