@@ -32,14 +32,12 @@ export class Quiz extends CustomBaseEntity {
 
 	@ManyToMany(() => Painting, {
 		cascade: ["update", "insert"],
-		eager: true,
 	})
 	@JoinTable()
 	distractor_paintings!: Painting[];
 
 	@ManyToMany(() => Painting, {
 		cascade: ["update", "insert"],
-		eager: true,
 	})
 	@JoinTable()
 	answer_paintings!: Painting[];
@@ -49,7 +47,6 @@ export class Quiz extends CustomBaseEntity {
   */
 	@ManyToOne(() => Painting, {
 		cascade: ["update", "insert"],
-		eager: true,
 		nullable: true,
 	})
 	@JoinTable()
