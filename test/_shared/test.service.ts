@@ -387,10 +387,10 @@ export class TestService {
 
 	async insertQuizReaction(stubs: InsertQuizReaction<QuizLikeDummy>[]): Promise<QuizLike[]>;
 	async insertQuizReaction(stubs: InsertQuizReaction<QuizDislikeDummy>[]): Promise<QuizDislike[]>;
-	async insertQuizReaction<
-		Arg extends InsertQuizReaction<QuizLikeDummy>[] | InsertQuizReaction<QuizDislikeDummy>[],
-	>(stubs: Arg): Promise<QuizLike[] | QuizDislike[]> {
-		const insertToDB = async <T extends { id: string }>(
+	async insertQuizReaction(
+		stubs: InsertQuizReaction<QuizLikeDummy>[] | InsertQuizReaction<QuizDislikeDummy>[],
+	): Promise<QuizLike[] | QuizDislike[]> {
+		const insertToDB = async <T extends Omit<QuizLike, "_type">>(
 			entity: EntityTarget<T>,
 			insertDataList: QueryDeepPartialEntity<T>[],
 		) => {
@@ -419,26 +419,25 @@ export class TestService {
 
 		assert(stubs.length > 0);
 
-		let reactions: QuizLike[] | QuizDislike[] = [];
+		let reactions = [];
 
 		const type = stubs[0].reactionStub._type;
+		const insertDataList = stubs.map((reaction) => ({
+			...reaction.reactionStub,
+			user_id: reaction.user.id,
+			quiz_id: reaction.quiz.id,
+		}));
 
 		if (type === "dislike") {
-			const insertDataList = (stubs as InsertQuizReaction<QuizDislikeDummy>[]).map(
-				(like) => ({
-					...like.reactionStub,
-					user_id: like.user.id,
-					quiz_id: like.quiz.id,
-				}),
+			reactions = await insertToDB(
+				QuizDislike,
+				insertDataList as QueryDeepPartialEntity<QuizDislike>[],
 			);
-			reactions = await insertToDB(QuizDislike, insertDataList);
 		} else {
-			const insertDataList = (stubs as InsertQuizReaction<QuizLikeDummy>[]).map((like) => ({
-				...like.reactionStub,
-				user_id: like.user.id,
-				quiz_id: like.quiz.id,
-			}));
-			reactions = await insertToDB(QuizLike, insertDataList);
+			reactions = await insertToDB(
+				QuizLike,
+				insertDataList as QueryDeepPartialEntity<QuizLike>[],
+			);
 		}
 
 		assert(reactions.length === stubs.length);
