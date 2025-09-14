@@ -676,8 +676,6 @@ export class TestService {
 			const { name, message } = error;
 			// 데이터베이스 쿼리 에러 처리
 			console.error(`typeOrm error: ${name}`, message);
-
-			throw new Error("typeOrm failed error");
 		} else if (error instanceof Error) {
 			const { message, stack, name } = error;
 			console.log(
@@ -686,9 +684,8 @@ export class TestService {
 			);
 		} else {
 			console.error("Unknown error:", error);
-			throw new Error("알 수 없는 서버 오류");
 		}
 
-		throw error;
+		process.exit(1);
 	}
 }
