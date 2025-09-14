@@ -1,9 +1,9 @@
 import { assert } from "console";
-import { Artist } from "../../../src/modules/artist/entities/artist.entity";
-import { Quiz } from "../../../src/modules/quiz/entities/quiz.entity";
-import { Style } from "../../../src/modules/style/entities/style.entity";
-import { Tag } from "../../../src/modules/tag/entities/tag.entity";
-import { deduplicate, omit, pick, sortById } from "../../../src/utils/object";
+import { Artist } from "../../src/modules/artist/entities/artist.entity";
+import { Quiz } from "../../src/modules/quiz/entities/quiz.entity";
+import { Style } from "../../src/modules/style/entities/style.entity";
+import { Tag } from "../../src/modules/tag/entities/tag.entity";
+import { deduplicate, omit, pick, sortById } from "../../src/utils/object";
 
 const ESSENTIAL_QUIZ__FIELD = [
 	"answer_paintings",
