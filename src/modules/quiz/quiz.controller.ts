@@ -98,7 +98,13 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	@HttpCode(HttpStatus.CREATED)
 	@Post("submit/:id")
 	async submitQuiz(@Param("id", ParseUUIDPipe) id: string, @Body() dto: SubmitQuizDTO) {
-		await this.batchService.insertSubmission(id, dto.isCorrect);
+		const target = await this.service.findOne({ where: { id } });
+
+		if (!target) {
+			throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST");
+		}
+
+		await this.batchService.insertSubmission(target.id, dto.isCorrect);
 	}
 
 	@ApiOkResponse({ type: ShowQuizReactionResponse, isArray: true })
