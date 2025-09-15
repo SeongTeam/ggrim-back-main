@@ -111,9 +111,15 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	@HttpCode(HttpStatus.OK)
 	@Get(":id/reactions")
 	async getQuizReactions(
-		@Param("id") id: string,
+		@Param("id", ParseUUIDPipe) id: string,
 		@Query() dto: QuizReactionQueryDTO,
 	): Promise<ShowQuizReactionResponse[]> {
+		const target = await this.service.findOne({ where: { id } });
+
+		if (!target) {
+			throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST");
+		}
+
 		const pageCount = 30;
 
 		const { page } = dto;
@@ -121,7 +127,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		const baseOptions = {
 			take: pageCount,
 			skip: page,
-			where: { quiz_id: id },
+			where: { quiz_id: target.id },
 			relations: ["user"],
 		};
 
