@@ -3,12 +3,8 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { AppModule } from "../../../src/app.module";
 import { DatabaseService } from "../../../src/modules/db/db.service";
 import { configNestApp } from "../../../src/app.config";
-import { factoryPaintingStub } from "../../_shared/stub/painting.stub";
-import { factoryTagStub } from "../../_shared/stub/tag.stub";
 import { factoryUserStub } from "../../_shared/stub/user.stub";
 import { User } from "../../../src/modules/user/entity/user.entity";
-import { factoryArtistStub } from "../../_shared/stub/artist.stub";
-import { factoryStyleStub } from "../../_shared/stub/style.stub";
 import { TestService } from "../../_shared/test.service";
 import { faker } from "@faker-js/faker";
 import { TestModule } from "../../_shared/test.module";
@@ -28,6 +24,8 @@ import {
 	ShowPainting,
 	ShowPaintingResponse,
 } from "../../../src/modules/painting/dto/response/showPainting.response";
+import { getRandomElement } from "../../../src/utils/random";
+import { assert } from "console";
 
 if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 	console.log("Set setTimeout for debugging");
@@ -69,160 +67,112 @@ describe("PaintingController (e2e)", () => {
 	});
 
 	describe("/painting (GET) Test", () => {
-		let painting: Painting;
+		// TODO: "/quiz/submit/:id (POST)" e2e 테스트 구현
+		// - [ ] 공통 로직 구현
+		// - [ ] 좋은 데이터 테스트 (모든 dto 경우에 대해 테스트)
+		// - [ ] 나쁜 데이터 테스트 (비유효 path)
+		// - [ ] 나쁜 데이터 테스트 (비유효 dto)
+
+		let paintings: Painting[];
 		beforeAll(async () => {
-			const [tag1, tag2, tag3, tag4] = await Promise.all([
-				testService.insertTagStub(factoryTagStub()),
-				testService.insertTagStub(factoryTagStub()),
-				testService.insertTagStub(factoryTagStub()),
-				testService.insertTagStub(factoryTagStub()),
-			]);
-			const [style1, style2, style3] = await Promise.all([
-				testService.insertStyleStub(factoryStyleStub()),
-				testService.insertStyleStub(factoryStyleStub()),
-				testService.insertStyleStub(factoryStyleStub()),
-			]);
-			const [artist1, artist2, artist3] = await Promise.all([
-				testService.insertArtistStub(factoryArtistStub()),
-				testService.insertArtistStub(factoryArtistStub()),
-				testService.insertArtistStub(factoryArtistStub()),
-			]);
-			painting = await testService.insertPaintingStub(
-				factoryPaintingStub(),
-				artist1,
-				[tag1, tag2],
-				[style1],
-			);
-
-			// seed Painting
-			await Promise.all(
-				Array(10)
-					.fill(0)
-					.map(() =>
-						testService.insertPaintingStub(
-							factoryPaintingStub(),
-							artist2,
-							[tag3, tag4],
-							[style2],
-						),
-					),
-			);
-			await Promise.all(
-				Array(10)
-					.fill(0)
-					.map(() =>
-						testService.insertPaintingStub(
-							factoryPaintingStub(),
-							artist3,
-							[tag2, tag4],
-							[style3],
-						),
-					),
-			);
+			paintings = await testService.seedPaintings(100);
 		});
 
-		it("/painting (GET) : 성공 ", async () => {
-			const response = await client.GET(ApiPaths.PaintingController_searchMany, {
-				params: {
-					query: {
-						tags: [painting.tags[0].name],
+		describe("success when deliver valid query", () => {
+			it("/painting (GET) : 성공 ", async () => {
+				const targetPainting = paintings[0];
+				const response = await client.GET(ApiPaths.PaintingController_searchMany, {
+					params: {
+						query: {
+							tags: [targetPainting.tags[0].name],
+						},
 					},
-				},
+				});
+
+				expect(response.response.status).toBe(HttpStatus.OK);
+				expect(response.data).toBeDefined();
+				const body = response.data!;
+				expect(body.total).toBe(1);
+				expect(body.data[0].id).toBe(targetPainting.id);
+				expectResponseBody(zPagination(zShowPainting), body);
 			});
 
-			expect(response.response.status).toBe(HttpStatus.OK);
-			expect(response.data).toBeDefined();
-			const body = response.data!;
-			expect(body.total).toBe(1);
-			expect(body.data[0].id).toBe(painting.id);
-			expectResponseBody(zPagination(zShowPainting), body);
-		});
-
-		it("/painting?title=val1 (GET) : 성공,", async () => {
-			const response = await client.GET(ApiPaths.PaintingController_searchMany, {
-				params: {
-					query: {
-						title: painting.title.slice(0, 2),
+			it("/painting?title=val1 (GET) : 성공,", async () => {
+				const expectedPainting = paintings[0];
+				const response = await client.GET(ApiPaths.PaintingController_searchMany, {
+					params: {
+						query: {
+							title: expectedPainting.title.slice(0, 2),
+						},
 					},
-				},
+				});
+
+				expect(response.response.status).toBe(HttpStatus.OK);
+				expect(response.data).toBeDefined();
+				const body = response.data!;
+				expect(body.total).toBeGreaterThanOrEqual(1);
+				expectResponseBody(zPagination(zShowPainting), body);
+
+				const hasPainting = (body.data as ShowPainting[]).some(
+					(showPainting) => showPainting.title === expectedPainting.title,
+				);
+				expect(hasPainting).toBe(true);
 			});
 
-			expect(response.response.status).toBe(HttpStatus.OK);
-			expect(response.data).toBeDefined();
-			const body = response.data!;
-			expect(body.total).toBeGreaterThanOrEqual(1);
-			expectResponseBody(zPagination(zShowPainting), body);
-
-			const hasPainting = (body.data as ShowPainting[]).some(
-				(showPainting) => showPainting.title === painting.title,
-			);
-			expect(hasPainting).toBe(true);
-		});
-
-		it("/painting?tag=val1&tag&val2 (GET) : 성공,", async () => {
-			const response = await client.GET(ApiPaths.PaintingController_searchMany, {
-				params: {
-					query: {
-						tags: painting.tags.map((t) => t.name),
+			it("/painting?tag=val1&tag&val2 (GET) : 성공,", async () => {
+				const expectedPainting = paintings[0];
+				const response = await client.GET(ApiPaths.PaintingController_searchMany, {
+					params: {
+						query: {
+							tags: expectedPainting.tags.map((t) => t.name),
+						},
 					},
-				},
+				});
+
+				expect(response.response.status).toBe(HttpStatus.OK);
+				expect(response.data).toBeDefined();
+				const body = response.data!;
+				expect(body.total).toBe(1);
+				expectResponseBody(zPagination(zShowPainting), body);
+				expectResponseBody(zShowPainting, body.data[0]);
+				expect(body.data[0].id).toBe(expectedPainting.id);
 			});
 
-			expect(response.response.status).toBe(HttpStatus.OK);
-			expect(response.data).toBeDefined();
-			const body = response.data!;
-			expect(body.total).toBe(1);
-			expectResponseBody(zPagination(zShowPainting), body);
-			expectResponseBody(zShowPainting, body.data[0]);
-			expect(body.data[0].id).toBe(painting.id);
-		});
-
-		it("/painting?artistName=val1 (GET) : 성공,", async () => {
-			const response = await client.GET(ApiPaths.PaintingController_searchMany, {
-				params: {
-					query: {
-						artistName: painting.artist.name,
+			it("/painting?artistName=val1 (GET) : 성공,", async () => {
+				const expectedPainting = paintings[0];
+				const response = await client.GET(ApiPaths.PaintingController_searchMany, {
+					params: {
+						query: {
+							artistName: expectedPainting.artist.name,
+						},
 					},
-				},
+				});
+
+				expect(response.response.status).toBe(HttpStatus.OK);
+				expect(response.data).toBeDefined();
+				const body = response.data!;
+
+				expectResponseBody(zPagination(zShowPainting), body);
+				expect(body.total).toBe(1);
+				expectResponseBody(zShowPainting, body.data[0]);
+				expect(body.data[0].id).toBe(expectedPainting.id);
 			});
-
-			expect(response.response.status).toBe(HttpStatus.OK);
-			expect(response.data).toBeDefined();
-			const body = response.data!;
-
-			expectResponseBody(zPagination(zShowPainting), body);
-			expect(body.total).toBe(1);
-			expectResponseBody(zShowPainting, body.data[0]);
-			expect(body.data[0].id).toBe(painting.id);
 		});
 	});
 
 	describe("/painting/by-ids (GET)", () => {
-		let tag1, tag2: Tag;
-		let style: Style;
-		let artist: Artist;
-		let painting: Painting;
+		let paintings: Painting[];
 		beforeAll(async () => {
-			[tag1, tag2] = await Promise.all([
-				testService.insertTagStub(factoryTagStub()),
-				testService.insertTagStub(factoryTagStub()),
-			]);
-			[style, artist] = await Promise.all([
-				testService.insertStyleStub(factoryStyleStub()),
-				testService.insertArtistStub(factoryArtistStub()),
-			]);
-			painting = await testService.insertPaintingStub(
-				factoryPaintingStub(),
-				artist,
-				[tag1, tag2],
-				[style],
-			);
+			paintings = await testService.seedPaintings(10);
 		});
 		it("/painting/by-ids?ids=val1 (GET) : 성공,", async () => {
+			const expectedPainting = getRandomElement(paintings);
+			assert(expectedPainting !== undefined);
+
 			const response = await client.GET(ApiPaths.PaintingController_getManyByIds, {
 				params: {
 					query: {
-						ids: [painting.id],
+						ids: [expectedPainting!.id],
 					},
 				},
 			});
@@ -231,7 +181,7 @@ describe("PaintingController (e2e)", () => {
 			expect(response.data).toBeDefined();
 			const body = response.data!;
 			expectResponseBody(z.array(zShowPaintingResponse), body);
-			expect(body[0].title).toBe(painting.title);
+			expect(body[0].title).toBe(expectedPainting!.title);
 		});
 
 		it("/painting/by-ids?ids=val1 (GET) : (실패, 유효치않은 Query)", async () => {
@@ -265,9 +215,9 @@ describe("PaintingController (e2e)", () => {
 		}
 
 		beforeAll(async () => {
-			artist = await testService.insertArtistStub(factoryArtistStub());
-			tag = await testService.insertTagStub(factoryTagStub());
-			style = await testService.insertStyleStub(factoryStyleStub());
+			artist = (await testService.seedArtists(1))[0];
+			tag = (await testService.seedTags(1))[0];
+			style = (await testService.seedStyles(1))[0];
 		});
 		it("/painting (POST) : (성공, no relation)", async () => {
 			const dto = factoryBaseCreateDto();
@@ -322,7 +272,7 @@ describe("PaintingController (e2e)", () => {
 		});
 
 		it("/painting (POST) : (실패, 권한 없음)", async () => {
-			const artist = await testService.insertArtistStub(factoryArtistStub());
+			const artist = (await testService.seedArtists(1))[0];
 
 			const dto: CreatePaintingDto = {
 				title: faker.person.middleName(),
@@ -404,21 +354,6 @@ describe("PaintingController (e2e)", () => {
 			return dto;
 		}
 
-		async function seedPainting() {
-			const [tag, style, artist] = await Promise.all([
-				testService.insertTagStub(factoryTagStub()),
-				testService.insertStyleStub(factoryStyleStub()),
-				testService.insertArtistStub(factoryArtistStub()),
-			]);
-			const painting = await testService.insertPaintingStub(
-				factoryPaintingStub(),
-				artist,
-				[tag],
-				[style],
-			);
-			return painting;
-		}
-
 		async function requestReplacePainting(
 			id: string,
 			authorization: string,
@@ -442,7 +377,8 @@ describe("PaintingController (e2e)", () => {
 			let expectedPainting: Painting;
 			let receivedPainting: Painting;
 			beforeAll(async () => {
-				painting = await seedPainting();
+				const paintings = await testService.seedPaintings(10);
+				painting = paintings[0];
 				dto = factoryReplaceDto(painting, { title: "replace title" });
 				dto.title = "replace title";
 				expectedPainting = { ...painting, title: dto.title };
@@ -479,12 +415,17 @@ describe("PaintingController (e2e)", () => {
 			let expectedPainting: Painting;
 			let receivedPainting: Painting;
 			beforeAll(async () => {
-				[newTag, newStyle, newArtist] = await Promise.all([
-					testService.insertTagStub(factoryTagStub()),
-					testService.insertStyleStub(factoryStyleStub()),
-					testService.insertArtistStub(factoryArtistStub()),
+				const [tags, styles, artists, paintings] = await Promise.all([
+					testService.seedTags(1),
+					testService.seedStyles(1),
+					testService.seedArtists(1),
+					testService.seedPaintings(1),
 				]);
-				painting = await seedPainting();
+
+				newTag = tags[0];
+				newStyle = styles[0];
+				newArtist = artists[0];
+				painting = paintings[0];
 				dto = factoryReplaceDto(painting, {
 					tags: [newTag],
 					styles: [newStyle],
@@ -534,7 +475,8 @@ describe("PaintingController (e2e)", () => {
 			let expectedPainting: Painting;
 			let receivedPainting: Painting;
 			beforeAll(async () => {
-				painting = await seedPainting();
+				const paintings = await testService.seedPaintings(1);
+				painting = paintings[0];
 				dto = factoryReplaceDto(painting, { title: "new title" });
 				expectedPainting = { ...painting };
 				const authorization = testService.getBearerAuthCredential(user);
@@ -564,7 +506,8 @@ describe("PaintingController (e2e)", () => {
 			let expectedPainting: Painting;
 			let receivedPainting: Painting;
 			beforeAll(async () => {
-				painting = await seedPainting();
+				const paintings = await testService.seedPaintings(1);
+				painting = paintings[0];
 				dto = factoryReplaceDto(painting, { title: "new title" });
 				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 				const { title: _title, ...partialDto } = dto;
@@ -602,17 +545,8 @@ describe("PaintingController (e2e)", () => {
 
 		let painting: Painting;
 		beforeEach(async () => {
-			const [tag, style, artist] = await Promise.all([
-				testService.insertTagStub(factoryTagStub()),
-				testService.insertStyleStub(factoryStyleStub()),
-				testService.insertArtistStub(factoryArtistStub()),
-			]);
-			painting = await testService.insertPaintingStub(
-				factoryPaintingStub(),
-				artist,
-				[tag],
-				[style],
-			);
+			const paintings = await testService.seedPaintings(1);
+			painting = paintings[0];
 		});
 		it("success delete painting when admin request ", async () => {
 			const adminAuthorization = testService.getBearerAuthCredential(admin);
