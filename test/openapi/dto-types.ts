@@ -3426,6 +3426,7 @@ export interface operations {
 	QuizController_getScheduledQuiz: {
 		parameters: {
 			query?: {
+				/** @description all fields exist. service handle query as all fields not exist same time when one of fields is missed */
 				currentIndex?: number;
 				endIndex?: number;
 				context?: components["schemas"]["QuizContextDTO"];

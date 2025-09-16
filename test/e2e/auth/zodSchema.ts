@@ -1,6 +1,6 @@
 import * as z from "zod";
 import { zShowUserResponse } from "../user/zodSchema";
-import { ONE_TIME_TOKEN_PURPOSE } from "../../swagger/dto-types";
+import { ONE_TIME_TOKEN_PURPOSE } from "../../openapi/dto-types";
 
 const bcryptPattern = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/;
 

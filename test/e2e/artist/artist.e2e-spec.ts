@@ -3,7 +3,7 @@ import { DatabaseService } from "../../../src/modules/db/db.service";
 import { TestService } from "../../_shared/test.service";
 import { ArtistService } from "../../../src/modules/artist/artist.service";
 import { User } from "../../../src/modules/user/entity/user.entity";
-import { ApiPaths, CreateArtistDto, paths } from "../../swagger/dto-types";
+import { ApiPaths, CreateArtistDto, paths } from "../../openapi/dto-types";
 import createClient from "openapi-fetch";
 import { Test, TestingModule } from "@nestjs/testing";
 import { AppModule } from "../../../src/app.module";

@@ -9,7 +9,7 @@ import { TestService } from "../../_shared/test.service";
 import { faker } from "@faker-js/faker";
 import { TestModule } from "../../_shared/test.module";
 import createClient from "openapi-fetch";
-import { ApiPaths, CreatePaintingDto, paths, ReplacePaintingDto } from "../../swagger/dto-types";
+import { ApiPaths, CreatePaintingDto, paths, ReplacePaintingDto } from "../../openapi/dto-types";
 import { expectResponseBody } from "../_common/jest-zod";
 import { zPagination } from "../_common/zodSchema";
 import { zShowPainting, zShowPaintingResponse } from "./zodSchema";

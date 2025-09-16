@@ -9,9 +9,9 @@ import { factoryArtistStub } from "../_shared/stub/artist.stub";
 import { factoryStyleStub } from "../_shared/stub/style.stub";
 import { factoryPaintingStub } from "../_shared/stub/painting.stub";
 import { factoryQuizStub } from "../_shared/stub/quiz.stub";
-import { USER_ROLE } from "../swagger/dto-types";
+import { USER_ROLE } from "../openapi/dto-types";
 import { Painting } from "../../src/modules/painting/entities/painting.entity";
-import { expectQuizEqual } from "../e2e/_common/expect";
+import { expectQuizEqual } from "../_shared/expect";
 import { factoryQuizReaction } from "../e2e/quiz/quiz-reaction.stub";
 
 describe("TestModule Integration Test", () => {

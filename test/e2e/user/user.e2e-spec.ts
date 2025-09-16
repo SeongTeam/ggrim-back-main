@@ -19,7 +19,7 @@ import {
 	ReplaceUsernameDto,
 	USER_ROLE,
 	USER_STATE,
-} from "../../swagger/dto-types";
+} from "../../openapi/dto-types";
 import { expectResponseBody } from "../_common/jest-zod";
 import { zShowUserResponse } from "./zodSchema";
 import { UserService } from "../../../src/modules/user/user.service";
