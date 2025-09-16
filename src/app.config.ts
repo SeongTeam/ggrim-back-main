@@ -21,7 +21,6 @@ export function configNestApp<T extends INestApplication>(app: T): void {
 		new ValidationPipe({
 			transform: true,
 			whitelist: true,
-			forbidNonWhitelisted: true,
 		}),
 	);
 	app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
