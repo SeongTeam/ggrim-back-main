@@ -15,12 +15,26 @@ import { ShowQuizResponse } from "./modules/quiz/dto/response/showQuiz.response"
 import { ShowStyleResponse } from "./modules/style/dto/response/showStyle.response";
 import { ShowTagResponse } from "./modules/tag/dto/response/showTag.response";
 import { ShowUserResponse } from "./modules/user/dto/request/response/showUser.response";
+import { ServiceException } from "./modules/_common/filter/exception/service/serviceException";
 
 export function configNestApp<T extends INestApplication>(app: T): void {
 	app.useGlobalPipes(
 		new ValidationPipe({
 			transform: true,
 			whitelist: true,
+			exceptionFactory: (errors) => {
+				debugger;
+				console.log("validator error", errors);
+
+				const messages = errors.map((e) => JSON.stringify(e.constraints));
+
+				const serviceException = new ServiceException(
+					"BASE",
+					"BAD_REQUEST",
+					`ValidationError.\n` + messages.join("\n"),
+				);
+				return serviceException;
+			},
 		}),
 	);
 	app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
