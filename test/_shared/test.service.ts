@@ -28,6 +28,7 @@ import { assert } from "node:console";
 import { deduplicate } from "../../src/utils/object";
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
 import { EntityTarget, TypeORMError } from "typeorm";
+import { USER_ROLE, UserRole } from "../../src/modules/user/const";
 
 // TODO: 데이터 시딩 로직 개선하기
 // - [x] connection pool 최대한 활용하기
@@ -542,13 +543,13 @@ export class TestService {
 		return users;
 	}
 
-	async seedUsersSingleInsert(count: number) {
+	async seedUsersSingleInsert(count: number, userType: UserRole = USER_ROLE.USER) {
 		assert(count > 0);
 		assert(count < 1000);
 		const users = await Promise.all(
 			Array(count)
 				.fill(0)
-				.map(() => this.insertStubUser(factoryUserStub("user"))),
+				.map(() => this.insertStubUser(factoryUserStub(userType))),
 		);
 
 		return users;
@@ -570,6 +571,7 @@ export class TestService {
 			owners: [User, ...User[]];
 			paintings: [Painting, Painting, Painting, Painting, ...Painting[]];
 		},
+		userType: UserRole = USER_ROLE.USER,
 	) {
 		assert(count > 0);
 		assert(count < 1000);
@@ -580,7 +582,7 @@ export class TestService {
 			const paintingCount = Math.min(30, count * 4);
 			[paintings, owners] = await Promise.all([
 				this.seedPaintings(paintingCount),
-				this.seedUsersSingleInsert(userCount),
+				this.seedUsersSingleInsert(userCount, userType),
 			]);
 		} else {
 			paintings = relations.paintings;
@@ -616,10 +618,17 @@ export class TestService {
 		return quizzes;
 	}
 	async seedQuizReaction(count: number, type: "like"): Promise<QuizLike[]>;
+	async seedQuizReaction(count: number, type: "like", userType: UserRole): Promise<QuizLike[]>;
 	async seedQuizReaction(count: number, type: "dislike"): Promise<QuizDislike[]>;
 	async seedQuizReaction(
 		count: number,
+		type: "dislike",
+		userType: UserRole,
+	): Promise<QuizDislike[]>;
+	async seedQuizReaction(
+		count: number,
 		type: "like" | "dislike",
+		userType: UserRole = USER_ROLE.USER,
 	): Promise<QuizDislike[] | QuizLike[]> {
 		assert(count > 0);
 		assert(count < 1000);
@@ -632,7 +641,7 @@ export class TestService {
 
 		const [quizzes, users] = await Promise.all([
 			this.seedOneChoiceQuizzes(quizCount),
-			this.seedUsersSingleInsert(userCount),
+			this.seedUsersSingleInsert(userCount, userType),
 		]);
 		let reactions: QuizLike[] | QuizDislike[] = [];
 
