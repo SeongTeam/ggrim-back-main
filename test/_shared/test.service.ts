@@ -477,6 +477,9 @@ export class TestService {
 		return artists;
 	}
 
+	/**
+	 * @description choose tag, style and artist is random.tag is selected 1 ~ half. style and artist is selected 1
+	 * */
 	async seedPaintings(
 		count: number,
 		relations?: {
