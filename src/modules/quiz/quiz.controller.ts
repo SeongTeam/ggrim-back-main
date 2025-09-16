@@ -236,10 +236,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 				continue;
 			}
 
-			const isContextChanged = dto.context !== context;
-			const currentIndex = isContextChanged ? undefined : dto.currentIndex;
-
-			return new ScheduleQuizResponse(quizList, context, currentIndex);
+			return new ScheduleQuizResponse(quizList, context);
 		}
 		throw new ServiceException(
 			`SERVICE_RUN_ERROR`,

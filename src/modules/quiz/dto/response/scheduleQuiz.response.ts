@@ -21,11 +21,9 @@ export class ScheduleQuizResponse {
 	currentIndex: number;
 	endIndex: number;
 
-	constructor(shortQuizzes: ShowQuiz[], context: QuizContext, currentIndex?: number) {
+	constructor(shortQuizzes: ShowQuiz[], context: QuizContext) {
 		this.context = new ShowQuizContext(context);
-		this.currentIndex = currentIndex
-			? (currentIndex + 1) % shortQuizzes.length
-			: randomInt(shortQuizzes.length);
+		this.currentIndex = randomInt(shortQuizzes.length);
 
 		this.endIndex = shortQuizzes.length - 1;
 		this.shortQuiz = shortQuizzes[this.currentIndex];
