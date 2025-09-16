@@ -55,7 +55,7 @@ import { UseTokenAuthGuard } from "../auth/guard/decorator/authentication";
 import { GetQuizQueryDTO } from "./dto/request/getQuiz.query.dto";
 import { ShowQuizReactionResponse } from "./dto/response/showQuizReaction.response";
 import { ConfigService } from "@nestjs/config";
-import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
+import { ApiCreatedResponse, ApiOkResponse, ApiQuery } from "@nestjs/swagger";
 import { QuizBatchService } from "./batch/quiz.batch.service";
 
 //TODO whitelist 옵션 추가하여 보안강화 고려하기
@@ -196,14 +196,34 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		await this.service.removeReaction(qr, user, quiz);
 	}
 
+	@ApiQuery({
+		name: "currentIndex",
+		required: false,
+		description:
+			"all fields exist. service handle query as all fields not exist same time when one of fields is missed",
+		examples: {
+			"All fields Exist": {
+				currentIndex: 0,
+				endIndex: 0,
+				context: {
+					artist: "example artist",
+					page: 0,
+				},
+			},
+			"All fields not exist": {},
+		},
+	})
 	@ApiOkResponse({ type: ScheduleQuizResponse })
 	@HttpCode(HttpStatus.OK)
 	@Get("schedule")
-	async getScheduledQuiz(@Query() dto: ScheduleQuizQueryDTO): Promise<ScheduleQuizResponse> {
+	async getScheduledQuiz(
+		@Query()
+		query: ScheduleQuizQueryDTO,
+	): Promise<ScheduleQuizResponse> {
 		const MAX_RETRY = 10;
 		let attempt = 0;
 		for (attempt = 0; attempt < MAX_RETRY; attempt++) {
-			const context: QuizContext = await this.extractContext(dto);
+			const context: QuizContext = await this.extractContext(query);
 
 			const search = this.buildSearchDTO(context, context.page);
 
@@ -212,7 +232,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 			const quizList: ShowQuiz[] = pagination.data.map((q) => new ShowQuiz(q));
 			if (quizList.length === 0) {
 				await this.scheduleService.requestDeleteContext(context);
-				dto.context = undefined;
+				query.context = undefined;
 				continue;
 			}
 

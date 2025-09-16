@@ -1,9 +1,14 @@
-import { plainToClass, Transform, Type } from "class-transformer";
+import { Type } from "class-transformer";
 import { IsNumber, ValidateNested } from "class-validator";
 import { QuizContextDTO } from "./quizContext.dto";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 
 export class ScheduleQuizQueryDTO {
+	/**
+	 * @description all fields exist or not exist same time
+	 * @example { currentIndex : 0 , endIndex : 0 , context[artist] : "example artist", context[page] : 0}
+	 * @example { }
+	 */
 	@Type(() => Number)
 	@IsOptionalProperty()
 	@IsNumber()
@@ -14,11 +19,12 @@ export class ScheduleQuizQueryDTO {
 	@IsNumber()
 	endIndex?: number;
 
-	//Quiz Context interface
-	@Transform(({ value }: { value: string }) =>
-		value ? plainToClass(QuizContextDTO, JSON.parse(value)) : null,
-	)
+	/**
+	 * @description serialization format is deepObject
+	 * @example /route?context[artist]="example artist"&context[page]=0
+	 */
 	@IsOptionalProperty()
 	@ValidateNested()
+	@Type(() => QuizContextDTO)
 	context?: QuizContextDTO;
 }
