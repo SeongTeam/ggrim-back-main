@@ -151,7 +151,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	async createQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		@Param("id") id: string,
+		@Param("id", ParseUUIDPipe) id: string,
 		@Body() dto: CreateQuizReactionDTO,
 	): Promise<void> {
 		const userPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
@@ -180,7 +180,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	async deleteQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		@Param("id") id: string,
+		@Param("id", ParseUUIDPipe) id: string,
 	): Promise<void> {
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = userPayload;
