@@ -272,6 +272,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	): Promise<ShowQuizResponse> {
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 
+		this.validateCreateQuizDto(dto);
 		const quiz = await this.service.createQuiz(qr, dto, userPayload.user);
 
 		return new ShowQuizResponse(quiz);
@@ -439,6 +440,14 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 			page,
 			count: pageCount,
 		};
+	}
+
+	private validateCreateQuizDto(dto: CreateQuizDTO) {
+		const ids = [...dto.answerPaintingIds, ...dto.distractorPaintingIds];
+		const set = new Set(ids);
+		if (ids.length !== set.size) {
+			throw new ServiceException("BASE", "BAD_REQUEST", "quiz id is duplicated");
+		}
 	}
 
 	async replaceImageSrcToS3(quiz: Quiz) {

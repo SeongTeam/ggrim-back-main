@@ -1,4 +1,4 @@
-import { ArrayNotEmpty, IsArray, IsNumber, IsString, IsUUID } from "class-validator";
+import { ArrayNotEmpty, IsArray, IsNumber, IsString, IsUUID, Min } from "class-validator";
 import { IsInArray } from "../../../../utils/classValidator";
 import { QUIZ_TYPE } from "../../const";
 import { QuizType } from "../../type";
@@ -32,6 +32,7 @@ export class CreateQuizDTO {
 	title!: string;
 
 	@IsNumber()
+	@Min(0)
 	timeLimit!: number;
 
 	@ApiProperty({ enum: Object.values(QUIZ_TYPE), enumName: "QUIZ_TYPE" })
