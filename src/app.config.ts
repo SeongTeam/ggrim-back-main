@@ -16,12 +16,14 @@ import { ShowStyleResponse } from "./modules/style/dto/response/showStyle.respon
 import { ShowTagResponse } from "./modules/tag/dto/response/showTag.response";
 import { ShowUserResponse } from "./modules/user/dto/request/response/showUser.response";
 import { ServiceException } from "./modules/_common/filter/exception/service/serviceException";
+import { ExpressAdapter, NestExpressApplication } from "@nestjs/platform-express";
 
 export function configNestApp<T extends INestApplication>(app: T): void {
 	app.useGlobalPipes(
 		new ValidationPipe({
 			transform: true,
 			whitelist: true,
+			forbidNonWhitelisted: true,
 			exceptionFactory: (errors) => {
 				debugger;
 				console.log("validator error", errors);
@@ -38,6 +40,10 @@ export function configNestApp<T extends INestApplication>(app: T): void {
 		}),
 	);
 	app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+
+	if (isExpressApp(app)) {
+		app.set("query parser", "extended");
+	}
 }
 
 export function configSwagger<T extends INestApplication>(app: T): void {
@@ -73,3 +79,11 @@ export function configSwagger<T extends INestApplication>(app: T): void {
 
 	SwaggerModule.setup("api", app, document);
 }
+
+function isExpressApp(app: INestApplication): app is NestExpressApplication {
+	return app.getHttpAdapter() instanceof ExpressAdapter;
+}
+
+// function isFastifyApp(app: any): app is NestFastifyApplication {
+// 	return app.getHttpAdapter() instanceof FastifyAdapter;
+// }
