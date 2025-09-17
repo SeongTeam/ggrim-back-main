@@ -54,12 +54,16 @@ export function expectQuizEqual(receivedQuiz: Quiz, expectedQuizPart: ExpectedQu
 		omit(clonedExpectedQuizPart, ["answer_paintings", "distractor_paintings"]),
 	);
 
+	cloneReceivedQuiz.distractor_paintings = sortById(cloneReceivedQuiz.distractor_paintings);
+	clonedExpectedQuizPart.distractor_paintings = sortById(
+		clonedExpectedQuizPart.distractor_paintings,
+	);
 	//
 
 	const paintingRelationField = ["artist", "tags", "styles"] as const;
 	for (let i = 0; i < cloneReceivedQuiz.distractor_paintings.length; i++) {
 		const receivedDistractor = cloneReceivedQuiz.distractor_paintings[i];
-		const expectedDistractor = expectedQuizPart.distractor_paintings[i];
+		const expectedDistractor = clonedExpectedQuizPart.distractor_paintings[i];
 
 		expect(omit(receivedDistractor, paintingRelationField)).toEqual(
 			omit(expectedDistractor, paintingRelationField),
