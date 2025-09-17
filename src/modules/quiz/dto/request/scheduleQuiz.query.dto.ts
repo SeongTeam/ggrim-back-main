@@ -23,8 +23,8 @@ export class ScheduleQuizQueryDTO {
 	 * @description serialization format is deepObject
 	 * @example /route?context[artist]="example artist"&context[page]=0
 	 */
+	@Type(() => QuizContextDTO)
 	@IsOptionalProperty()
 	@ValidateNested()
-	@Type(() => QuizContextDTO)
 	context?: QuizContextDTO;
 }
