@@ -57,6 +57,7 @@ import { ShowQuizReactionResponse } from "./dto/response/showQuizReaction.respon
 import { ConfigService } from "@nestjs/config";
 import { ApiCreatedResponse, ApiOkResponse, ApiQuery } from "@nestjs/swagger";
 import { QuizBatchService } from "./batch/quiz.batch.service";
+import { isNotFalsy } from "../../utils/validator";
 
 //TODO whitelist 옵션 추가하여 보안강화 고려하기
 @Controller("quiz")
@@ -412,9 +413,13 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	}
 
 	private async extractContext(dto: ScheduleQuizQueryDTO): Promise<QuizContext> {
+		//TODO context 추출 로직 구현
+		//-[x] context 검증
+		//-[x] 미유효 index 입력시, 새로운 context 반환
 		const { context, currentIndex, endIndex } = dto;
-		if (context && currentIndex && endIndex) {
-			if (currentIndex !== endIndex) {
+
+		if (isNotFalsy(context) && isNotFalsy(currentIndex) && isNotFalsy(endIndex)) {
+			if (currentIndex < endIndex) {
 				await this.validateQuizContextDTO(context);
 				return context;
 			}
