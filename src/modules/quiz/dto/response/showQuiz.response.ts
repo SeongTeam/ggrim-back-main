@@ -7,6 +7,7 @@ import { ShowTag } from "../../../tag/dto/response/showTag.response";
 import { ShowStyle } from "../../../style/dto/response/showStyle.response";
 import { ShowArtist } from "../../../artist/dto/response/showArtist.response";
 import { QUIZ_TYPE } from "../../const";
+import { isNotFalsy } from "../../../../utils/validator";
 
 export class ShowQuiz {
 	readonly id: string;
@@ -54,8 +55,9 @@ export class ShowQuizResponse extends ShowQuiz {
 		super(quiz);
 		this.distractor_paintings = quiz.distractor_paintings.map((dp) => new ShowPainting(dp));
 		this.answer_paintings = quiz.answer_paintings.map((ap) => new ShowPainting(ap));
-		this.example_painting =
-			quiz.example_painting !== null ? new ShowPainting(quiz.example_painting) : undefined;
+		this.example_painting = isNotFalsy(quiz.example_painting)
+			? new ShowPainting(quiz.example_painting)
+			: undefined;
 		this.view_count = quiz.view_count;
 		this.correct_count = quiz.correct_count;
 		this.incorrect_count = quiz.incorrect_count;
