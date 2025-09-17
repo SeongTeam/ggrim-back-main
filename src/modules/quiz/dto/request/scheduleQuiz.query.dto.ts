@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsNumber, ValidateNested } from "class-validator";
+import { IsNumber, Min, ValidateNested } from "class-validator";
 import { QuizContextDTO } from "./quizContext.dto";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 
@@ -11,11 +11,13 @@ export class ScheduleQuizQueryDTO {
 	 */
 	@Type(() => Number)
 	@IsOptionalProperty()
+	@Min(0)
 	@IsNumber()
 	currentIndex?: number;
 
 	@Type(() => Number)
 	@IsOptionalProperty()
+	@Min(0)
 	@IsNumber()
 	endIndex?: number;
 

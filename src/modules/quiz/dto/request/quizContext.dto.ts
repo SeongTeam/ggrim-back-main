@@ -1,5 +1,5 @@
 import { Expose, Transform, Type } from "class-transformer";
-import { ArrayNotEmpty, IsNumber, IsString } from "class-validator";
+import { ArrayNotEmpty, IsNumber, IsString, Min } from "class-validator";
 import { QuizContext } from "../../schedule/type";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 import { ApiHideProperty } from "@nestjs/swagger";
@@ -18,6 +18,7 @@ export class QuizContextDTO implements QuizContext {
 	style?: string;
 
 	@Type(() => Number)
+	@Min(0)
 	@IsNumber()
 	page!: number;
 
