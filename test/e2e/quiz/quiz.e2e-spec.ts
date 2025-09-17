@@ -54,6 +54,7 @@ import { getRandomElement } from "../../../src/utils/random";
 import { factoryTagStub } from "../../_shared/stub/tag.stub";
 import { factoryArtistStub } from "../../_shared/stub/artist.stub";
 import { factoryStyleStub } from "../../_shared/stub/style.stub";
+import { isNotFalsy } from "../../../src/utils/validator";
 
 //TODO : Quiz DTO 이름 변경하기. ApiHandlerMethod+DTO 형식으로
 
@@ -717,29 +718,42 @@ describe("QuizController (e2e)", () => {
 			return response;
 		}
 
-		async function expectScheduleQuiz(res: ScheduleQuizResponse) {
-			const quiz = await quizService.findOne({
-				where: {
-					id: res.shortQuiz.id,
-				},
-			});
+		async function expectScheduleQuiz(query: ScheduleQuizQuery, res: ScheduleQuizResponse) {
+			//TODO Schedule Quiz API 검증 구현
+			//- [x] 요청 context와 응답 context 일치 검증
+			//- [x] 응답 scheduled quiz 검증
+			//- [x] 응답 scheduled quiz와 응답 context 연관성 검증
+			//- [x] context에 해당하는 퀴즈가 없는 경우에 대한 예외상황 구현
 
-			expect(quiz).toBeDefined();
-			expect(res.shortQuiz).toEqual(new ShowQuiz(quiz!));
+			const { currentIndex, endIndex, context } = query;
+
+			if (isNotFalsy(currentIndex) && isNotFalsy(endIndex) && isNotFalsy(context)) {
+				if (currentIndex < endIndex) {
+					const expectedContext = context;
+					const receivedContext = res.context;
+					expect(receivedContext).toEqual(expectedContext);
+				}
+			}
+
+			const expectedQuiz = await findAllRelationQuiz(res.shortQuiz.id);
+			expect(expectedQuiz).toBeDefined();
+			expect(res.shortQuiz).toEqual(new ShowQuiz(expectedQuiz!));
 
 			const { artist: artistName, tag: tagName, style: styleName } = res.context;
 
-			expect(artistName && tagName && styleName).toBeTruthy();
+			expect(
+				isNotFalsy(artistName) || isNotFalsy(tagName) || isNotFalsy(styleName),
+			).toBeTruthy();
 			if (artistName) {
-				expect(quiz!.artists.some((v) => v.name === artistName)).toBe(true);
+				expect(expectedQuiz!.artists.some((v) => v.name === artistName)).toBe(true);
 			}
 
 			if (tagName) {
-				expect(quiz!.tags.some((v) => v.name === tagName)).toBe(true);
+				expect(expectedQuiz!.tags.some((v) => v.name === tagName)).toBe(true);
 			}
 
 			if (styleName) {
-				expect(quiz!.styles.some((v) => v.name === styleName)).toBe(true);
+				expect(expectedQuiz!.styles.some((v) => v.name === styleName)).toBe(true);
 			}
 		}
 
@@ -789,15 +803,15 @@ describe("QuizController (e2e)", () => {
 
 			await quizScheduleService.initialize(initQuizContext);
 		});
-		describe("success when deliver valid query", () => {
+		describe("success when deliver valid query(minimal, maximal, custom)", () => {
 			//TODO
-			//-[ ] empty query
-			//-[ ] 필드가 1개인 query
-			//-[ ] 필드가 여러개인 query
+			//-[x] empty query
+			//-[x] 필드가 1개인 query
+			//-[x] 필드가 여러개인 query
 
 			describe.each([
 				{
-					query: { info: undefined },
+					query: {},
 				},
 				{
 					query: {
@@ -811,8 +825,6 @@ describe("QuizController (e2e)", () => {
 						endIndex: 1,
 					},
 				},
-
-				//customized context
 				{
 					query: {
 						context: {
@@ -857,151 +869,238 @@ describe("QuizController (e2e)", () => {
 				});
 
 				it("scheduled quiz should contain context", async () => {
-					await expectScheduleQuiz(receivedRes.data!);
+					await expectScheduleQuiz(query, receivedRes.data!);
 				});
 			});
 		});
 
-		// describe("success when deliver fully query", () => {
-		// 	let receivedRes: Awaited<ReturnType<typeof requestReadScheduleQuiz>>;
-		// 	beforeAll(async () => {
-		// 		//request delete reaction
-		// 		const initResponse = await requestReadScheduleQuiz();
-		// 		const query = pick(initResponse.data!, ["context", "currentIndex", "endIndex"]);
-		// 		receivedRes = await requestReadScheduleQuiz(query);
-		// 	});
+		describe("should get sequentially different quiz when repeat same query ", () => {
+			const queries: ScheduleQuizQuery[] = [];
+			let prevReceivedRes: Awaited<ReturnType<typeof requestReadScheduleQuiz>>;
+			beforeAll(async () => {
+				//request delete reaction
+				const initResponse = await requestReadScheduleQuiz({});
+				prevReceivedRes = initResponse;
+				const query = pick(initResponse.data!, ["context", "currentIndex", "endIndex"]);
+				queries.push(
+					...Array(10)
+						.fill(0)
+						.map(() => query),
+				);
+			});
 
-		// 	it("response data should match openapi doc", () => {
-		// 		expect(receivedRes.response.status).toBe(HttpStatus.OK);
-		// 		const body = receivedRes.data!;
-		// 		expectResponseBody(zScheduleQuizResponse, body);
-		// 	});
+			it("response data should match openapi doc", () => {
+				expect(prevReceivedRes.response.status).toBe(HttpStatus.OK);
+				const body = prevReceivedRes.data!;
+				expectResponseBody(zScheduleQuizResponse, body);
+			});
 
-		// 	it("scheduled quiz should contain context", async () => {
-		// 		await expectScheduleQuiz(receivedRes.data!);
-		// 	});
-		// });
+			it("success when deliver previous request", async () => {
+				for (const query of queries) {
+					const receivedRes = await requestReadScheduleQuiz(query);
+					expect(receivedRes.response.status).toBe(HttpStatus.OK);
+					const body = receivedRes.data!;
+					expectResponseBody(zScheduleQuizResponse, body);
 
-		// describe("sequentially different quiz when repeat same query ", () => {
-		// 	const queries: ScheduleQuizQuery[] = [];
-		// 	let prevReceivedRes: Awaited<ReturnType<typeof requestReadScheduleQuiz>>;
-		// 	beforeAll(async () => {
-		// 		//request delete reaction
-		// 		const initResponse = await requestReadScheduleQuiz();
-		// 		prevReceivedRes = initResponse;
-		// 		const query = pick(initResponse.data!, ["context", "currentIndex", "endIndex"]);
-		// 		queries.push(
-		// 			...Array(10)
-		// 				.fill(0)
-		// 				.map(() => query),
-		// 		);
-		// 	});
+					//"sequential quiz should be not equal",
+					const prevQuizId = prevReceivedRes.data?.shortQuiz.id;
+					const currentQuizId = receivedRes.data?.shortQuiz.id;
+					expect(currentQuizId === prevQuizId).toBe(false);
+				}
+			});
+		});
 
-		// 	it("response data should match openapi doc", () => {
-		// 		expect(prevReceivedRes.response.status).toBe(HttpStatus.OK);
-		// 		const body = prevReceivedRes.data!;
-		// 		expectResponseBody(zScheduleQuizResponse, body);
-		// 	});
+		//TODO 특수 상황 테스트 케이스
+		//- [x] endIndex === currentIndex 인 경우 처리 결과
+		//- [x] endIndex < currentIndex 인 경우 처리 결과
+		describe("success when deliver special case query", () => {
+			describe.each([
+				{
+					specialQuery: {
+						context: {
+							artist: artistStubs[0].name,
+							page: 0,
+						},
+						currentIndex: 0,
+						endIndex: 1,
+					},
+				},
+				{
+					specialQuery: {
+						context: {
+							artist: artistStubs[0].name,
+							page: 0, //
+						},
+						currentIndex: 100,
+						endIndex: 10,
+					},
+				},
 
-		// 	it("success when deliver previous request", async () => {
-		// 		for (const query of queries) {
-		// 			const receivedRes = await requestReadScheduleQuiz(query);
-		// 			expect(receivedRes.response.status).toBe(HttpStatus.OK);
-		// 			const body = receivedRes.data!;
-		// 			expectResponseBody(zScheduleQuizResponse, body);
+				{
+					specialQuery: {
+						context: {
+							tag: tagStubs.reverse()[0].name,
+							page: 0,
+						},
+						currentIndex: 100,
+						endIndex: 100,
+					},
+				},
+				{
+					specialQuery: {
+						currentIndex: 100,
+						endIndex: 100,
+					},
+				},
+				{
+					specialQuery: {
+						context: {
+							style: styleStubs.reverse()[0].name,
+							artist: artistStubs.reverse()[0].name,
+							page: 10,
+						},
+						currentIndex: 0,
+						endIndex: 10,
+					},
+				},
+			])("input : %o", ({ specialQuery }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestReadScheduleQuiz>>;
+				beforeAll(async () => {
+					const response = await requestReadScheduleQuiz(specialQuery);
+					receivedRes = response;
+				});
 
-		// 			//"sequential quiz should be not equal",
-		// 			const prevQuizId = prevReceivedRes.data?.shortQuiz.id;
-		// 			const currentQuizId = receivedRes.data?.shortQuiz.id;
-		// 			expect(currentQuizId === prevQuizId).toBe(false);
-		// 		}
-		// 	});
-		// });
+				it("response data should match openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.OK);
+					const body = receivedRes.data!;
+					expectResponseBody(zScheduleQuizResponse, body);
+				});
 
-		// describe("success when deliver customized query", () => {
-		// 	let receivedRes: Awaited<ReturnType<typeof requestReadScheduleQuiz>>;
-		// 	beforeAll(async () => {
-		// 		const quizCount = 20;
-		// 		const quizzes = await testService.seedOneChoiceQuizzes(quizCount);
-		// 		const targetQuiz = quizzes[0];
+				it("scheduled quiz should contain context", async () => {
+					await expectScheduleQuiz(specialQuery, receivedRes.data!);
+				});
+			});
+		});
 
-		// 		const query = {
-		// 			context: {
-		// 				artist: targetQuiz.artists[0].name,
-		// 				style: targetQuiz.styles[0].name,
-		// 				tag: targetQuiz.tags[0].name,
-		// 				page: 0,
-		// 			},
-		// 			endIndex: 3,
-		// 			currentIndex: 0,
-		// 		};
+		describe.skip("success when deliver special case query( difficult to test)", () => {
+			describe.each([
+				{
+					specialQuery: {
+						context: {
+							style: styleStubs.reverse()[0].name,
+							artist: artistStubs.reverse()[0].name,
+							page: 100,
+						},
+						currentIndex: 0,
+						endIndex: 10,
+					},
+				},
+			])("input : %o", ({ specialQuery }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestReadScheduleQuiz>>;
+				beforeAll(async () => {
+					const response = await requestReadScheduleQuiz(specialQuery);
+					receivedRes = response;
+				});
 
-		// 		//request delete reaction
-		// 		const response = await requestReadScheduleQuiz(query);
-		// 		receivedRes = response;
-		// 	});
+				it("response data should match openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.OK);
+					const body = receivedRes.data!;
+					expectResponseBody(zScheduleQuizResponse, body);
+				});
 
-		// 	it("response data should match openapi doc", () => {
-		// 		expect(receivedRes.response.status).toBe(HttpStatus.OK);
-		// 		const body = receivedRes.data!;
-		// 		expectResponseBody(zScheduleQuizResponse, body);
-		// 	});
-		// 	it("scheduled quiz should contain context", async () => {
-		// 		await expectScheduleQuiz(receivedRes.data!);
-		// 	});
-		// });
+				// it("scheduled quiz should contain context", async () => {
+				// 	await expectScheduleQuiz(specialQuery, receivedRes.data!);
+				// });
+			});
+		});
 
-		// describe("fail when deliver invalid query", () => {
-		// 	let receivedRes: Awaited<ReturnType<typeof requestReadScheduleQuiz>>;
-		// 	beforeAll(async () => {
-		// 		const quizCount = 20;
-		// 		await testService.seedOneChoiceQuizzes(quizCount);
+		//TODO 비유효 query 테스트 케이스 구현
+		//- [x] 정의되지 않은 필드 데이터
+		//- [x] context (artist,style,tag) 누락 데이터
+		//- [x] page 음수 데이터
+		//- [x] currentIndex 음수 데이터
+		//- [x] endIndex 음수 데이터
+		describe("fail when deliver invalid query", () => {
+			describe.each([
+				{
+					invalidQuery: {
+						invalid: "it is invalid",
+					},
+				},
+				{
+					invalidQuery: {
+						context: {
+							page: 0,
+						},
+						currentIndex: 0,
+						endIndex: 1,
+					},
+				},
+				{
+					invalidQuery: {
+						context: {
+							artist: faker.string.uuid(),
+							page: 0,
+						},
+						currentIndex: 0,
+						endIndex: 1,
+					},
+				},
+				{
+					invalidQuery: {
+						context: {
+							artist: artistStubs[0].name,
+							page: 0,
+						},
+						currentIndex: -1,
+						endIndex: 1,
+					},
+				},
+				{
+					invalidQuery: {
+						context: {
+							artist: faker.internet.ipv6(),
+							page: 0,
+						},
+						currentIndex: 0,
+						endIndex: 10,
+					},
+				},
+				{
+					invalidQuery: {
+						context: {
+							style: faker.internet.ipv6(),
+							artist: faker.string.uuid(),
+							page: 0,
+						},
+						currentIndex: 0,
+						endIndex: 10,
+					},
+				},
+				{
+					invalidQuery: {
+						context: {
+							tag: faker.internet.ipv6(),
+							page: 0,
+						},
+						currentIndex: 0,
+						endIndex: 1,
+					},
+				},
+			])("input : %o", ({ invalidQuery }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestReadScheduleQuiz>>;
+				beforeAll(async () => {
+					const response = await requestReadScheduleQuiz(
+						invalidQuery as ScheduleQuizQuery,
+					);
+					receivedRes = response;
+				});
 
-		// 		const inValidQuery = {
-		// 			context: {
-		// 				tag: faker.string.uuid(),
-		// 				page: 0,
-		// 			},
-		// 			endIndex: 1,
-		// 			currentIndex: 0,
-		// 		};
-
-		// 		const response = await requestReadScheduleQuiz(inValidQuery);
-		// 		receivedRes = response;
-		// 	});
-
-		// 	it("response data should match openapi doc", () => {
-		// 		expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
-		// 		const body = receivedRes.data!;
-		// 		expectResponseBody(zShowQuizContext, body);
-		// 	});
-
-		// 	it("scheduled quiz should contain context", async () => {
-		// 		await expectScheduleQuiz(receivedRes.data!);
-		// 	});
-		// });
-
-		// describe("fail when deliver invalid query containing wrong index", () => {
-		// 	let receivedRes: Awaited<ReturnType<typeof requestReadScheduleQuiz>>;
-		// 	beforeAll(async () => {
-		// 		//request delete reaction
-		// 		const initResponse = await requestReadScheduleQuiz();
-		// 		const invalidQuery = pick(initResponse.data!, [
-		// 			"context",
-		// 			"currentIndex",
-		// 			"endIndex",
-		// 		]);
-
-		// 		invalidQuery.endIndex = Number.MAX_SAFE_INTEGER;
-		// 		invalidQuery.currentIndex = invalidQuery.endIndex - 1;
-
-		// 		receivedRes = await requestReadScheduleQuiz(invalidQuery);
-		// 	});
-
-		// 	it("response data should match openapi doc", () => {
-		// 		expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
-		// 	});
-		// });
+				it("response data should match openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
+				});
+			});
+		});
 	});
 
 	//TODO quiz schedule API 스펙 분석한뒤 진행하기
