@@ -1120,109 +1120,151 @@ describe("QuizController (e2e)", () => {
 			return response;
 		}
 
+		const stubSize = 3;
+		const tagStubs = Array(stubSize)
+			.fill(0)
+			.map(() => factoryTagStub());
+		const styleStubs = Array(stubSize)
+			.fill(0)
+			.map(() => factoryStyleStub());
+		const artistStubs = Array(stubSize)
+			.fill(0)
+			.map(() => factoryArtistStub());
+
 		beforeAll(async () => {
-			const quizCount = 30;
-			const quizzes = await testService.seedOneChoiceQuizzes(quizCount);
-			const initQuiz = quizzes.slice(0, 10);
+			const [artists, styles, tags] = await Promise.all([
+				testService.insertArtistStubs(artistStubs),
+				testService.insertStyleStubs(styleStubs),
+				testService.insertTagStubs(tagStubs),
+			]);
 
-			await Promise.all(
-				initQuiz.map((q) =>
-					quizScheduleService.initialize([
-						{
-							artist: q.artists[0].name,
-							page: 0,
-						},
-					]),
-				),
-			);
-		});
-		describe("success when deliver minimal dto", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestCreateSchedule>>;
-			beforeAll(async () => {
-				const quizzes = await testService.seedOneChoiceQuizzes(1);
-				const targetQuiz = quizzes[0];
-				const dto = {
-					tag: targetQuiz.tags[0].name,
+			const paintingCount = 50;
+			const [paintings, owners] = await Promise.all([
+				testService.seedPaintings(paintingCount, {
+					artists,
+					styles,
+					tags,
+				}),
+				testService.seedUsersSingleInsert(10),
+			]);
+
+			const quizCount = 50;
+			await testService.seedOneChoiceQuizzes(quizCount, {
+				owners: owners as [User, ...User[]],
+				paintings: paintings as [Painting, Painting, Painting, Painting, ...Painting[]],
+			});
+
+			// initialize quizSchedule context
+			const initQuizContext = Array(stubSize)
+				.fill(0)
+				.map((v, idx) => ({
+					artist: artistStubs[idx].name,
+					style: styleStubs[idx].name,
+					tag: tagStubs[idx].name,
 					page: 0,
-				};
-				receivedRes = await requestCreateSchedule(dto);
-			});
+				}));
 
-			it("response data should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.CREATED);
-			});
-		});
-
-		describe("success when deliver fully dto", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestCreateSchedule>>;
-			beforeAll(async () => {
-				const quizzes = await testService.seedOneChoiceQuizzes(1);
-				const targetQuiz = quizzes[0];
-				const dto = {
-					tag: targetQuiz.tags[0].name,
-					artist: targetQuiz.artists[0].name,
-					style: targetQuiz.styles[0].name,
-					page: 0,
-				};
-				receivedRes = await requestCreateSchedule(dto);
-			});
-
-			it("response data should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.CREATED);
-			});
+			await quizScheduleService.initialize(initQuizContext);
 		});
 
-		describe.each([
-			{
-				dto: {
-					tag: faker.string.uuid(),
-					page: 0,
+		describe("success when deliver dto (minimal, fully)", () => {
+			describe.each([
+				{
+					dto: {
+						tag: tagStubs[0].name,
+						artist: artistStubs[0].name,
+						style: styleStubs[0].name,
+						page: 0,
+					},
 				},
-			},
-			{
-				dto: {
-					style: faker.string.uuid(),
-					page: 0,
+				{
+					dto: {
+						tag: tagStubs[0].name,
+						page: 0,
+					},
 				},
-			},
-			{
-				dto: {
-					artist: faker.string.uuid(),
-					page: 0,
+				{
+					dto: {
+						artist: artistStubs[0].name,
+						page: 0,
+					},
 				},
-			},
+				{
+					dto: {
+						style: styleStubs[0].name,
+						page: 0,
+					},
+				},
+				{
+					dto: {
+						tag: tagStubs[0].name,
+						artist: artistStubs[0].name,
+						style: styleStubs[0].name,
+						page: 100,
+					},
+				},
+			])("input : %o", ({ dto }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestCreateSchedule>>;
+				beforeAll(async () => {
+					receivedRes = await requestCreateSchedule(dto);
+				});
 
-			{
-				dto: {
-					artist: faker.string.uuid(),
-					page: 0,
-				},
-			},
-		])("input : %p", ({ dto }) => {
-			let receivedRes: Awaited<ReturnType<typeof requestCreateSchedule>>;
-			beforeAll(async () => {
-				receivedRes = await requestCreateSchedule(dto);
-			});
-
-			it("response data should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
+				it("response data should match openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.CREATED);
+				});
 			});
 		});
 
-		describe("fail when fully invalid dto ", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestCreateSchedule>>;
-			beforeAll(async () => {
-				const dto = {
-					tag: faker.string.uuid(),
-					artist: faker.string.uuid(),
-					style: faker.string.uuid(),
-					page: 0,
-				};
-				receivedRes = await requestCreateSchedule(dto);
-			});
+		describe("fail when deliver invalid dto ", () => {
+			describe.each([
+				{
+					dto: {
+						tag: faker.string.uuid(),
+						page: 0,
+					},
+				},
+				{
+					dto: {
+						style: faker.string.uuid(),
+						page: 0,
+					},
+				},
+				{
+					dto: {
+						artist: faker.string.uuid(),
+						page: 0,
+					},
+				},
+				{
+					dto: {
+						artist: faker.string.uuid(),
+						page: 0,
+					},
+				},
+				{
+					dto: {
+						invalid: "invalid",
+						page: 0,
+					},
+				},
+				{
+					dto: {},
+				},
+				{
+					dto: {
+						artist: artistStubs[0].name,
+						page: -1,
+					},
+				},
+			])("input : %p", ({ dto }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestCreateSchedule>>;
+				beforeAll(async () => {
+					receivedRes = await requestCreateSchedule(dto as QuizContextDto);
+				});
 
-			it("response data should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
+				it("response data should match openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
+				});
 			});
 		});
 	});
