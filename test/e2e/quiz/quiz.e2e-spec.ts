@@ -50,11 +50,13 @@ import { factoryQuizReaction } from "./quiz-reaction.stub";
 import { USER_ROLE } from "../../../src/modules/user/const";
 import { User } from "../../../src/modules/user/entity/user.entity";
 import z from "zod";
-import { getRandomElement } from "../../../src/utils/random";
+import { getRandomElement, selectRandomElements } from "../../../src/utils/random";
 import { factoryTagStub } from "../../_shared/stub/tag.stub";
 import { factoryArtistStub } from "../../_shared/stub/artist.stub";
 import { factoryStyleStub } from "../../_shared/stub/style.stub";
 import { isNotFalsy } from "../../../src/utils/validator";
+import { factoryPaintingStub } from "../../_shared/stub/painting.stub";
+import { assert } from "console";
 
 //TODO : Quiz DTO 이름 변경하기. ApiHandlerMethod+DTO 형식으로
 
@@ -1290,13 +1292,16 @@ describe("QuizController (e2e)", () => {
 			return response;
 		}
 
-		type PaintingLeast3 = [Painting, Painting, Painting];
-		function factoryCreateQuizDto(answer: Painting, distractor: PaintingLeast3): CreateQuizDto {
+		type StringLeast3 = [string, string, string];
+		function factoryCreateQuizDto(
+			answerPaintingId: string,
+			distractorPaintingIds: StringLeast3,
+		): CreateQuizDto {
 			const { time_limit: timeLimit, description, title } = factoryQuizStub();
 			const dto: CreateQuizDto = {
 				type: QUIZ_TYPE.ONE_CHOICE,
-				answerPaintingIds: [answer.id],
-				distractorPaintingIds: distractor.map((p) => p.id),
+				answerPaintingIds: [answerPaintingId],
+				distractorPaintingIds: distractorPaintingIds,
 				title,
 				timeLimit,
 				description,
@@ -1305,41 +1310,113 @@ describe("QuizController (e2e)", () => {
 			return dto;
 		}
 
-		describe("success when create quiz by user", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestCreateQuiz>>;
+		const paintingStubs = Array(50)
+			.fill(0)
+			.map(() => factoryPaintingStub());
+		const deletedPaintingStub = factoryPaintingStub();
 
-			let expectedQuizPart: ExpectedQuizPart;
-			let receivedQuiz: Quiz | null;
+		beforeAll(async () => {
+			const count = 20;
+			const [artists, styles, tags] = await Promise.all([
+				testService.seedArtists(count),
+				testService.seedStyles(count),
+				testService.seedTags(count),
+			]);
 
-			beforeAll(async () => {
-				const creator = await testService.insertStubUser(factoryUserStub("user"));
-				const paintings = await testService.seedPaintings(4);
-				const answer = paintings[0];
-				const distractors = paintings.slice(1) as PaintingLeast3;
-				const dto = factoryCreateQuizDto(answer, distractors);
-				expectedQuizPart = {
-					answer_paintings: [answer],
-					distractor_paintings: distractors,
-					description: dto.description,
-					time_limit: dto.timeLimit,
-					title: dto.title,
-					owner: creator,
-				};
+			await testService.insertPaintingStub(
+				paintingStubs
+					.map((stub) => ({
+						paintingDummy: stub,
+						tags: selectRandomElements(tags, 2),
+						styles: selectRandomElements(styles, 2),
+						artist: getRandomElement(artists)!,
+					}))
+					.concat({
+						paintingDummy: deletedPaintingStub,
+						tags: selectRandomElements(tags, 2),
+						styles: selectRandomElements(styles, 2),
+						artist: getRandomElement(artists)!,
+					}),
+			);
 
-				const bearerAuth = testService.getBearerAuthCredential(creator);
-				receivedRes = await requestCreateQuiz(dto, bearerAuth);
-				receivedQuiz = await findAllRelationQuiz(receivedRes.data!.id);
+			const deletedPainting = await paintingService.findOne({
+				where: { id: deletedPaintingStub.id },
 			});
+			assert(deletedPainting);
+			await paintingService.deleteOne(dbService.getQueryRunner(), deletedPainting!);
+		});
 
-			it("response should follow openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.CREATED);
-				expectResponseBody(zShowQuizResponse, receivedRes.data);
-			});
+		describe.each([
+			{
+				userType: USER_ROLE.USER,
+			},
+			{
+				userType: USER_ROLE.ADMIN,
+			},
+		])("success when deliver valid dto by user($userType)", ({ userType }) => {
+			describe.each([
+				{
+					dto: {
+						type: QUIZ_TYPE.ONE_CHOICE,
+						answerPaintingIds: [paintingStubs[0].id],
+						distractorPaintingIds: paintingStubs.slice(1, 4).map((stub) => stub.id),
+						title: "quiz create",
+						timeLimit: 10,
+						description: "anything what you can",
+					},
+				},
+				{
+					dto: {
+						type: QUIZ_TYPE.MULTIPLE_CHOICE,
+						answerPaintingIds: [paintingStubs[10].id],
+						distractorPaintingIds: paintingStubs.slice(0, 3).map((stub) => stub.id),
+						title: faker.person.fullName(),
+						timeLimit: 20,
+						description: faker.commerce.productDescription(),
+					},
+				},
+			])("input : %o", ({ dto }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestCreateQuiz>>;
 
-			it("quiz should be created and to be expected", () => {
-				expect(receivedQuiz).toBeDefined();
-				expect(receivedRes.data).toEqual(new ShowQuizResponse(receivedQuiz!));
-				expectQuizEqual(receivedQuiz!, expectedQuizPart);
+				let expectedQuizPart: ExpectedQuizPart;
+				let receivedQuiz: Quiz | null;
+
+				beforeAll(async () => {
+					const creator = await testService.insertStubUser(factoryUserStub(userType));
+
+					const answer = await paintingService.findOne({
+						where: { id: dto.answerPaintingIds[0] },
+					});
+					const distractors = await paintingService.getManyByIds(
+						dto.distractorPaintingIds,
+					);
+
+					assert(answer);
+					assert(distractors.length === dto.distractorPaintingIds.length);
+
+					expectedQuizPart = {
+						answer_paintings: [answer!],
+						distractor_paintings: distractors,
+						description: dto.description,
+						time_limit: dto.timeLimit,
+						title: dto.title,
+						owner: creator,
+					};
+					const bearerAuth = testService.getBearerAuthCredential(creator);
+					receivedRes = await requestCreateQuiz(dto, bearerAuth);
+					receivedQuiz = await findAllRelationQuiz(receivedRes.data!.id);
+				});
+
+				it("response should follow openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.CREATED);
+					expectResponseBody(zShowQuizResponse, receivedRes.data);
+				});
+
+				it("quiz should be created and to be expected", () => {
+					expect(receivedQuiz).toBeDefined();
+					expect(receivedRes.data).toEqual(new ShowQuizResponse(receivedQuiz!));
+					expectQuizEqual(receivedQuiz!, expectedQuizPart);
+				});
 			});
 		});
 
@@ -1347,79 +1424,169 @@ describe("QuizController (e2e)", () => {
 			let receivedRes: Awaited<ReturnType<typeof requestCreateQuiz>>;
 			let receivedQuiz: Quiz | null;
 
-			beforeAll(async () => {
-				const creator = await testService.insertStubUser(factoryUserStub("user"));
-				const paintings = await testService.seedPaintings(4);
-				const answer = paintings[0];
-				const distractors = paintings.slice(1) as PaintingLeast3;
-				const dto = factoryCreateQuizDto(answer, distractors);
+			describe.each([
+				{
+					invalidBearToken: faker.internet.jwt(),
+				},
+			])("input : %o", ({ invalidBearToken }) => {
+				beforeAll(async () => {
+					const paintings = await testService.seedPaintings(4);
+					const answer = paintings[0];
+					const distractors = paintings.slice(1);
+					const dto = factoryCreateQuizDto(
+						answer.id,
+						distractors.map((d) => d.id) as StringLeast3,
+					);
 
-				const invalidBearerAuth = testService.getBearerAuthCredential(creator) + "invalid";
-				receivedRes = await requestCreateQuiz(dto, invalidBearerAuth);
-				receivedQuiz = await findAllRelationQuiz(receivedRes.data!.id);
-			});
+					receivedRes = await requestCreateQuiz(dto, `Bearer ${invalidBearToken}`);
+					receivedQuiz = await findAllRelationQuiz(receivedRes.data!.id);
+				});
 
-			it("response should follow openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.FORBIDDEN);
-			});
+				it("response should follow openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.FORBIDDEN);
+				});
 
-			it("quiz should not created", () => {
-				expect(receivedQuiz).toBeNull();
-			});
-		});
-
-		describe("fail when invalid referring wrong painting", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestCreateQuiz>>;
-			let receivedQuiz: Quiz | null;
-
-			beforeAll(async () => {
-				const creator = await testService.insertStubUser(factoryUserStub("user"));
-				const paintings = await testService.seedPaintings(4);
-				const answer = paintings[0];
-				const distractors = paintings.slice(1) as PaintingLeast3;
-				const dto = factoryCreateQuizDto(answer, distractors);
-
-				dto.answerPaintingIds[0] = faker.string.uuid();
-
-				const bearerAuth = testService.getBearerAuthCredential(creator);
-				receivedRes = await requestCreateQuiz(dto, bearerAuth);
-				receivedQuiz = await findAllRelationQuiz(receivedRes.data!.id);
-			});
-
-			it("response should follow openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
-			});
-
-			it("quiz should not created", () => {
-				expect(receivedQuiz).toBeNull();
+				it("quiz should not created", () => {
+					expect(receivedQuiz).toBeNull();
+				});
 			});
 		});
 
-		describe("fail when invalid dto referring deleted painting", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestCreateQuiz>>;
-			let receivedQuiz: Quiz | null;
+		describe.each([
+			{
+				userType: USER_ROLE.USER,
+			},
+			{
+				userType: USER_ROLE.ADMIN,
+			},
+		])("fail when invalid referring wrong painting", ({ userType }) => {
+			//TODO 비유효 body dto 테스트 케이스 구현
+			//- [x] 잘못된 painting ID 데이터
+			//- [x] 중복된 painting ID 데이터
+			//- [x] 비유효 type 데이터
+			//- [x] 음수 timeLimit
+			//- [x] 삭제된 Painting ID 참조
 
-			beforeAll(async () => {
-				const creator = await testService.insertStubUser(factoryUserStub("user"));
-				const paintings = await testService.seedPaintings(4);
-				const answer = paintings[0];
-				const distractors = paintings.slice(1) as PaintingLeast3;
-				const dto = factoryCreateQuizDto(answer, distractors);
+			describe.each([
+				{
+					inValidDto: {
+						type: QUIZ_TYPE.ONE_CHOICE,
+						answerPaintingIds: [faker.string.uuid()],
+						distractorPaintingIds: paintingStubs.slice(1, 4).map((stub) => stub.id),
+						title: "quiz create",
+						timeLimit: 10,
+						description: "anything what you can",
+					},
+				},
+				{
+					inValidDto: {
+						type: "invalid_enum",
+						answerPaintingIds: [paintingStubs[10].id],
+						distractorPaintingIds: paintingStubs.slice(0, 3).map((stub) => stub.id),
+						title: faker.person.fullName(),
+						timeLimit: 20,
+						description: faker.commerce.productDescription(),
+					},
+				},
+				{
+					inValidDto: {
+						type: QUIZ_TYPE.ONE_CHOICE,
+						answerPaintingIds: [paintingStubs[10].id],
+						distractorPaintingIds: paintingStubs.slice(10, 13).map((stub) => stub.id), //
+						title: faker.person.fullName(),
+						timeLimit: 20,
+						description: faker.commerce.productDescription(),
+					},
+				},
+				{
+					inValidDto: {
+						type: QUIZ_TYPE.ONE_CHOICE,
+						answerPaintingIds: [paintingStubs[10].id],
+						distractorPaintingIds: paintingStubs.slice(10, 13).map((stub) => stub.id),
+						title: faker.person.fullName(),
+						timeLimit: -1, //
+						description: faker.commerce.productDescription(),
+					},
+				},
+				{
+					inValidDto: {
+						type: QUIZ_TYPE.ONE_CHOICE,
+						answerPaintingIds: [faker.string.uuid()],
+						distractorPaintingIds: paintingStubs.slice(1, 4).map((stub) => stub.id),
+						title: "quiz create",
+						timeLimit: 10,
+						description: undefined,
+					},
+				},
+				{
+					inValidDto: {
+						type: QUIZ_TYPE.ONE_CHOICE,
+						answerPaintingIds: undefined,
+						distractorPaintingIds: undefined,
+						title: "quiz create",
+						timeLimit: 10,
+						description: undefined,
+					},
+				},
+				{
+					inValidDto: {
+						type: QUIZ_TYPE.ONE_CHOICE,
+						answerPaintingIds: null,
+						distractorPaintingIds: paintingStubs.slice(1, 4).map((stub) => stub.id),
+						title: "quiz create",
+						timeLimit: 10,
+						description: faker.commerce.productDescription(),
+					},
+				},
+				{
+					inValidDto: {
+						type: QUIZ_TYPE.ONE_CHOICE,
+						answerPaintingIds: deletedPaintingStub.id,
+						distractorPaintingIds: paintingStubs.slice(1, 4).map((stub) => stub.id),
+						title: "quiz create",
+						timeLimit: 10,
+						description: faker.commerce.productDescription(),
+					},
+				},
+				{
+					inValidDto: {
+						type: QUIZ_TYPE.ONE_CHOICE,
+						answerPaintingIds: [paintingStubs[0].id],
+						distractorPaintingIds: paintingStubs
+							.slice(1, 3)
+							.map((stub) => stub.id)
+							.concat(deletedPaintingStub.id),
+						title: "quiz create",
+						timeLimit: 10,
+						description: faker.commerce.productDescription(),
+					},
+				},
+				{
+					inValidDto: {
+						type: QUIZ_TYPE.ONE_CHOICE,
+						answerPaintingIds: [paintingStubs[0].id],
+						distractorPaintingIds: paintingStubs
+							.slice(1, 10)
+							.map((stub) => stub.id)
+							.concat(deletedPaintingStub.id),
+						title: "quiz create",
+						timeLimit: 10,
+						description: faker.commerce.productDescription(),
+					},
+				},
+			])("input : %o", ({ inValidDto }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestCreateQuiz>>;
 
-				//delete painting;
-				await paintingService.deleteOne(dbService.getQueryRunner(), answer);
+				beforeAll(async () => {
+					const creator = await testService.insertStubUser(factoryUserStub(userType));
 
-				const bearerAuth = testService.getBearerAuthCredential(creator);
-				receivedRes = await requestCreateQuiz(dto, bearerAuth);
-				receivedQuiz = await findAllRelationQuiz(receivedRes.data!.id);
-			});
+					const bearerAuth = testService.getBearerAuthCredential(creator);
+					receivedRes = await requestCreateQuiz(inValidDto as CreateQuizDto, bearerAuth);
+				});
 
-			it("response should follow openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
-			});
-
-			it("quiz should not created", () => {
-				expect(receivedQuiz).toBeNull();
+				it("response should follow openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
+				});
 			});
 		});
 	});
