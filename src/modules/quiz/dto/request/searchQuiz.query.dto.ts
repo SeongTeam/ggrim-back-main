@@ -1,9 +1,14 @@
-import { IsArray, IsNumber, IsString } from "class-validator";
+import { IsArray, IsNumber, IsString, Min } from "class-validator";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 import { Transform } from "class-transformer";
 import { ApiProperty } from "@nestjs/swagger";
 
 export class SearchQuizQueryDTO {
+	/**
+	 * @description follow openapi query serialization spec.
+	 * @example /route?artists=name1
+	 * @example /route?artists=name1&artists=name2
+	 */
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
 	@IsOptionalProperty()
@@ -11,12 +16,11 @@ export class SearchQuizQueryDTO {
 	@IsString({ each: true })
 	artists: string[] = [];
 
-	/*형식 
-      JSON 문자열 
-        - 예시) url?tags=["1","2"]
-        - 서버쪽에서 파싱 로직을 사용해야함
-      */
-
+	/**
+	 * @description follow openapi query serialization spec.
+	 * @example /route?tags=name1
+	 * @example /route?tags=name1&tags=name2
+	 */
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
 	@IsOptionalProperty()
@@ -24,11 +28,11 @@ export class SearchQuizQueryDTO {
 	@IsString({ each: true })
 	tags: string[] = [];
 
-	/*형식 
-      JSON 문자열 
-        - 예시) url?tags=["1","2"]
-        - 서버쪽에서 파싱 로직을 사용해야함
-      */
+	/**
+	 * @description follow openapi query serialization spec.
+	 * @example /route?styles=name1
+	 * @example /route?styles=name1&tags=name2
+	 */
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
 	@IsOptionalProperty()
