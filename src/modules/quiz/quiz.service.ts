@@ -80,12 +80,13 @@ export class QuizService {
 	}
 
 	async searchQuiz(dto: SearchQuizQueryDTO): Promise<Pagination<Quiz>> {
-		/*TODO 검색 로직 개선
-      - [ ]각 JSON 값이 string[]인지 확인 필요.
-      - [ ] 배열의 각 원소가 공백("")인지 확인 필요.
-        - 공백값이 삽입되어 DB QUERY에 적용되면, 공백값과 일치하는 조건이 추가됨.
-      - [ ] title, description 검색 고려하기
-    */
+		//TODO 검색 로직 개선
+		//- [x] Dto 검증 구현
+		// -> controller 또는 호출자에서 검증
+		//- [ ] 배열의 각 원소가 공백("")인지 확인 필요.
+		//	-> 공백값이 삽입되어 DB QUERY에 적용되면, 공백값과 일치하는 조건이 추가됨.
+		//- [ ] title, description 검색 고려하기
+		//
 		const { tags, styles, artists, page, count: paginationCount } = dto;
 
 		const quizAlias = "q";
