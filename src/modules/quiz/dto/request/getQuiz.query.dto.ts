@@ -4,6 +4,9 @@ import { Transform } from "class-transformer";
 import { ApiProperty } from "@nestjs/swagger";
 
 export class GetQuizQueryDTO {
+	/**
+	 * @description this field always transform invalid value or type into default value
+	 */
 	@ApiProperty({ default: false })
 	@Transform(({ value }) => (value === "true" ? true : false))
 	@IsOptionalProperty()
