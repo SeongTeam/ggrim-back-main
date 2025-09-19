@@ -221,29 +221,40 @@ export class PaintingService {
 	}
 
 	/**
-	 * - [] 중에서 0번째 index중 큰 순서로 이동 중에 DB에 없는 ID가 있으면 에러 발생
-	 * - 에러가 발생 ID를 console에 출력해 줌 (typeorm 자체 기능)
+	 * @returns 모든 relation 필드를 갖는 painting 배열
+	 * @description Exception 발생 : 전달된 id 배열에 매칭되는 Painting을 찾지 못한 경우.
 	 */
 	async getManyByIds(ids: string[]): Promise<Painting[]> {
+		//TODO : 전달된 id 배열에 대응되는 Painting 반환하는 함수 구현
+		//-[ ] : id가 중복되는 상황 예방
+		//-[ ] : id에 해당하는 Painting을 찾지 못한 상황 예외처리
+
+		const targetIdSet = new Set<string>(ids);
 		const query = this.repo
 			.createQueryBuilder("p")
 			.leftJoinAndSelect("p.tags", "tags")
 			.leftJoinAndSelect("p.styles", "styles")
 			.leftJoinAndSelect("p.artist", "artist")
-			.where("p.id IN (:...ids)", { ids });
+			.where("p.id IN (:...ids)", { ids: [...targetIdSet] });
 
 		Logger.debug(query.getSql());
 
 		const paintings: Painting[] = await query.getMany();
+		const foundIdSet = new Set<string>(paintings.map((p) => p.id));
 
-		if (paintings.length !== ids.length) {
-			const foundIds = paintings.map((p) => p.id);
-			const notFoundIds = ids.filter((id) => !foundIds.includes(id));
+		if (targetIdSet.size !== foundIdSet.size) {
+			const notFoundIdSet = new Set<string>();
+
+			for (const id of targetIdSet) {
+				if (!foundIdSet.has(id)) {
+					notFoundIdSet.add(id);
+				}
+			}
 
 			throw new ServiceException(
 				"ENTITY_NOT_FOUND",
 				"BAD_REQUEST",
-				`Can Not found ids : ${JSON.stringify(notFoundIds)}`,
+				`Can Not found ids : ${[...notFoundIdSet].join(", ")}`,
 			);
 		}
 		return paintings;
