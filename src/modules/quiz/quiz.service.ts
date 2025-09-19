@@ -29,6 +29,7 @@ import { QuizReactionCount } from "./type";
 import { RelatedPaintings } from "./type";
 import { RelatedPaintingIds } from "./type";
 import { QuizSubmission } from "./batch/type";
+import { assert } from "console";
 @Injectable()
 export class QuizService {
 	constructor(
@@ -56,16 +57,7 @@ export class QuizService {
 		return this.insertQuiz(queryRunner, newQuiz);
 	}
 
-	async updateQuiz(queryRunner: QueryRunner, id: string, dto: ReplaceQuizDTO) {
-		const quiz = await this.repo.findOneByOrFail({ id });
-		if (!isNotFalsy(quiz)) {
-			throw new ServiceException(
-				"ENTITY_NOT_FOUND",
-				"BAD_REQUEST",
-				`Not found quiz.\n` + `id : ${id}`,
-			);
-		}
-
+	async updateQuiz(queryRunner: QueryRunner, quiz: Quiz, dto: ReplaceQuizDTO) {
 		updateProperty(quiz, "time_limit", dto.timeLimit);
 		updateProperty(quiz, "title", dto.title);
 		updateProperty(quiz, "description", dto.description);
@@ -395,38 +387,27 @@ export class QuizService {
 	private async getRelatedPaintings(
 		relatedPaintingIds: RelatedPaintingIds,
 	): Promise<RelatedPaintings> {
+		/**
+		 * @requires relatedPaintingIds 유효성은 호출자에서 확인해야한다.
+		 */
 		const { answerPaintingIds, distractorPaintingIds, examplePaintingId } = relatedPaintingIds;
 		const ids: string[] = [...answerPaintingIds, ...distractorPaintingIds];
 		if (isNotFalsy(examplePaintingId)) {
 			ids.push(examplePaintingId);
 		}
-		const idToPaintingMap: Map<string, Painting> = await this.createPaintingMap(ids);
+		const paintingMap: Map<string, Painting> = new Map();
+		const paintings: Painting[] = await this.paintingService.getManyByIds(ids);
+
+		paintings.forEach((painting) => {
+			if (!paintingMap.has(painting.id)) {
+				paintingMap.set(painting.id, painting);
+			}
+		});
 
 		return {
-			answerPaintings: this.resolvePaintings(
-				relatedPaintingIds.answerPaintingIds,
-				idToPaintingMap,
-			),
-			distractorPaintings: this.resolvePaintings(
-				relatedPaintingIds.distractorPaintingIds,
-				idToPaintingMap,
-			),
-			examplePainting: relatedPaintingIds.examplePaintingId
-				? idToPaintingMap.get(relatedPaintingIds.examplePaintingId)
-				: undefined,
+			answerPaintings: answerPaintingIds.map((id) => paintingMap.get(id)!),
+			distractorPaintings: distractorPaintingIds.map((id) => paintingMap.get(id)!),
+			examplePainting: examplePaintingId ? paintingMap.get(examplePaintingId)! : undefined,
 		};
-	}
-	private resolvePaintings(ids: string[], paintingMap: Map<string, Painting>): Painting[] {
-		return ids.map((id) => {
-			const painting = paintingMap.get(id);
-			if (!painting) {
-				throw new ServiceException(
-					"ENTITY_NOT_FOUND",
-					"BAD_REQUEST",
-					`Painting not found with id: ${id}`,
-				);
-			}
-			return painting;
-		});
 	}
 }

@@ -37,7 +37,7 @@ import { DetailQuizResponse } from "./dto/response/detailQuiz.response";
 import { ScheduleQuizResponse } from "./dto/response/scheduleQuiz.response";
 import { QuizContextDTO } from "./dto/request/quizContext.dto";
 import { CreateQuizReactionDTO } from "./dto/request/createQuizReaction.dto";
-import { QuizReactionType } from "./const";
+import { QUIZ_TYPE, QuizReactionType } from "./const";
 import { QuizReactionQueryDTO } from "./dto/request/getQuizReaction.query.dto";
 import { ScheduleQuizQueryDTO } from "./dto/request/scheduleQuiz.query.dto";
 import { SubmitQuizDTO } from "./dto/request/submitQuiz.dto";
@@ -58,6 +58,7 @@ import { ConfigService } from "@nestjs/config";
 import { ApiCreatedResponse, ApiOkResponse, ApiQuery } from "@nestjs/swagger";
 import { QuizBatchService } from "./batch/quiz.batch.service";
 import { isNotFalsy } from "../../utils/validator";
+import { QuizType } from "./type";
 
 //TODO whitelist 옵션 추가하여 보안강화 고려하기
 @Controller("quiz")
@@ -272,7 +273,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	): Promise<ShowQuizResponse> {
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 
-		this.validateCreateQuizDto(dto);
+		await this.validateCreateQuizDto(dto);
 		const quiz = await this.service.createQuiz(qr, dto, userPayload.user);
 
 		return new ShowQuizResponse(quiz);
@@ -328,8 +329,14 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		@Param("id", ParseUUIDPipe) id: string,
 		@Body() dto: ReplaceQuizDTO,
 	): Promise<ShowQuizResponse> {
-		const quiz = await this.service.updateQuiz(qr, id, dto);
-		return new ShowQuizResponse(quiz);
+		const quiz = await this.service.findOne({ where: { id } });
+
+		if (!quiz) {
+			throw new ServiceException("BASE", "BAD_REQUEST", `Not Found quiz ${id} `);
+		}
+		await this.validateReplaceQuizDto(quiz.type, dto);
+		const updatedQuiz = await this.service.updateQuiz(qr, quiz, dto);
+		return new ShowQuizResponse(updatedQuiz);
 	}
 
 	@HttpCode(HttpStatus.OK)
@@ -442,11 +449,82 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		};
 	}
 
-	private validateCreateQuizDto(dto: CreateQuizDTO) {
-		const ids = [...dto.answerPaintingIds, ...dto.distractorPaintingIds];
-		const set = new Set(ids);
-		if (ids.length !== set.size) {
-			throw new ServiceException("BASE", "BAD_REQUEST", "quiz id is duplicated");
+	private async validateCreateQuizDto(dto: CreateQuizDTO) {
+		//TODO CreateQuizDto 검증 로직 구현
+		//-[x] painting id 유효성 검증하기
+		//-[x] ONE_CHOICE 타입인 경우에 대한 검증 로직 추가하기
+		//-[ ]
+
+		const { answerPaintingIds, distractorPaintingIds } = dto;
+		const ids = [...answerPaintingIds, ...distractorPaintingIds];
+
+		await this.paintingService.getManyByIds(ids);
+
+		if (dto.type === QUIZ_TYPE.ONE_CHOICE) {
+			this.validateOneChoiceQuizBodyDto(dto);
+		} else {
+			throw new ServiceException("NOT_IMPLEMENTED", "NOT_IMPLEMENTED");
+		}
+	}
+
+	private async validateReplaceQuizDto(type: QuizType, dto: ReplaceQuizDTO) {
+		//TODO ReplaceQuizDto 검증 로직 구현
+		//-[x] ONE_CHOICE 타입인 경우에 대한 검증 로직 추가하기
+
+		const { answerPaintingIds, distractorPaintingIds } = dto;
+		const ids = [...answerPaintingIds, ...distractorPaintingIds];
+
+		await this.paintingService.getManyByIds(ids);
+
+		if (type === QUIZ_TYPE.ONE_CHOICE) {
+			this.validateOneChoiceQuizBodyDto(dto);
+		} else {
+			throw new ServiceException("NOT_IMPLEMENTED", "NOT_IMPLEMENTED");
+		}
+	}
+
+	private validateOneChoiceQuizBodyDto(dto: Omit<CreateQuizDTO, "type">) {
+		//TODO ONE_CHOICE Quiz 생성 수정 Dto 검증하기
+		//	-[x] answer id 개수 1개인지 검사하기
+		//  -[x] distractor id 개수 3개인지 검사하기
+		//  -[x] quiz Id 중복 검사하기
+
+		const { answerPaintingIds, distractorPaintingIds } = dto;
+		const EXPECTED = { answer: 1, distractor: 3 };
+
+		// 개수 검증
+		const checks: [string, string[], number][] = [
+			["answer", answerPaintingIds, EXPECTED.answer],
+			["distractor", distractorPaintingIds, EXPECTED.distractor],
+		];
+
+		for (const [label, ids, expected] of checks) {
+			if (ids.length !== expected) {
+				throw new ServiceException(
+					"BASE",
+					"BAD_REQUEST",
+					`${label} painting count must be ${expected}, got ${ids.length}`,
+				);
+			}
+		}
+
+		const ids = [...answerPaintingIds, ...distractorPaintingIds];
+		const seen = new Set<string>();
+		const duplicates = new Set<string>();
+
+		for (const id of ids) {
+			if (seen.has(id)) {
+				duplicates.add(id);
+			}
+			seen.add(id);
+		}
+
+		if (duplicates.size) {
+			throw new ServiceException(
+				"BASE",
+				"BAD_REQUEST",
+				`Duplicated painting ids: ${[...duplicates].join(", ")}`,
+			);
 		}
 	}
 
