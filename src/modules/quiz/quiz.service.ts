@@ -357,8 +357,25 @@ export class QuizService {
 		quiz.styles = [...styleMap.values()];
 		quiz.artists = [...artistMap.values()];
 
-		// return await this.repo.save(quiz);
-		return await queryRunner.manager.save(quiz);
+		await queryRunner.manager.save(quiz);
+
+		const insertedQuiz = await queryRunner.manager.findOne(Quiz, {
+			where: {
+				id: quiz.id,
+			},
+			relations: {
+				answer_paintings: true,
+				distractor_paintings: true,
+				tags: true,
+				styles: true,
+				artists: true,
+				owner: true,
+			},
+		});
+
+		assert(insertedQuiz !== null);
+
+		return insertedQuiz!;
 	}
 
 	private async createPaintingMap(paintingIds: string[]): Promise<Map<string, Painting>> {
