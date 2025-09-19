@@ -258,7 +258,7 @@ export class TestService {
 		return styles;
 	}
 
-	async insertPaintingStub(paintingStubs: InsertPaintingArgs[]) {
+	async insertPaintingStubs(paintingStubs: InsertPaintingArgs[]) {
 		const manager = this.dbService.getManager();
 		let paintingWithRelation: Painting[] = [];
 		const insertRelations = async (painting: Painting, relations: PaintingRelations) => {
@@ -528,7 +528,7 @@ export class TestService {
 					artist: getRandomElement(artists)!,
 				};
 			});
-		const paintings = await this.insertPaintingStub(seedArgsList);
+		const paintings = await this.insertPaintingStubs(seedArgsList);
 
 		return paintings;
 	}
