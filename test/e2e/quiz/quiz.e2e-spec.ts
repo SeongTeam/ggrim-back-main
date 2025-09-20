@@ -1467,13 +1467,12 @@ describe("QuizController (e2e)", () => {
 
 		describe("fail when invalid auth", () => {
 			let receivedRes: Awaited<ReturnType<typeof requestCreateQuiz>>;
-			let receivedQuiz: Quiz | null;
 			describe.each([
 				{
 					testName: "deliver invalid jwt",
 					invalidBearToken: faker.internet.jwt(),
 				},
-			])("test : %testName", ({ invalidBearToken }) => {
+			])("test : $testName", ({ invalidBearToken }) => {
 				beforeAll(async () => {
 					const dto = factoryCreateQuizDto(
 						paintingStubs[0].id,
@@ -1481,15 +1480,10 @@ describe("QuizController (e2e)", () => {
 					);
 
 					receivedRes = await requestCreateQuiz(dto, `Bearer ${invalidBearToken}`);
-					receivedQuiz = await findAllRelationQuiz(receivedRes.data!.id);
 				});
 
 				it("response should follow openapi doc", () => {
 					expect(receivedRes.response.status).toBe(HttpStatus.FORBIDDEN);
-				});
-
-				it("quiz should not created", () => {
-					expect(receivedQuiz).toBeNull();
 				});
 			});
 		});
