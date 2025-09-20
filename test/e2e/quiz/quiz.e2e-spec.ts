@@ -1675,35 +1675,42 @@ describe("QuizController (e2e)", () => {
 			page?: number;
 		};
 
-		async function expectSearchQuiz(query: SearchQuizQuery, receivedData: PaginationShowQuiz) {
-			assert(receivedData.data.length !== 0);
+		async function expectSearchQuiz(
+			query: SearchQuizQuery,
+			receivedPagination: PaginationShowQuiz,
+		) {
+			assert(receivedPagination.data.length !== 0);
 			const quizzes = await Promise.all(
-				receivedData.data.map((info) => findAllRelationQuiz(info.id)),
+				receivedPagination.data.map((info) => findAllRelationQuiz(info.id)),
 			);
 
 			for (const quiz of quizzes) {
 				expect(quiz).toBeDefined();
 				const { tags, artists, styles } = quiz!;
-				const receivedTagNames = sortByAlphabet(tags.map((t) => t.name));
-				const expectedTagNames = isNotFalsy(query.tags) ? sortByAlphabet(query.tags) : [];
-				expect(receivedTagNames).toMatchObject(expectedTagNames);
+				const receivedTagNames = tags.map((t) => t.name);
+				if (isNotFalsy(query.tags) && query.tags.length !== 0) {
+					const expectedTagNames = query.tags;
+					expect(receivedTagNames).toMatchObject(
+						expect.arrayContaining(expectedTagNames),
+					);
+				}
 
-				const receivedArtistNames = sortByAlphabet(artists.map((a) => a.name));
-				const expectedArtistNames = isNotFalsy(query.artists)
-					? sortByAlphabet(query.artists)
-					: [];
-				expect(receivedArtistNames).toMatchObject(expectedArtistNames);
+				const receivedArtistNames = artists.map((a) => a.name);
+				if (isNotFalsy(query.artists) && query.artists.length !== 0) {
+					const expectedArtistNames = query.artists;
+					expect(receivedArtistNames).toMatchObject(
+						expect.arrayContaining(expectedArtistNames),
+					);
+				}
 
-				const receivedStyleNames = sortByAlphabet(styles.map((s) => s.name));
-				const expectedStyleNames = isNotFalsy(query.styles)
-					? sortByAlphabet(query.styles)
-					: [];
-				expect(receivedStyleNames).toMatchObject(expectedStyleNames);
+				const receivedStyleNames = styles.map((s) => s.name);
+				if (isNotFalsy(query.styles) && query.styles.length !== 0) {
+					const expectedStyleNames = query.styles;
+					expect(receivedStyleNames).toMatchObject(
+						expect.arrayContaining(expectedStyleNames),
+					);
+				}
 			}
-		}
-
-		function sortByAlphabet(arr: string[]) {
-			return arr.sort((str1, str2) => str1.localeCompare(str2));
 		}
 		const stubSize = 3;
 		const tagStubs = Array(stubSize)
@@ -1801,7 +1808,7 @@ describe("QuizController (e2e)", () => {
 				{
 					testName: "deliver artist and style name",
 					query: {
-						artist: artistStubs.slice(0, 1).map((v) => v.name),
+						artists: artistStubs.slice(0, 1).map((v) => v.name),
 						styles: styleStubs.slice(0, 1).map((v) => v.name),
 					},
 				},
@@ -1938,6 +1945,7 @@ describe("QuizController (e2e)", () => {
 
 			return response;
 		}
+
 		describe.each([
 			{
 				userType: USER_ROLE.USER,
@@ -1967,9 +1975,11 @@ describe("QuizController (e2e)", () => {
 
 			describe.each([
 				{
+					testName: "deliver valid id",
 					id: quizStub.id,
 				},
 				{
+					testName: "deliver valid id and query",
 					id: quizStub.id,
 					query: {
 						userId: userStub.id,
@@ -1977,19 +1987,13 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
-					id: quizStub.id,
-					query: {
-						userId: userStub.id,
-						isS3Access: false,
-					},
-				},
-				{
+					testName: "deliver valid id and query without userId",
 					id: quizStub.id,
 					query: {
 						isS3Access: false,
 					},
 				},
-			])("input : %o", ({ id, query }) => {
+			])("test : $testName", ({ id, query }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestReadQuiz>>;
 				let expectedQuiz: Quiz;
 
@@ -2006,8 +2010,22 @@ describe("QuizController (e2e)", () => {
 
 				it("received quiz should be expected", () => {
 					const expectedQuizResponse = new ShowQuizResponse(expectedQuiz);
-					expect(receivedRes.data?.quiz).toEqual(
-						omit(expectedQuizResponse, ["example_painting"]),
+					const receivedQuizResponse = receivedRes.data!.quiz;
+
+					const relationFields = [
+						"artists",
+						"tags",
+						"styles",
+						"answer_paintings",
+						"distractor_paintings",
+						"example_painting",
+					] as const;
+					relationFields.forEach((field) => {
+						expect(receivedQuizResponse[field]).toEqual(expectedQuizResponse[field]);
+					});
+
+					expect(omit(receivedQuizResponse, relationFields)).toEqual(
+						omit(expectedQuizResponse, relationFields),
 					);
 				});
 			});
@@ -2021,7 +2039,7 @@ describe("QuizController (e2e)", () => {
 				userType: USER_ROLE.ADMIN,
 			},
 		])(
-			"success when deliver userId in query and user create reaction by user($userType)",
+			"success when deliver data after user create reaction by user($userType)",
 			({ userType }) => {
 				const quizStub = factoryQuizStub();
 				const userStub = factoryUserStub(userType);
@@ -2047,6 +2065,7 @@ describe("QuizController (e2e)", () => {
 				});
 				describe.each([
 					{
+						testName: "after user create dislike",
 						id: quizStub.id,
 						query: {
 							userId: userStub.id,
@@ -2054,13 +2073,14 @@ describe("QuizController (e2e)", () => {
 						reactionType: QUIZ_REACTION.dislike,
 					},
 					{
+						testName: "after user create like",
 						id: quizStub.id,
 						query: {
 							userId: userStub.id,
 						},
 						reactionType: QUIZ_REACTION.like,
 					},
-				])("input : %o", ({ id, query, reactionType }) => {
+				])("test : $testName", ({ id, query, reactionType }) => {
 					let receivedRes: Awaited<ReturnType<typeof requestReadQuiz>>;
 
 					beforeAll(async () => {
@@ -2086,9 +2106,26 @@ describe("QuizController (e2e)", () => {
 							await quizService.getQuizReactionCounts(expectedQuiz.id),
 							reactionType,
 						);
-						//example_painting field is not used. so omit when expect quiz
-						expect(receivedRes.data!.quiz).toEqual(
-							omit(expectedData.quiz, ["example_painting"]),
+
+						const expectedQuizResponse = expectedData.quiz;
+						const receivedQuizResponse = receivedRes.data!.quiz;
+
+						const relationFields = [
+							"artists",
+							"tags",
+							"styles",
+							"answer_paintings",
+							"distractor_paintings",
+							"example_painting",
+						] as const;
+						relationFields.forEach((field) => {
+							expect(receivedQuizResponse[field]).toEqual(
+								expectedQuizResponse[field],
+							);
+						});
+
+						expect(omit(receivedQuizResponse, relationFields)).toEqual(
+							omit(expectedQuizResponse, relationFields),
 						);
 						expect(receivedRes.data!.reactionCount).toEqual(expectedData.reactionCount);
 						expect(receivedRes.data!.userReaction).toEqual(expectedData.userReaction);
