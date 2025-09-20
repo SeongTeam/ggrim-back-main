@@ -1483,7 +1483,7 @@ describe("QuizController (e2e)", () => {
 				});
 
 				it("response should follow openapi doc", () => {
-					expect(receivedRes.response.status).toBe(HttpStatus.FORBIDDEN);
+					expect(receivedRes.response.status).toBe(HttpStatus.UNAUTHORIZED);
 				});
 			});
 		});
