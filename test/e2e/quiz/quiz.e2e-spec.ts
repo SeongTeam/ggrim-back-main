@@ -800,7 +800,7 @@ describe("QuizController (e2e)", () => {
 				testService.seedUsersSingleInsert(10),
 			]);
 
-			const quizCount = 50;
+			const quizCount = 80;
 			await testService.seedOneChoiceQuizzes(quizCount, {
 				owners: owners as [User, ...User[]],
 				paintings: paintings as [Painting, Painting, Painting, Painting, ...Painting[]],
@@ -894,7 +894,10 @@ describe("QuizController (e2e)", () => {
 			});
 		});
 
-		describe("should get sequentially different quiz when repeat same query ", () => {
+		/**
+		 * @description result is random. because it is based on seed quiz data distribution.
+		 */
+		describe("should get sequentially different quiz when repeat same query", () => {
 			const queries: ScheduleQuizQuery[] = [];
 			let prevReceivedRes: Awaited<ReturnType<typeof requestReadScheduleQuiz>>;
 			beforeAll(async () => {
@@ -909,25 +912,34 @@ describe("QuizController (e2e)", () => {
 				);
 			});
 
-			it("response data should match openapi doc", () => {
-				expect(prevReceivedRes.response.status).toBe(HttpStatus.OK);
-				const body = prevReceivedRes.data!;
-				expectResponseBody(zScheduleQuizResponse, body);
-			});
-
-			it("success when deliver previous request", async () => {
-				for (const query of queries) {
-					const receivedRes = await requestReadScheduleQuiz(query);
-					expect(receivedRes.response.status).toBe(HttpStatus.OK);
-					const body = receivedRes.data!;
+			const timeOutMS = 10 * 1000;
+			it(
+				"response data should match openapi doc",
+				() => {
+					expect(prevReceivedRes.response.status).toBe(HttpStatus.OK);
+					const body = prevReceivedRes.data!;
 					expectResponseBody(zScheduleQuizResponse, body);
+				},
+				timeOutMS,
+			);
 
-					//"sequential quiz should be not equal",
-					const prevQuizId = prevReceivedRes.data?.shortQuiz.id;
-					const currentQuizId = receivedRes.data?.shortQuiz.id;
-					expect(currentQuizId === prevQuizId).toBe(false);
-				}
-			});
+			it(
+				"success when deliver previous request",
+				async () => {
+					for (const query of queries) {
+						const receivedRes = await requestReadScheduleQuiz(query);
+						expect(receivedRes.response.status).toBe(HttpStatus.OK);
+						const body = receivedRes.data!;
+						expectResponseBody(zScheduleQuizResponse, body);
+
+						//"sequential quiz should be not equal",
+						const prevQuizId = prevReceivedRes.data?.shortQuiz.id;
+						const currentQuizId = receivedRes.data?.shortQuiz.id;
+						expect(currentQuizId).not.toBe(prevQuizId);
+					}
+				},
+				timeOutMS,
+			);
 		});
 
 		//TODO 특수 상황 테스트 케이스
