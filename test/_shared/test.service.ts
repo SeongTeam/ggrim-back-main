@@ -520,11 +520,15 @@ export class TestService {
 					min: 1,
 					max: Math.max(1, Math.floor(tags.length / 2)),
 				});
+				const styleCount = faker.number.int({
+					min: 1,
+					max: Math.min(2, styles.length),
+				});
 
 				return {
 					paintingDummy: factoryPaintingStub(),
 					tags: selectRandomElements(tags, tagCount),
-					styles: [getRandomElement(styles)!],
+					styles: selectRandomElements(styles, styleCount),
 					artist: getRandomElement(artists)!,
 				};
 			});
