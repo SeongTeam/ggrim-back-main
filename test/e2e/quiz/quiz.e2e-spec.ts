@@ -23,7 +23,7 @@ import {
 import { QuizService } from "../../../src/modules/quiz/quiz.service";
 import { faker } from "@faker-js/faker";
 import { factoryQuizStub } from "../../_shared/stub/quiz.stub";
-import { omit, pick, sortById } from "../../../src/utils/object";
+import { omit, pick } from "../../../src/utils/object";
 import { Quiz } from "../../../src/modules/quiz/entities/quiz.entity";
 import { QuizBatchService } from "../../../src/modules/quiz/batch/quiz.batch.service";
 import { QuizLike } from "../../../src/modules/quiz/entities/quizLike.entity";
@@ -46,7 +46,6 @@ import { zPagination } from "../_common/zodSchema";
 import { DetailQuizResponse } from "../../../src/modules/quiz/dto/response/detailQuiz.response";
 import { QuizScheduleService } from "../../../src/modules/quiz/schedule/quizSchedule.service";
 import { ExpectedQuizPart, expectQuizEqual } from "../../_shared/expect";
-import { factoryQuizReaction } from "./quiz-reaction.stub";
 import { USER_ROLE } from "../../../src/modules/user/const";
 import { User } from "../../../src/modules/user/entity/user.entity";
 import z from "zod";
@@ -57,8 +56,7 @@ import { factoryStyleStub } from "../../_shared/stub/style.stub";
 import { isNotFalsy } from "../../../src/utils/validator";
 import { factoryPaintingStub } from "../../_shared/stub/painting.stub";
 import { assert } from "console";
-
-//TODO : Quiz DTO 이름 변경하기. ApiHandlerMethod+DTO 형식으로
+import { UserService } from "../../../src/modules/user/user.service";
 
 // TODO: QuizController API 테스트 구현
 // - [x] API 별로 테스트 시나리오 설계
@@ -1323,7 +1321,7 @@ describe("QuizController (e2e)", () => {
 				testService.seedTags(count),
 			]);
 
-			await testService.insertPaintingStub(
+			await testService.insertPaintingStubs(
 				paintingStubs
 					.map((stub) => ({
 						paintingDummy: stub,
@@ -1343,7 +1341,9 @@ describe("QuizController (e2e)", () => {
 				where: { id: deletedPaintingStub.id },
 			});
 			assert(deletedPainting);
-			await paintingService.deleteOne(dbService.getQueryRunner(), deletedPainting!);
+			const qr = dbService.getQueryRunner();
+			await paintingService.deleteOne(qr, deletedPainting!);
+			await qr.release();
 		});
 
 		describe.each([
@@ -1434,8 +1434,8 @@ describe("QuizController (e2e)", () => {
 					const answer = paintings[0];
 					const distractors = paintings.slice(1);
 					const dto = factoryCreateQuizDto(
-						answer.id,
-						distractors.map((d) => d.id) as StringLeast3,
+						paintingStubs[0].id,
+						paintingStubs.slice(1, 4).map((d) => d.id) as StringLeast3,
 					);
 
 					receivedRes = await requestCreateQuiz(dto, `Bearer ${invalidBearToken}`);
@@ -1628,225 +1628,243 @@ describe("QuizController (e2e)", () => {
 			page?: number;
 		};
 
+		async function expectSearchQuiz(query: SearchQuizQuery, receivedData: PaginationShowQuiz) {
+			assert(receivedData.data.length !== 0);
+			const quizzes = await Promise.all(
+				receivedData.data.map((info) => findAllRelationQuiz(info.id)),
+			);
+
+			for (const quiz of quizzes) {
+				expect(quiz).toBeDefined();
+				const { tags, artists, styles } = quiz!;
+				const receivedTagNames = sortByAlphabet(tags.map((t) => t.name));
+				const expectedTagNames = isNotFalsy(query.tags) ? sortByAlphabet(query.tags) : [];
+				expect(receivedTagNames).toMatchObject(expectedTagNames);
+
+				const receivedArtistNames = sortByAlphabet(artists.map((a) => a.name));
+				const expectedArtistNames = isNotFalsy(query.artists)
+					? sortByAlphabet(query.artists)
+					: [];
+				expect(receivedArtistNames).toMatchObject(expectedArtistNames);
+
+				const receivedStyleNames = sortByAlphabet(styles.map((s) => s.name));
+				const expectedStyleNames = isNotFalsy(query.styles)
+					? sortByAlphabet(query.styles)
+					: [];
+				expect(receivedStyleNames).toMatchObject(expectedStyleNames);
+			}
+		}
+
 		function sortByAlphabet(arr: string[]) {
 			return arr.sort((str1, str2) => str1.localeCompare(str2));
 		}
+		const stubSize = 3;
+		const tagStubs = Array(stubSize)
+			.fill(0)
+			.map(() => factoryTagStub());
+		const styleStubs = Array(stubSize)
+			.fill(0)
+			.map(() => factoryStyleStub());
+		const artistStubs = Array(stubSize)
+			.fill(0)
+			.map(() => factoryArtistStub());
 
-		describe("success when search quiz without query", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestSearchQuiz>>;
-			let expectedData: PaginationShowQuiz;
-			beforeAll(async () => {
-				await dbService.resetDB();
-				const countPerPage = 20;
-				const quizzes = await testService.seedOneChoiceQuizzes(countPerPage);
-				expectedData = {
-					data: quizzes.map((q) => new ShowQuiz(q)),
-					count: countPerPage,
+		beforeAll(async () => {
+			const [artists, styles, tags] = await Promise.all([
+				testService.insertArtistStubs(artistStubs),
+				testService.insertStyleStubs(styleStubs),
+				testService.insertTagStubs(tagStubs),
+			]);
+
+			const paintingCount = 50;
+			const [paintings, owners] = await Promise.all([
+				testService.seedPaintings(paintingCount, {
+					artists,
+					styles,
+					tags,
+				}),
+				testService.seedUsersSingleInsert(10),
+			]);
+
+			const quizCount = 80;
+			await testService.seedOneChoiceQuizzes(quizCount, {
+				owners: owners as [User, ...User[]],
+				paintings: paintings as [Painting, Painting, Painting, Painting, ...Painting[]],
+			});
+
+			// initialize quizSchedule context
+			const initQuizContext = Array(stubSize)
+				.fill(0)
+				.map((v, idx) => ({
+					artist: artistStubs[idx].name,
+					style: styleStubs[idx].name,
+					tag: tagStubs[idx].name,
 					page: 0,
-					total: countPerPage,
-					pageCount: 1,
-				};
-				receivedRes = await requestSearchQuiz();
-			});
+				}));
 
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.OK);
-				expectResponseBody(zPagination(zShowQuiz), receivedRes.data);
-			});
-			it("response data should be expected", () => {
-				const pickedKey = ["count", "page", "pageCount", "total"] as const;
-				expect(pick(receivedRes.data!, pickedKey)).toBe(pick(expectedData, pickedKey));
-				const expectedSearchQuiz = sortById(expectedData.data);
-				const receivedSearchQuiz = sortById(receivedRes.data!.data);
-				expect(receivedSearchQuiz).toEqual(expectedSearchQuiz);
-			});
-		});
-		describe("success when search quiz by tag", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestSearchQuiz>>;
-			let expectedData: PaginationShowQuiz;
-			beforeAll(async () => {
-				await dbService.resetDB();
-				const countPerPage = 20;
-				const quizCount = 40;
-				const quizzes = await testService.seedOneChoiceQuizzes(quizCount);
-				const targetTag = quizzes[0].tags[0];
-				const filteredQuizzes = quizzes
-					.filter((q) => q.tags.some((t) => t.id === targetTag.id))
-					.map((q) => new ShowQuiz(q));
-
-				expectedData = {
-					data: filteredQuizzes.slice(0, countPerPage),
-					count: Math.min(countPerPage, filteredQuizzes.length),
-					page: 0,
-					total: filteredQuizzes.length,
-					pageCount: Math.ceil(filteredQuizzes.length / countPerPage),
-				};
-				const query = {
-					tags: [targetTag.name],
-				};
-				receivedRes = await requestSearchQuiz(query);
-			});
-
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.OK);
-				expectResponseBody(zPagination(zShowQuiz), receivedRes.data);
-			});
-			it("response data should match with expected", () => {
-				const pickedKey = ["count", "page", "pageCount", "total"] as const;
-				expect(pick(receivedRes.data!, pickedKey)).toBe(pick(expectedData, pickedKey));
-				const expectedSearchQuiz = sortById(expectedData.data);
-				const receivedSearchQuiz = sortById(receivedRes.data!.data);
-				expect(receivedSearchQuiz).toEqual(expectedSearchQuiz);
-			});
+			await quizScheduleService.initialize(initQuizContext);
 		});
 
-		describe("success when searching with query", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestSearchQuiz>>;
-			let query: SearchQuizQuery;
-			beforeAll(async () => {
-				await dbService.resetDB();
-				const quizCount = 1000;
-				const quizzes = await testService.seedOneChoiceQuizzes(quizCount);
-				const targetQuiz = quizzes[0];
-				query = {
-					tags: targetQuiz.tags.map((t) => t.name).slice(0, 1),
-					artists: targetQuiz.artists.map((a) => a.name).slice(0, 1),
-					styles: targetQuiz.styles.map((s) => s.name).slice(0, 1),
-					page: 0,
-				};
-				receivedRes = await requestSearchQuiz(query);
-			});
+		describe("success when deliver valid query", () => {
+			describe.each([
+				{ testName: "deliver empty object query", query: {} },
+				{
+					testName: "deliver one artist name",
+					query: {
+						artists: artistStubs.slice(0, 1).map((v) => v.name),
+					},
+				},
+				{
+					testName: "deliver two artist name",
+					query: {
+						artists: artistStubs.slice(0, 2).map((v) => v.name),
+					},
+				},
+				{
+					testName: "deliver 1 artist name and page ",
+					query: {
+						artists: artistStubs.slice(0, 1).map((v) => v.name),
+						page: 1,
+					},
+				},
+				{
+					testName: "deliver one tag name ",
+					query: {
+						tags: tagStubs.slice(0, 1).map((v) => v.name),
+					},
+				},
+				{
+					testName: "deliver two tag names",
+					query: {
+						tags: tagStubs.slice(0, 2).map((v) => v.name),
+					},
+				},
+				{
+					testName: "deliver one style name",
+					query: {
+						styles: styleStubs.slice(0, 1).map((v) => v.name),
+					},
+				},
+				{
+					testName: "deliver two style names",
+					query: {
+						styles: styleStubs.slice(0, 2).map((v) => v.name),
+					},
+				},
+				{
+					testName: "deliver artist and style name",
+					query: {
+						artist: artistStubs.slice(0, 1).map((v) => v.name),
+						styles: styleStubs.slice(0, 1).map((v) => v.name),
+					},
+				},
+			])("test : $testName", ({ query }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestSearchQuiz>>;
+				beforeAll(async () => {
+					receivedRes = await requestSearchQuiz(query);
+				});
 
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.OK);
-				expectResponseBody(zPagination(zShowQuiz), receivedRes.data);
-			});
-			it("response data should contain query conditions", async () => {
-				const quizInfos = receivedRes.data as PaginationShowQuiz;
-				const quizzes = await Promise.all(
-					quizInfos.data.map((info) => findAllRelationQuiz(info.id)),
-				);
-				for (const quiz of quizzes) {
-					expect(quiz).toBeDefined();
-					const { tags, artists, styles } = quiz!;
-					expect(sortByAlphabet(query.tags!)).toMatchObject(
-						sortByAlphabet(tags.map((t) => t.name)),
-					);
-
-					expect(sortByAlphabet(query.artists!)).toMatchObject(
-						sortByAlphabet(artists.map((a) => a.name)),
-					);
-
-					expect(sortByAlphabet(query.styles!)).toMatchObject(
-						sortByAlphabet(styles.map((s) => s.name)),
-					);
-				}
+				it("response should match openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.OK);
+					expectResponseBody(zPagination(zShowQuiz), receivedRes.data);
+				});
+				it("response data should be expected", async () => {
+					assert(receivedRes.data !== undefined);
+					await expectSearchQuiz(query, receivedRes.data as PaginationShowQuiz);
+				});
 			});
 		});
 
-		describe("success when searching with more conditions query", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestSearchQuiz>>;
-			let query: SearchQuizQuery;
-			beforeAll(async () => {
-				const quizCount = 1000;
-				const quizzes = await testService.seedOneChoiceQuizzes(quizCount);
-				const targetQuiz = quizzes[0];
-				query = {
-					tags: targetQuiz.tags.map((t) => t.name),
-					artists: targetQuiz.artists.map((a) => a.name),
-					styles: targetQuiz.styles.map((s) => s.name),
-					page: 0,
-				};
-				receivedRes = await requestSearchQuiz(query);
-			});
+		describe("success when deliver query containing meaningless data", () => {
+			//TODO 의미없는 Query 사용한 검색 테스트 구현
+			//- [x] 미존재 artist 이름 데이터
+			//- [x] 미존재 tag 이름 데이터
+			//- [x] 미존재 style 이름 데이터
+			//- [x] 매우큰 page 데이터
+			//- [ ] 공백 데이터
+			describe.each([
+				{
+					testName: "deliver not exist artist name",
+					query: {
+						artists: [faker.string.uuid()],
+					},
+				},
+				{
+					testName: "deliver not exist tag name",
+					query: {
+						tags: [faker.string.uuid()],
+					},
+				},
+				{
+					testName: "deliver not exist styles name",
+					query: {
+						styles: [faker.string.uuid()],
+					},
+				},
+				{
+					testName: "deliver big page",
+					query: {
+						artists: artistStubs.slice(0, 1).map((v) => v.name),
+						styles: styleStubs.slice(0, 1).map((v) => v.name),
+						page: 100,
+					},
+				},
+				{
+					testName: "deliver big page and not existed tag",
+					query: {
+						artists: artistStubs.slice(0, 1).map((v) => v.name),
+						styles: styleStubs.slice(0, 1).map((v) => v.name),
+						tags: [faker.string.uuid()],
+						page: 100,
+					},
+				},
+				{
+					testName: "deliver empty array",
+					query: {
+						styles: [""],
+					},
+				},
+			])("test : $testName", ({ query }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestSearchQuiz>>;
+				beforeAll(async () => {
+					receivedRes = await requestSearchQuiz(query);
+				});
 
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.OK);
-				expectResponseBody(zPagination(zShowQuiz), receivedRes.data);
-			});
-			it("response data should contain query conditions", async () => {
-				const quizInfos = receivedRes.data as PaginationShowQuiz;
-				const quizzes = await Promise.all(
-					quizInfos.data.map((info) => findAllRelationQuiz(info.id)),
-				);
-				for (const quiz of quizzes) {
-					expect(quiz).toBeDefined();
-					const { tags, artists, styles } = quiz!;
-					expect(sortByAlphabet(query.tags!)).toMatchObject(
-						sortByAlphabet(tags.map((t) => t.name)),
-					);
-
-					expect(sortByAlphabet(query.artists!)).toMatchObject(
-						sortByAlphabet(artists.map((a) => a.name)),
-					);
-
-					expect(sortByAlphabet(query.styles!)).toMatchObject(
-						sortByAlphabet(styles.map((s) => s.name)),
-					);
-				}
+				it("response should match openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.OK);
+					expectResponseBody(zPagination(zShowQuiz), receivedRes.data);
+				});
+				it("search result should empty", () => {
+					expect(receivedRes.data!.data).toEqual([]);
+				});
 			});
 		});
-		describe("success when invalid query referring not exist artist", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestSearchQuiz>>;
-			let query: SearchQuizQuery;
-			beforeAll(async () => {
-				const quizCount = 10;
-				await testService.seedOneChoiceQuizzes(quizCount);
-				query = {
-					artists: [faker.string.uuid()],
-				};
-				receivedRes = await requestSearchQuiz(query);
-			});
+		describe("fail when deliver invalid query", () => {
+			//TODO 미유효 Query 테스트 구현
+			//- [x] : page가 음수인 데이터
+			//- [x] : 정의되지 않은 필드를 포함하는 데이터
+			describe.each([
+				{
+					testName: "page is negative",
+					invalidQuery: {
+						page: -1,
+					},
+				},
+				{
+					testName: "deliver not existed field",
+					invalidQuery: {
+						notExistField: -1,
+					},
+				},
+			])("test : $testName", ({ invalidQuery }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestSearchQuiz>>;
+				beforeAll(async () => {
+					receivedRes = await requestSearchQuiz(invalidQuery as SearchQuizQuery);
+				});
 
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.OK);
-				expectResponseBody(zPagination(zShowQuiz), receivedRes.data);
-			});
-			it("search result should empty", () => {
-				expect(receivedRes.data!.data).toEqual([]);
-			});
-		});
-
-		describe("success when invalid query referring not exist style and referring valid tag", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestSearchQuiz>>;
-			let query: SearchQuizQuery;
-			beforeAll(async () => {
-				const quizCount = 10;
-				const quizzes = await testService.seedOneChoiceQuizzes(quizCount);
-				const targetQuiz = quizzes[0];
-				query = {
-					tags: targetQuiz.tags.map((t) => t.name),
-					styles: [faker.string.alpha()],
-					page: 0,
-				};
-				receivedRes = await requestSearchQuiz(query);
-			});
-
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.OK);
-				expectResponseBody(zPagination(zShowQuiz), receivedRes.data);
-			});
-			it("search result should empty", () => {
-				expect(receivedRes.data!.data).toEqual([]);
-			});
-		});
-
-		describe("fail when invalid query referring big page", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestSearchQuiz>>;
-			let query: SearchQuizQuery;
-			beforeAll(async () => {
-				const quizCount = 10;
-				await testService.seedOneChoiceQuizzes(quizCount);
-				query = {
-					page: quizCount * 10,
-				};
-				receivedRes = await requestSearchQuiz(query);
-			});
-
-			//TODO 응답 확인 필요
-			it("response should 500 status", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
-				expect(receivedRes.data).toBeUndefined();
+				it("response should match openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
+				});
 			});
 		});
 	});
@@ -1873,101 +1891,319 @@ describe("QuizController (e2e)", () => {
 
 			return response;
 		}
-		describe("success quiz when without query", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestReadQuiz>>;
-			let expectedQuiz: Quiz;
+		describe.each([
+			{
+				userType: USER_ROLE.USER,
+			},
+			{
+				userType: USER_ROLE.ADMIN,
+			},
+		])("success quiz when deliver id path and query", ({ userType }) => {
+			const quizStub = factoryQuizStub();
+			const userStub = factoryUserStub(userType);
 
 			beforeAll(async () => {
-				const count = 1;
-				const quizzes = await testService.seedOneChoiceQuizzes(count);
-				expectedQuiz = quizzes[0];
+				const owner = (await testService.seedUsersSingleInsert(1))[0];
+				const [answer, ...distractors] = await testService.seedPaintings(4);
 
-				receivedRes = await requestReadQuiz(expectedQuiz.id);
-			});
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.OK);
-				expectResponseBody(zDetailQuizResponse, receivedRes.data);
-			});
-
-			it("received quiz should be expected", () => {
-				expect(receivedRes.data?.quiz).toBe(new ShowQuizResponse(expectedQuiz));
-				expectResponseBody(zDetailQuizResponse, receivedRes.data);
-			});
-		});
-
-		describe("success when deliver userId in query", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestReadQuiz>>;
-			let expectedQuiz: Quiz;
-
-			beforeAll(async () => {
-				const count = 1;
-				const quizzes = await testService.seedOneChoiceQuizzes(count);
-				const testUser = await testService.insertStubUser(factoryUserStub("user"));
-				expectedQuiz = quizzes[0];
-				await testService.insertQuizReaction([
+				await testService.insertOneChoiceQuizStubs([
 					{
-						reactionStub: factoryQuizReaction("like"),
-						user: testUser,
-						quiz: expectedQuiz,
+						answer,
+						owner,
+						quizStub,
+						distractors: distractors as [Painting, Painting, Painting],
 					},
 				]);
 
-				receivedRes = await requestReadQuiz(expectedQuiz.id, {
-					userId: testUser.id,
+				await testService.insertStubUser(userStub);
+			});
+
+			describe.each([
+				{
+					id: quizStub.id,
+				},
+				{
+					id: quizStub.id,
+					query: {
+						userId: userStub.id,
+						isS3Access: false,
+					},
+				},
+				{
+					id: quizStub.id,
+					query: {
+						userId: userStub.id,
+						isS3Access: false,
+					},
+				},
+				{
+					id: quizStub.id,
+					query: {
+						isS3Access: false,
+					},
+				},
+			])("input : %o", ({ id, query }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestReadQuiz>>;
+				let expectedQuiz: Quiz;
+
+				beforeAll(async () => {
+					expectedQuiz = (await findAllRelationQuiz(id))!;
+					assert(expectedQuiz !== null);
+
+					receivedRes = await requestReadQuiz(id, query);
+				});
+				it("response should match openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.OK);
+					expectResponseBody(zDetailQuizResponse, receivedRes.data);
+				});
+
+				it("received quiz should be expected", () => {
+					const expectedQuizResponse = new ShowQuizResponse(expectedQuiz);
+					expect(receivedRes.data?.quiz).toEqual(
+						omit(expectedQuizResponse, ["example_painting"]),
+					);
 				});
 			});
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.OK);
-				expectResponseBody(zDetailQuizResponse, receivedRes.data);
-			});
-
-			it("received quiz should be expected", async () => {
-				const expectedData = new DetailQuizResponse(
-					expectedQuiz,
-					await quizService.getQuizReactionCounts(expectedQuiz.id),
-					"like",
-				);
-				expect(receivedRes.data!).toEqual(expectedData);
-			});
 		});
 
-		describe("fail when invalid :id path", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestReadQuiz>>;
+		describe.each([
+			{
+				userType: USER_ROLE.USER,
+			},
+			{
+				userType: USER_ROLE.ADMIN,
+			},
+		])(
+			"success when deliver userId in query and user create reaction by user($userType)",
+			({ userType }) => {
+				const quizStub = factoryQuizStub();
+				const userStub = factoryUserStub(userType);
+				let expectedQuiz: Quiz;
+				let testUser: User;
 
-			beforeAll(async () => {
-				const invalidId = faker.string.uuid();
-				receivedRes = await requestReadQuiz(invalidId, {});
-			});
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
-				expect(receivedRes.data).toBeUndefined();
-			});
-		});
+				beforeAll(async () => {
+					const owner = (await testService.seedUsersSingleInsert(1))[0];
+					const [answer, ...distractors] = await testService.seedPaintings(4);
 
-		describe("fail when try to read deleted quiz", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestReadQuiz>>;
+					expectedQuiz = (
+						await testService.insertOneChoiceQuizStubs([
+							{
+								answer,
+								owner,
+								quizStub,
+								distractors: distractors as [Painting, Painting, Painting],
+							},
+						])
+					)[0];
 
-			beforeAll(async () => {
-				const count = 1;
-				const quizzes = await testService.seedOneChoiceQuizzes(count);
-				const testUser = await testService.insertStubUser(factoryUserStub("user"));
-				const targetQuiz = quizzes[0];
-				await testService.insertQuizReaction([
+					testUser = await testService.insertStubUser(userStub);
+				});
+				describe.each([
 					{
-						reactionStub: factoryQuizReaction("like"),
-						user: testUser,
-						quiz: targetQuiz,
+						id: quizStub.id,
+						query: {
+							userId: userStub.id,
+						},
+						reactionType: QUIZ_REACTION.dislike,
+					},
+					{
+						id: quizStub.id,
+						query: {
+							userId: userStub.id,
+						},
+						reactionType: QUIZ_REACTION.like,
+					},
+				])("input : %o", ({ id, query, reactionType }) => {
+					let receivedRes: Awaited<ReturnType<typeof requestReadQuiz>>;
+
+					beforeAll(async () => {
+						const qr = dbService.getQueryRunner();
+						if (reactionType === QUIZ_REACTION.dislike) {
+							await quizService.dislikeQuiz(qr, testUser, expectedQuiz);
+						} else {
+							await quizService.likeQuiz(qr, testUser, expectedQuiz);
+						}
+						await qr.release();
+
+						receivedRes = await requestReadQuiz(id, query);
+					});
+					it("response should match openapi doc", () => {
+						expect(receivedRes.response.status).toBe(HttpStatus.OK);
+						expectResponseBody(zDetailQuizResponse, receivedRes.data);
+					});
+
+					it("received quiz should be expected", async () => {
+						assert(receivedRes.data !== undefined);
+						const expectedData = new DetailQuizResponse(
+							expectedQuiz,
+							await quizService.getQuizReactionCounts(expectedQuiz.id),
+							reactionType,
+						);
+						//example_painting field is not used. so omit when expect quiz
+						expect(receivedRes.data!.quiz).toEqual(
+							omit(expectedData.quiz, ["example_painting"]),
+						);
+						expect(receivedRes.data!.reactionCount).toEqual(expectedData.reactionCount);
+						expect(receivedRes.data!.userReaction).toEqual(expectedData.userReaction);
+					});
+				});
+			},
+		);
+		describe.each([
+			{
+				userType: USER_ROLE.USER,
+			},
+			{
+				userType: USER_ROLE.ADMIN,
+			},
+		])("success when special case", ({ userType }) => {
+			// TODO 특수 상황 GET /quiz:id 테스트 구현
+			//-[x] 삭제된 user id 데이터
+
+			const quizStub = factoryQuizStub();
+			const userStub = factoryUserStub(userType);
+			let expectedQuiz: Quiz;
+			const deletedUserStub = factoryUserStub(userType);
+
+			beforeAll(async () => {
+				const owner = (await testService.seedUsersSingleInsert(1))[0];
+				const [answer, ...distractors] = await testService.seedPaintings(4);
+
+				expectedQuiz = (
+					await testService.insertOneChoiceQuizStubs([
+						{
+							answer,
+							owner,
+							quizStub,
+							distractors: distractors as [Painting, Painting, Painting],
+						},
+					])
+				)[0];
+
+				await testService.insertStubUser(userStub);
+				await testService.insertStubUser(deletedUserStub);
+				const qr = dbService.getQueryRunner();
+				await userService.softDeleteUser(qr, deletedUserStub.id);
+				await qr.release();
+			});
+
+			describe.each([
+				{
+					id: quizStub.id,
+					query: {
+						userId: deletedUserStub.id,
+					},
+				},
+				{
+					id: quizStub.id,
+					query: {
+						userId: faker.string.uuid(),
+					},
+				},
+				{
+					id: quizStub.id,
+					query: {
+						userId: userStub.id,
+						isS3Access: "this value is transformed to default",
+					},
+				},
+			])("input : %o", ({ id, query }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestReadQuiz>>;
+
+				beforeAll(async () => {
+					receivedRes = await requestReadQuiz(
+						id,
+						query as { isS3Access?: boolean; userId?: string },
+					);
+				});
+				it("response should match openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.OK);
+					expectResponseBody(zDetailQuizResponse, receivedRes.data);
+				});
+				it("received quiz should be expected", () => {
+					const expectedQuizResponse = new ShowQuizResponse(expectedQuiz);
+					expect(receivedRes.data?.quiz).toEqual(
+						omit(expectedQuizResponse, ["example_painting"]),
+					);
+				});
+			});
+		});
+
+		describe.each([
+			{
+				userType: USER_ROLE.USER,
+			},
+			{
+				userType: USER_ROLE.ADMIN,
+			},
+		])("fail when invalid id or query", ({ userType }) => {
+			// TODO 미유효 id 또는 Query GET /quiz:id 테스트 구현
+			//-[x] 미유효 id 데이터
+			//-[x] 미유효 query 데이터
+			//-[x] 삭제된 quiz id 데이터
+
+			const quizStub = factoryQuizStub();
+			const userStub = factoryUserStub(userType);
+			const deletedQuizStub = factoryQuizStub();
+
+			beforeAll(async () => {
+				const owner = (await testService.seedUsersSingleInsert(1))[0];
+				const [answer, ...distractors] = await testService.seedPaintings(4);
+
+				await testService.insertOneChoiceQuizStubs([
+					{
+						answer,
+						owner,
+						quizStub,
+						distractors: distractors as [Painting, Painting, Painting],
+					},
+					{
+						answer,
+						owner,
+						quizStub: deletedQuizStub,
+						distractors: distractors as [Painting, Painting, Painting],
 					},
 				]);
 
-				await quizService.softDeleteQuiz(dbService.getQueryRunner(), targetQuiz.id);
-
-				const invalidId = faker.string.uuid();
-				receivedRes = await requestReadQuiz(invalidId, {});
+				await testService.insertStubUser(userStub);
+				const qr = dbService.getQueryRunner();
+				await quizService.softDeleteQuiz(qr, deletedQuizStub.id);
+				await qr.release();
 			});
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
-				expect(receivedRes.data).toBeUndefined();
+
+			describe.each([
+				{
+					testName: "UUID이외의 형식인 id",
+					invalidId: faker.internet.email(),
+				},
+				{
+					testName: "존재하지 않는 quiz id",
+					invalidId: faker.string.uuid(),
+				},
+				{
+					testName: "삭제된 quiz id",
+					invalidId: deletedQuizStub.id,
+				},
+				{
+					testName: "UUID이외의 형식인 userId",
+					invalidId: quizStub.id,
+					inValidQuery: {
+						userId: faker.person.firstName(),
+					},
+				},
+			])("input : $testName", ({ invalidId, inValidQuery }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestReadQuiz>>;
+
+				beforeAll(async () => {
+					receivedRes = await requestReadQuiz(
+						invalidId,
+						inValidQuery as { isS3Access?: boolean; userId?: string },
+					);
+				});
+				it("response should match openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
+					expect(receivedRes.data).toBeUndefined();
+				});
 			});
 		});
 	});
@@ -1994,177 +2230,401 @@ describe("QuizController (e2e)", () => {
 			return response;
 		}
 
-		type PaintingLeast3 = [Painting, Painting, Painting];
-		function factoryReplaceQuizDto(
-			answer: Painting,
-			distractor: PaintingLeast3,
-		): ReplaceQuizDto {
-			const { time_limit: timeLimit, description, title } = factoryQuizStub();
-			const dto: CreateQuizDto = {
-				type: QUIZ_TYPE.ONE_CHOICE,
-				answerPaintingIds: [answer.id],
-				distractorPaintingIds: distractor.map((p) => p.id),
-				title,
-				timeLimit,
-				description,
-			};
+		// type PaintingLeast3 = [Painting, Painting, Painting];
+		// function factoryReplaceQuizDto(
+		// 	answer: Painting,
+		// 	distractor: PaintingLeast3,
+		// ): ReplaceQuizDto {
+		// 	const { time_limit: timeLimit, description, title } = factoryQuizStub();
+		// 	const dto: CreateQuizDto = {
+		// 		type: QUIZ_TYPE.ONE_CHOICE,
+		// 		answerPaintingIds: [answer.id],
+		// 		distractorPaintingIds: distractor.map((p) => p.id),
+		// 		title,
+		// 		timeLimit,
+		// 		description,
+		// 	};
 
-			return dto;
-		}
+		// 	return dto;
+		// }
 
-		describe("success when update quiz without painting", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestReplaceQuiz>>;
-			let expectedQuizPart: ExpectedQuizPart;
-			let dto: ReplaceQuizDto;
-			let receivedQuiz: Quiz;
+		const PAINTING_COUNT = { answer: 1, distractor: 3, optional: 4 };
+		const paintingStubs = Array(
+			PAINTING_COUNT.answer + PAINTING_COUNT.distractor + PAINTING_COUNT.optional,
+		)
+			.fill(0)
+			.map(() => factoryPaintingStub());
+		let paintings: Painting[];
+
+		beforeAll(async () => {
+			const PaintingSource = await testService.seedPaintings(paintingStubs.length);
+
+			console.log("start at once before any description run");
+
+			paintings = await testService.insertPaintingStubs(
+				paintingStubs.map((stub, idx) => ({
+					paintingDummy: stub,
+					artist: PaintingSource[idx].artist,
+					styles: PaintingSource[idx].styles,
+					tags: PaintingSource[idx].tags,
+				})),
+			);
+		});
+
+		describe.each([
+			{
+				userType: USER_ROLE.USER,
+			},
+			{
+				userType: USER_ROLE.ADMIN,
+			},
+		])("success when deliver valid dto by user($userType)", ({ userType }) => {
+			// TODO 유효 body dto /quiz/:id (PUT) 테스트 구현
+			//-[x] : title 데이터 수정
+			//-[x] : description 데이터 수정
+			//-[x] : answer 데이터 수정
+			//-[x] : distractor 일부 수정
+			//-[x] : distractor 전체 수정
+
+			const quizStub = factoryQuizStub();
+			const ownerStub = factoryUserStub(userType);
+			let owner: User;
 
 			beforeAll(async () => {
-				const count = 1;
-				const quizzes = await testService.seedOneChoiceQuizzes(count);
-				const targetQuiz = quizzes[0];
-				const testUser = quizzes[0].owner;
-				dto = factoryReplaceQuizDto(
-					quizzes[0].answer_paintings[0],
-					quizzes[0].distractor_paintings as PaintingLeast3,
-				);
+				owner = await testService.insertStubUser(ownerStub);
 
-				expectedQuizPart = {
-					description: dto.description,
-					title: dto.title,
-					time_limit: dto.timeLimit,
-					owner: targetQuiz.owner,
-					answer_paintings: quizzes[0].answer_paintings.slice(0, 1),
-					distractor_paintings: quizzes[0].distractor_paintings,
-				};
+				const answer = paintings[PAINTING_COUNT.answer - 1];
+				const distractors = paintings.slice(
+					PAINTING_COUNT.answer,
+					PAINTING_COUNT.answer + 3,
+				) as [Painting, Painting, Painting];
 
-				const bearerAuth = testService.getBearerAuthCredential(testUser);
-				receivedRes = await requestReplaceQuiz(targetQuiz.id, dto, bearerAuth);
-				receivedQuiz = (await findAllRelationQuiz(receivedRes.data!.id))!;
+				assert(distractors.length === 3);
+
+				await testService.insertOneChoiceQuizStubs([
+					{
+						answer,
+						owner,
+						quizStub,
+						distractors,
+					},
+				]);
 			});
 
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.OK);
-				const body = receivedRes.data;
-				expectResponseBody(zShowQuizResponse, body);
-				expect(body).toEqual(new ShowQuizResponse(receivedQuiz));
-			});
-			it("quiz should be replaced", () => {
-				expectQuizEqual(receivedQuiz, expectedQuizPart);
+			describe.each([
+				{
+					testName: "title, timeLimit,description 수정",
+					id: quizStub.id,
+					dto: {
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
+						distractorPaintingIds: paintingStubs.slice(1, 4).map((p) => p.id),
+						title: faker.book.title(),
+						timeLimit: faker.number.int({ min: 0, max: 100 }),
+						description: faker.commerce.productDescription(),
+					},
+				},
+				{
+					testName: "answerPaintingIds와 distractorPaintingIds수정",
+					id: quizStub.id,
+					dto: {
+						answerPaintingIds: paintingStubs.slice(1, 2).map((p) => p.id),
+						distractorPaintingIds: paintingStubs.slice(2, 5).map((p) => p.id),
+						title: faker.book.title(),
+						timeLimit: faker.number.int({ min: 0, max: 100 }),
+						description: faker.commerce.productDescription(),
+					},
+				},
+			])("test : $testName", ({ id, dto }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestReplaceQuiz>>;
+				let expectedQuizPart: ExpectedQuizPart;
+				let receivedQuiz: Quiz;
+
+				beforeAll(async () => {
+					const answer_painting = await paintingService.findOne({
+						where: { id: dto.answerPaintingIds[0] },
+					});
+					const distractor_paintings = await paintingService.getManyByIds(
+						dto.distractorPaintingIds,
+					);
+					assert(answer_painting !== null);
+
+					expectedQuizPart = {
+						description: dto.description,
+						title: dto.title,
+						time_limit: dto.timeLimit,
+						owner: owner,
+						answer_paintings: [answer_painting!],
+						distractor_paintings: distractor_paintings,
+					};
+
+					const bearerAuth = testService.getBearerAuthCredential(owner);
+					receivedRes = await requestReplaceQuiz(id, dto, bearerAuth);
+					receivedQuiz = (await findAllRelationQuiz(receivedRes.data!.id))!;
+				});
+
+				it("response should match openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.OK);
+					const body = receivedRes.data;
+					expectResponseBody(zShowQuizResponse, body);
+					expect(body).toEqual(new ShowQuizResponse(receivedQuiz));
+				});
+				it("quiz should be replaced", () => {
+					expectQuizEqual(receivedQuiz, expectedQuizPart);
+				});
 			});
 		});
 
-		describe("success when update quiz's paintings", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestReplaceQuiz>>;
-			let expectedQuizPart: ExpectedQuizPart;
-			let dto: ReplaceQuizDto;
-			let receivedQuiz: Quiz;
+		describe.each([
+			{
+				userType: USER_ROLE.USER,
+			},
+			{
+				userType: USER_ROLE.ADMIN,
+			},
+		])("fail when deliver invalid id or dto by user($userType)", ({ userType }) => {
+			const quizStub = factoryQuizStub();
+			const ownerStub = factoryUserStub(userType);
+			const deletedPaintingStub = factoryPaintingStub();
+			let owner: User;
 
 			beforeAll(async () => {
-				const count = 1;
-				const quizzes = await testService.seedOneChoiceQuizzes(count);
-				const targetQuiz = quizzes[0];
-				const testUser = quizzes[0].owner;
+				owner = await testService.insertStubUser(ownerStub);
 
-				const [answer, ...distractors] = (await testService.seedPaintings(4)) as [
-					Painting,
-					Painting,
-					Painting,
-					Painting,
-				];
-				dto = factoryReplaceQuizDto(answer, distractors);
+				const answer = paintings[PAINTING_COUNT.answer - 1];
+				const distractors = paintings.slice(
+					PAINTING_COUNT.answer,
+					PAINTING_COUNT.answer + 3,
+				) as [Painting, Painting, Painting];
 
-				expectedQuizPart = {
-					description: dto.description,
-					title: dto.title,
-					time_limit: dto.timeLimit,
-					owner: targetQuiz.owner,
-					answer_paintings: [answer],
-					distractor_paintings: distractors,
-				};
+				assert(distractors.length === 3);
 
-				const bearerAuth = testService.getBearerAuthCredential(testUser);
-				receivedRes = await requestReplaceQuiz(targetQuiz.id, dto, bearerAuth);
-				receivedQuiz = (await findAllRelationQuiz(receivedRes.data!.id))!;
+				await testService.insertOneChoiceQuizStubs([
+					{
+						answer,
+						owner,
+						quizStub,
+						distractors,
+					},
+				]);
+
+				const [deletedPaintingSource] = await testService.seedPaintings(1);
+
+				const [deletedPainting] = await testService.insertPaintingStubs([
+					{
+						paintingDummy: deletedPaintingStub,
+						artist: deletedPaintingSource.artist,
+						styles: deletedPaintingSource.styles,
+						tags: deletedPaintingSource.tags,
+					},
+				]);
+
+				assert(deletedPainting !== undefined);
+
+				const qr = dbService.getQueryRunner();
+				await paintingService.deleteOne(qr, deletedPainting);
+				await qr.release();
 			});
+			describe.each([
+				{
+					testName: "deleted paintingId in answer",
+					invalidId: quizStub.id,
+					invalidDto: {
+						answerPaintingIds: [deletedPaintingStub.id],
+						distractorPaintingIds: paintingStubs.slice(0, 3).map((p) => p.id),
+						title: faker.book.title(),
+						timeLimit: faker.number.int({ min: 0, max: 100 }),
+						description: faker.commerce.productDescription(),
+					},
+				},
+				{
+					testName: "deleted paintingId in distractor",
+					invalidId: quizStub.id,
+					invalidDto: {
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
+						distractorPaintingIds: [deletedPaintingStub.id].concat(
+							paintingStubs.slice(1, 3).map((p) => p.id),
+						),
+						title: faker.book.title(),
+						timeLimit: faker.number.int({ min: 0, max: 100 }),
+						description: faker.commerce.productDescription(),
+					},
+				},
+				{
+					testName: "leak distractorIds",
+					invalidId: quizStub.id,
+					invalidDto: {
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
+						distractorPaintingIds: paintingStubs.slice(1, 3).map((p) => p.id),
+						title: faker.book.title(),
+						timeLimit: faker.number.int({ min: 0, max: 100 }),
+						description: faker.commerce.productDescription(),
+					},
+				},
+				{
+					testName: "over distractorIds",
+					invalidId: quizStub.id,
+					invalidDto: {
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
+						distractorPaintingIds: paintingStubs.slice(1).map((p) => p.id),
+						title: faker.book.title(),
+						timeLimit: faker.number.int({ min: 0, max: 100 }),
+						description: faker.commerce.productDescription(),
+					},
+				},
+				{
+					testName: "duplicate distractorIds",
+					invalidId: quizStub.id,
+					invalidDto: {
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
+						distractorPaintingIds: paintingStubs.slice(0, 3).map((p) => p.id),
+						title: faker.book.title(),
+						timeLimit: faker.number.int({ min: 0, max: 100 }),
+						description: faker.commerce.productDescription(),
+					},
+				},
+			])("test : $testName", ({ invalidId, invalidDto }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestReplaceQuiz>>;
 
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.OK);
-				const body = receivedRes.data;
-				expectResponseBody(zShowQuizResponse, body);
-				expect(body).toEqual(new ShowQuizResponse(receivedQuiz));
-			});
-			it("quiz should be replaced", () => {
-				expectQuizEqual(receivedQuiz, expectedQuizPart);
+				beforeAll(async () => {
+					const bearerAuth = testService.getBearerAuthCredential(owner);
+					receivedRes = await requestReplaceQuiz(
+						invalidId,
+						invalidDto as ReplaceQuizDto,
+						bearerAuth,
+					);
+				});
+
+				it("response should match openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
+					expect(receivedRes.data).toBeUndefined();
+				});
 			});
 		});
 
-		describe("fail when invalid dto referring not exist painting ", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestReplaceQuiz>>;
-			let expectedQuiz: Quiz;
-			let dto: ReplaceQuizDto;
-			let receivedQuiz: Quiz;
+		describe.each([
+			{
+				userType: USER_ROLE.USER,
+			},
+			{
+				userType: USER_ROLE.ADMIN,
+			},
+		])("fail when special case by user($userType)", ({ userType }) => {
+			//TODO: 특수 상황 실패 테스트 구현
+			//-[x] 삭제된 Quiz 수정
+			//-[x] 존재하지 않는 Quiz 수정
+			//-[x] 다른 사람 리소스 수정 시도
+			const quizStub = factoryQuizStub();
+			const ownerStub = factoryUserStub(userType);
+			const deletedQuizStub = factoryQuizStub();
+			const otherUserStub = factoryUserStub("user");
+			const otherAdminStub = factoryUserStub("admin");
+			let owner: User;
 
 			beforeAll(async () => {
-				const count = 1;
-				const quizzes = await testService.seedOneChoiceQuizzes(count);
-				expectedQuiz = quizzes[0];
-				const testUser = expectedQuiz.owner;
+				owner = await testService.insertStubUser(ownerStub);
 
-				const [answer, ...distractors] = (await testService.seedPaintings(4)) as [
-					Painting,
-					Painting,
-					Painting,
-					Painting,
-				];
-				dto = factoryReplaceQuizDto(answer, distractors);
+				const answer = paintings[PAINTING_COUNT.answer - 1];
+				const distractors = paintings.slice(
+					PAINTING_COUNT.answer,
+					PAINTING_COUNT.answer + 3,
+				) as [Painting, Painting, Painting];
 
-				//set invalid painting id
-				dto.answerPaintingIds = [faker.string.uuid()];
+				assert(distractors.length === 3);
 
-				const bearerAuth = testService.getBearerAuthCredential(testUser);
-				receivedRes = await requestReplaceQuiz(expectedQuiz.id, dto, bearerAuth);
-				receivedQuiz = (await findAllRelationQuiz(receivedRes.data!.id))!;
+				await testService.insertOneChoiceQuizStubs([
+					{
+						answer,
+						owner,
+						quizStub,
+						distractors,
+					},
+				]);
+
+				const [deletedQuiz] = await testService.insertOneChoiceQuizStubs([
+					{
+						answer,
+						owner,
+						quizStub: deletedQuizStub,
+						distractors,
+					},
+				]);
+				assert(deletedQuiz !== undefined);
+
+				const qr = dbService.getQueryRunner();
+				await quizService.softDeleteQuiz(qr, deletedQuiz.id);
+				await qr.release();
+
+				await testService.insertStubUser(otherUserStub);
+				await testService.insertStubUser(otherAdminStub);
 			});
+			describe.each([
+				{
+					testName: "invalid quizId",
+					invalidId: faker.string.uuid(),
+					invalidDto: {
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
+						distractorPaintingIds: paintingStubs.slice(1, 4).map((p) => p.id),
+						title: faker.book.title(),
+						timeLimit: faker.number.int({ min: 0, max: 100 }),
+						description: faker.commerce.productDescription(),
+					},
+					userId: ownerStub.id,
+				},
+				{
+					testName: "deleted quizId",
+					invalidId: deletedQuizStub.id,
+					invalidDto: {
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
+						distractorPaintingIds: paintingStubs.slice(1, 4).map((p) => p.id),
+						title: faker.book.title(),
+						timeLimit: faker.number.int({ min: 0, max: 100 }),
+						description: faker.commerce.productDescription(),
+					},
+					userId: ownerStub.id,
+				},
+				{
+					testName: "tried by other user",
+					invalidId: quizStub.id,
+					invalidDto: {
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
+						distractorPaintingIds: paintingStubs.slice(1, 4).map((p) => p.id),
+						title: faker.book.title(),
+						timeLimit: faker.number.int({ min: 0, max: 100 }),
+						description: faker.commerce.productDescription(),
+					},
+					userId: otherUserStub.id,
+				},
+				{
+					testName: "tried by other admin",
+					invalidId: quizStub.id,
+					invalidDto: {
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
+						distractorPaintingIds: paintingStubs.slice(1, 4).map((p) => p.id),
+						title: faker.book.title(),
+						timeLimit: faker.number.int({ min: 0, max: 100 }),
+						description: faker.commerce.productDescription(),
+					},
+					userId: otherAdminStub.id,
+				},
+			])("test : $testName", ({ invalidId, invalidDto, userId }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestReplaceQuiz>>;
 
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
-				expect(receivedRes.data).toBeUndefined();
-			});
-			it("quiz should not be replaced", () => {
-				expect(receivedQuiz).toEqual(expectedQuiz);
-			});
-		});
-		describe("fail when try to update by other admin", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestReplaceQuiz>>;
-			let expectedQuiz: Quiz;
-			let dto: ReplaceQuizDto;
-			let receivedQuiz: Quiz;
+				beforeAll(async () => {
+					const user = await userService.findOne({ where: { id: userId } });
+					assert(user !== null);
 
-			beforeAll(async () => {
-				const count = 1;
-				const quizzes = await testService.seedOneChoiceQuizzes(count);
-				expectedQuiz = quizzes[0];
-				const otherUser = await testService.insertStubUser(factoryUserStub("admin"));
+					const bearerAuth = testService.getBearerAuthCredential(user!);
+					receivedRes = await requestReplaceQuiz(
+						invalidId,
+						invalidDto as ReplaceQuizDto,
+						bearerAuth,
+					);
+				});
 
-				const [answer, ...distractors] = (await testService.seedPaintings(4)) as [
-					Painting,
-					Painting,
-					Painting,
-					Painting,
-				];
-				dto = factoryReplaceQuizDto(answer, distractors);
-
-				const bearerAuth = testService.getBearerAuthCredential(otherUser);
-				receivedRes = await requestReplaceQuiz(expectedQuiz.id, dto, bearerAuth);
-				receivedQuiz = (await findAllRelationQuiz(receivedRes.data!.id))!;
-			});
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.FORBIDDEN);
-				expect(receivedRes.data).toBeUndefined();
-			});
-
-			it("quiz should not be replaced", () => {
-				expect(receivedQuiz).toEqual(expectedQuiz);
+				it("response should match openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.FORBIDDEN);
+					expect(receivedRes.data).toBeUndefined();
+				});
 			});
 		});
 	});
@@ -2188,88 +2648,216 @@ describe("QuizController (e2e)", () => {
 
 			return response;
 		}
-		describe("success when delete quiz", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestDeleteQuiz>>;
-			let receivedQuiz: Quiz | null;
 
+		describe.each([
+			{
+				userType: USER_ROLE.USER,
+			},
+			{
+				userType: USER_ROLE.ADMIN,
+			},
+		])("success when deliver valid id by user($userType)", ({ userType }) => {
+			//TODO : 좋은 데이터 테스트 구현
+			//-[x] quiz의 owner를 각각 user와 admin으로 테스트 설정
+			//-[x] 유효한 id 데이터 전달
+
+			const ownerStub = factoryUserStub(userType);
+			const quizStub = factoryQuizStub();
+			let owner: User;
+			let targetQuiz: Quiz;
 			beforeAll(async () => {
-				const count = 1;
-				const quizzes = await testService.seedOneChoiceQuizzes(count);
-				const targetQuiz = quizzes[0];
-				const testUser = targetQuiz.owner;
+				[owner] = await testService.insertUserStubs([ownerStub]);
 
-				const bearerAuth = testService.getBearerAuthCredential(testUser);
-				receivedRes = await requestDeleteQuiz(targetQuiz.id, bearerAuth);
-				receivedQuiz = (await findAllRelationQuiz(targetQuiz.id))!;
-			});
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.OK);
+				const [answer, ...distractors] = await testService.seedPaintings(4);
+
+				assert(distractors.length === 3);
+				[targetQuiz] = await testService.insertOneChoiceQuizStubs([
+					{
+						quizStub,
+						answer,
+						distractors: distractors as [Painting, Painting, Painting],
+						owner,
+					},
+				]);
+				assert(isNotFalsy(targetQuiz));
 			});
 
-			it("quiz should be deleted", () => {
-				expect(receivedQuiz).toBeNull();
+			afterEach(async () => {
+				const manager = dbService.getManager();
+				await manager.recover(targetQuiz);
+			});
+
+			describe.each([
+				{
+					testName: "deliver valid quiz id",
+					id: quizStub.id,
+				},
+			])("test : $testName", ({ id }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestDeleteQuiz>>;
+				let receivedQuiz: Quiz | null;
+				beforeAll(async () => {
+					const bearerAuth = testService.getBearerAuthCredential(owner);
+					receivedRes = await requestDeleteQuiz(id, bearerAuth);
+					receivedQuiz = await findAllRelationQuiz(id);
+				});
+				it("response should match openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.OK);
+					//"quiz should be deleted"
+					expect(receivedQuiz).toBeNull();
+				});
 			});
 		});
 
-		describe("fail when invalid :id path referring already deleted quiz", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestDeleteQuiz>>;
-
+		describe.each([
+			{
+				userType: USER_ROLE.USER,
+			},
+			{
+				userType: USER_ROLE.ADMIN,
+			},
+		])("$userType : fail when deliver invalid id or auth ", ({ userType }) => {
+			//TODO : 좋은 데이터 테스트 구현
+			//-[x] quiz의 owner를 각각 user와 admin으로 테스트 설정
+			//-[x] 존재하지 않는 quiz id 전달
+			const deletedQuizStub = factoryQuizStub();
+			const ownerStub = factoryUserStub(userType);
+			const quizStub = factoryQuizStub();
+			let owner: User;
+			let targetQuiz: Quiz;
 			beforeAll(async () => {
-				const count = 1;
-				const quizzes = await testService.seedOneChoiceQuizzes(count);
-				const targetQuiz = quizzes[0];
-				const testUser = targetQuiz.owner;
+				[owner] = await testService.insertUserStubs([ownerStub]);
 
-				//delete quiz
-				await quizService.softDeleteQuiz(dbService.getQueryRunner(), targetQuiz.id);
+				const [answer, ...distractors] = await testService.seedPaintings(4);
 
-				const bearerAuth = testService.getBearerAuthCredential(testUser);
-				receivedRes = await requestDeleteQuiz(targetQuiz.id, bearerAuth);
+				assert(distractors.length === 3);
+				[targetQuiz] = await testService.insertOneChoiceQuizStubs([
+					{
+						quizStub,
+						answer,
+						distractors: distractors as [Painting, Painting, Painting],
+						owner,
+					},
+				]);
+				assert(isNotFalsy(targetQuiz));
+
+				await testService.insertOneChoiceQuizStubs([
+					{
+						quizStub: deletedQuizStub,
+						answer,
+						distractors: distractors as [Painting, Painting, Painting],
+						owner,
+					},
+				]);
+				const qr = dbService.getQueryRunner();
+				await quizService.softDeleteQuiz(qr, deletedQuizStub.id);
+				await qr.release();
 			});
 
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
-				expect(receivedRes.data).toBeUndefined();
+			afterEach(async () => {
+				const manager = dbService.getManager();
+				const quiz = await manager.findOne(Quiz, { where: { id: quizStub.id } });
+				assert(quiz !== null);
+			});
+
+			describe.each([
+				{
+					testName: "deliver not existed quiz id",
+					invalidId: faker.string.uuid(),
+					userId: ownerStub.id,
+				},
+				{
+					testName: "deliver deleted quiz id",
+					invalidId: deletedQuizStub.id,
+					userId: ownerStub.id,
+				},
+			])("test : $testName", ({ invalidId, userId }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestDeleteQuiz>>;
+
+				beforeAll(async () => {
+					const testUser = await userService.findOne({ where: { id: userId } });
+					assert(testUser !== null);
+
+					const bearerAuth = testService.getBearerAuthCredential(testUser!);
+					receivedRes = await requestDeleteQuiz(invalidId, bearerAuth);
+				});
+
+				it("response should match openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
+					expect(receivedRes.data).toBeUndefined();
+				});
 			});
 		});
-		describe("fail when invalid :id path referring not exist quiz", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestDeleteQuiz>>;
 
+		describe.each([
+			{
+				userType: USER_ROLE.USER,
+			},
+			{
+				userType: USER_ROLE.ADMIN,
+			},
+		])("$userType : fail when special case ", ({ userType }) => {
+			//TODO : 좋은 데이터 테스트 구현
+			//-[x] quiz의 owner를 각각 user와 admin으로 테스트 설정
+			//-[x] 이미 삭제된 quiz id 전달
+			//-[x] quiz owner가 아닌 user auth 전달
+			//-[x] quiz owner가 아닌 admin auth 전달
+
+			const otherUserStub = factoryUserStub("admin");
+			const otherAdminStub = factoryUserStub("user");
+			const ownerStub = factoryUserStub(userType);
+			const quizStub = factoryQuizStub();
+			let owner: User;
+			let targetQuiz: Quiz;
 			beforeAll(async () => {
-				const testUser = await testService.insertStubUser(factoryUserStub("user"));
+				[owner] = await testService.insertUserStubs([ownerStub]);
 
-				const invalidId = faker.string.uuid();
+				const [answer, ...distractors] = await testService.seedPaintings(4);
 
-				const bearerAuth = testService.getBearerAuthCredential(testUser);
-				receivedRes = await requestDeleteQuiz(invalidId, bearerAuth);
-			});
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
-			});
-		});
-
-		describe("fail when try to delete by other admin", () => {
-			let receivedRes: Awaited<ReturnType<typeof requestDeleteQuiz>>;
-			let receivedQuiz: Quiz | null;
-			let expectedQuiz: Quiz;
-			beforeAll(async () => {
-				const count = 1;
-				const quizzes = await testService.seedOneChoiceQuizzes(count);
-				expectedQuiz = quizzes[0];
-				const otherAdmin = await testService.insertStubUser(factoryUserStub("admin"));
-
-				const bearerAuth = testService.getBearerAuthCredential(otherAdmin);
-				receivedRes = await requestDeleteQuiz(expectedQuiz.id, bearerAuth);
-				receivedQuiz = (await findAllRelationQuiz(expectedQuiz.id))!;
-			});
-			it("response should match openapi doc", () => {
-				expect(receivedRes.response.status).toBe(HttpStatus.FORBIDDEN);
-				expect(receivedRes.data).toBeUndefined();
+				assert(distractors.length === 3);
+				[targetQuiz] = await testService.insertOneChoiceQuizStubs([
+					{
+						quizStub,
+						answer,
+						distractors: distractors as [Painting, Painting, Painting],
+						owner,
+					},
+				]);
+				assert(isNotFalsy(targetQuiz));
+				await testService.insertUserStubs([otherUserStub, otherAdminStub]);
 			});
 
-			it("quiz should not be deleted", () => {
-				expect(receivedQuiz).toBeDefined();
-				expect(receivedQuiz).toEqual(expectedQuiz);
+			afterEach(async () => {
+				const manager = dbService.getManager();
+				const quiz = await manager.findOne(Quiz, { where: { id: quizStub.id } });
+				assert(quiz !== null);
+			});
+
+			describe.each([
+				{
+					testName: "deliver other user id",
+					invalidId: quizStub.id,
+					userId: otherUserStub.id,
+				},
+				{
+					testName: "deliver other admin id",
+					invalidId: quizStub.id,
+					userId: otherAdminStub.id,
+				},
+			])("test : $testName", ({ invalidId, userId }) => {
+				let receivedRes: Awaited<ReturnType<typeof requestDeleteQuiz>>;
+
+				beforeAll(async () => {
+					const testUser = await userService.findOne({ where: { id: userId } });
+					assert(testUser !== null);
+
+					const bearerAuth = testService.getBearerAuthCredential(testUser!);
+					receivedRes = await requestDeleteQuiz(invalidId, bearerAuth);
+				});
+
+				it("response should match openapi doc", () => {
+					expect(receivedRes.response.status).toBe(HttpStatus.FORBIDDEN);
+					expect(receivedRes.data).toBeUndefined();
+				});
 			});
 		});
 	});
