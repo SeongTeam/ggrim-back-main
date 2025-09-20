@@ -66,7 +66,7 @@ export class OwnerGuard implements CanActivate {
 		if (!resource) {
 			throw new ServiceException(
 				`ENTITY_NOT_FOUND`,
-				`FORBIDDEN`,
+				"BAD_REQUEST",
 				`can't find resource ${resourceId}`,
 			);
 		}
