@@ -1,10 +1,4 @@
-import {
-	HttpException,
-	HttpStatus,
-	Inject,
-	Injectable,
-	UnauthorizedException,
-} from "@nestjs/common";
+import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
@@ -86,8 +80,22 @@ export class AuthService {
 			});
 			return decoded;
 		} catch (e: unknown) {
+			/**
+			 * @description JwtService provide error.
+			 * @example	e.name : TokenExpiredError, JsonWebTokenError , NotBeforeError
+			 */
 			if (e instanceof Error && e.name) {
-				throw new HttpException(e.name, HttpStatus["BAD_REQUEST"], { cause: e });
+				if (e.name === "TokenExpiredError" || "JsonWebTokenError") {
+					throw new ServiceException("UNAUTHENTICATED", "UNAUTHORIZED", {
+						name: e.name,
+						cause: e,
+					});
+				} else {
+					throw new ServiceException("UNEXPECTED_JWT_ERROR", "UNAUTHORIZED", {
+						name: e.name,
+						cause: e,
+					});
+				}
 			}
 			throw new ServiceException(
 				"EXTERNAL_SERVICE_FAILED",
