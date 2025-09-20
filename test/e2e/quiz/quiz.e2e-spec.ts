@@ -122,6 +122,7 @@ describe("QuizController (e2e)", () => {
 		quizService = moduleFixture.get(QuizService);
 		quizBatchService = moduleFixture.get(QuizBatchService);
 		quizScheduleService = moduleFixture.get(QuizScheduleService);
+		userService = moduleFixture.get(UserService);
 		await dbService.resetDB();
 		await app.listen(port);
 	});
@@ -199,30 +200,36 @@ describe("QuizController (e2e)", () => {
 
 			describe.each([
 				{
+					testName: "deliver id not existed and dto with true",
 					id: faker.string.uuid(),
 					dto: { isCorrect: true },
 				},
 				{
+					testName: "deliver id not existed and dto with false",
 					id: faker.string.uuid(),
 					dto: { isCorrect: false },
 				},
 				{
+					testName: "deliver dto with undefined value",
 					id: validId,
 					dto: { isCorrect: undefined },
 				},
 				{
+					testName: "deliver dto with invalid value 0",
 					id: validId,
 					dto: { isCorrect: 0 },
 				},
 				{
+					testName: "deliver dto with invalid value 1234",
 					id: validId,
 					dto: { isCorrect: 1234 },
 				},
 				{
+					testName: "deliver empty dto",
 					id: validId,
 					dto: {},
 				},
-			])("input : %p", ({ id, dto }) => {
+			])("test : $testName", ({ id, dto }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestSubmitQuiz>>;
 
 				beforeAll(async () => {
@@ -459,26 +466,31 @@ describe("QuizController (e2e)", () => {
 
 				describe.each([
 					{
+						testName: "deliver dto with invalid value",
 						id: validQuizId,
 						dto: { type: "invalid" },
 					},
 					{
+						testName: "deliver empty dto",
 						id: validQuizId,
 						dto: {},
 					},
 					{
+						testName: "deliver id not existed with dislike",
 						id: faker.string.uuid(),
 						dto: { type: QUIZ_REACTION.dislike },
 					},
 					{
+						testName: "deliver id not existed with like ",
 						id: faker.string.uuid(),
 						dto: { type: QUIZ_REACTION.like },
 					},
 					{
+						testName: "deliver id disallowed format ",
 						id: faker.internet.email(),
 						dto: { type: QUIZ_REACTION.dislike },
 					},
-				])("input : %p", ({ id, dto }) => {
+				])("test : $testName", ({ id, dto }) => {
 					let receivedRes: Awaited<ReturnType<typeof requestCreateReaction>>;
 					let receivedReaction: QuizLike;
 
@@ -814,9 +826,11 @@ describe("QuizController (e2e)", () => {
 
 			describe.each([
 				{
+					testName: "deliver empty object",
 					query: {},
 				},
 				{
+					testName: "deliver artist, style and tag",
 					query: {
 						context: {
 							artist: artistStubs[0].name,
@@ -829,6 +843,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver artist",
 					query: {
 						context: {
 							artist: getRandomElement(artistStubs)!.name,
@@ -839,6 +854,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver style",
 					query: {
 						context: {
 							style: getRandomElement(styleStubs)!.name,
@@ -849,6 +865,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver tag",
 					query: {
 						context: {
 							tag: getRandomElement(tagStubs)!.name,
@@ -858,7 +875,7 @@ describe("QuizController (e2e)", () => {
 						endIndex: 1,
 					},
 				},
-			])("input : %o ", ({ query }) => {
+			])("test : $testName ", ({ query }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestReadScheduleQuiz>>;
 
 				beforeAll(async () => {
@@ -919,6 +936,7 @@ describe("QuizController (e2e)", () => {
 		describe("success when deliver special case query", () => {
 			describe.each([
 				{
+					testName: "deliver 0 page",
 					specialQuery: {
 						context: {
 							artist: artistStubs[0].name,
@@ -929,6 +947,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver currentIndex bigger than endIndex",
 					specialQuery: {
 						context: {
 							artist: artistStubs[0].name,
@@ -938,8 +957,8 @@ describe("QuizController (e2e)", () => {
 						endIndex: 10,
 					},
 				},
-
 				{
+					testName: "deliver currentIndex equal to endIndex",
 					specialQuery: {
 						context: {
 							tag: tagStubs.reverse()[0].name,
@@ -950,12 +969,14 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver without context and currentIndex equal to endIndex",
 					specialQuery: {
 						currentIndex: 100,
 						endIndex: 100,
 					},
 				},
 				{
+					testName: "deliver query medium page ",
 					specialQuery: {
 						context: {
 							style: styleStubs.reverse()[0].name,
@@ -966,7 +987,7 @@ describe("QuizController (e2e)", () => {
 						endIndex: 10,
 					},
 				},
-			])("input : %o", ({ specialQuery }) => {
+			])("test : $testName", ({ specialQuery }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestReadScheduleQuiz>>;
 				beforeAll(async () => {
 					const response = await requestReadScheduleQuiz(specialQuery);
@@ -988,6 +1009,7 @@ describe("QuizController (e2e)", () => {
 		describe.skip("success when deliver special case query( difficult to test)", () => {
 			describe.each([
 				{
+					testName: "deliver big page",
 					specialQuery: {
 						context: {
 							style: styleStubs.reverse()[0].name,
@@ -998,7 +1020,7 @@ describe("QuizController (e2e)", () => {
 						endIndex: 10,
 					},
 				},
-			])("input : %o", ({ specialQuery }) => {
+			])("test : $testName", ({ specialQuery }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestReadScheduleQuiz>>;
 				beforeAll(async () => {
 					const response = await requestReadScheduleQuiz(specialQuery);
@@ -1026,11 +1048,13 @@ describe("QuizController (e2e)", () => {
 		describe("fail when deliver invalid query", () => {
 			describe.each([
 				{
+					testName: "deliver query containing not allowed field",
 					invalidQuery: {
 						invalid: "it is invalid",
 					},
 				},
 				{
+					testName: "deliver context containing only page",
 					invalidQuery: {
 						context: {
 							page: 0,
@@ -1040,6 +1064,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver not existed artist",
 					invalidQuery: {
 						context: {
 							artist: faker.string.uuid(),
@@ -1050,6 +1075,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver negative currentIndex",
 					invalidQuery: {
 						context: {
 							artist: artistStubs[0].name,
@@ -1060,6 +1086,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver not exist artist",
 					invalidQuery: {
 						context: {
 							artist: faker.internet.ipv6(),
@@ -1070,6 +1097,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver not exist tag and artist",
 					invalidQuery: {
 						context: {
 							style: faker.internet.ipv6(),
@@ -1081,6 +1109,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver not exist tag",
 					invalidQuery: {
 						context: {
 							tag: faker.internet.ipv6(),
@@ -1090,7 +1119,7 @@ describe("QuizController (e2e)", () => {
 						endIndex: 1,
 					},
 				},
-			])("input : %o", ({ invalidQuery }) => {
+			])("test : $testName", ({ invalidQuery }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestReadScheduleQuiz>>;
 				beforeAll(async () => {
 					const response = await requestReadScheduleQuiz(
@@ -1173,6 +1202,7 @@ describe("QuizController (e2e)", () => {
 		describe("success when deliver dto (minimal, fully)", () => {
 			describe.each([
 				{
+					testName: "deliver tag, artist, style and page",
 					dto: {
 						tag: tagStubs[0].name,
 						artist: artistStubs[0].name,
@@ -1181,24 +1211,28 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver tag and page",
 					dto: {
 						tag: tagStubs[0].name,
 						page: 0,
 					},
 				},
 				{
+					testName: "deliver artist and page",
 					dto: {
 						artist: artistStubs[0].name,
 						page: 0,
 					},
 				},
 				{
+					testName: "deliver style and page",
 					dto: {
 						style: styleStubs[0].name,
 						page: 0,
 					},
 				},
 				{
+					testName: "deliver big page",
 					dto: {
 						tag: tagStubs[0].name,
 						artist: artistStubs[0].name,
@@ -1206,7 +1240,7 @@ describe("QuizController (e2e)", () => {
 						page: 100,
 					},
 				},
-			])("input : %o", ({ dto }) => {
+			])("test : $testName", ({ dto }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestCreateSchedule>>;
 				beforeAll(async () => {
 					receivedRes = await requestCreateSchedule(dto);
@@ -1221,45 +1255,45 @@ describe("QuizController (e2e)", () => {
 		describe("fail when deliver invalid dto ", () => {
 			describe.each([
 				{
+					testName: "deliver not exist tag name",
 					dto: {
 						tag: faker.string.uuid(),
 						page: 0,
 					},
 				},
 				{
+					testName: "deliver not exist style name",
 					dto: {
 						style: faker.string.uuid(),
 						page: 0,
 					},
 				},
 				{
+					testName: "deliver not exist artist name",
 					dto: {
 						artist: faker.string.uuid(),
 						page: 0,
 					},
 				},
 				{
-					dto: {
-						artist: faker.string.uuid(),
-						page: 0,
-					},
-				},
-				{
+					testName: "deliver not exist dto field",
 					dto: {
 						invalid: "invalid",
 						page: 0,
 					},
 				},
 				{
+					testName: "deliver empty object dto",
 					dto: {},
 				},
 				{
+					testName: "deliver negative page",
 					dto: {
 						artist: artistStubs[0].name,
 						page: -1,
 					},
 				},
-			])("input : %p", ({ dto }) => {
+			])("test : $testName", ({ dto }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestCreateSchedule>>;
 				beforeAll(async () => {
 					receivedRes = await requestCreateSchedule(dto as QuizContextDto);
@@ -1359,6 +1393,7 @@ describe("QuizController (e2e)", () => {
 		])("success when deliver valid dto by user($userType)", ({ userType }) => {
 			describe.each([
 				{
+					testName: "deliver ONE_CHOICE type",
 					dto: {
 						type: QUIZ_TYPE.ONE_CHOICE,
 						answerPaintingIds: [paintingStubs[0].id],
@@ -1369,6 +1404,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver MULTIPLE_CHOICE type",
 					dto: {
 						type: QUIZ_TYPE.MULTIPLE_CHOICE,
 						answerPaintingIds: [paintingStubs[10].id],
@@ -1378,7 +1414,7 @@ describe("QuizController (e2e)", () => {
 						description: faker.commerce.productDescription(),
 					},
 				},
-			])("input : %o", ({ dto }) => {
+			])("test : $testName", ({ dto }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestCreateQuiz>>;
 
 				let expectedQuizPart: ExpectedQuizPart;
@@ -1426,16 +1462,13 @@ describe("QuizController (e2e)", () => {
 		describe("fail when invalid auth", () => {
 			let receivedRes: Awaited<ReturnType<typeof requestCreateQuiz>>;
 			let receivedQuiz: Quiz | null;
-
 			describe.each([
 				{
+					testName: "deliver invalid jwt",
 					invalidBearToken: faker.internet.jwt(),
 				},
-			])("input : %o", ({ invalidBearToken }) => {
+			])("test : %testName", ({ invalidBearToken }) => {
 				beforeAll(async () => {
-					const paintings = await testService.seedPaintings(4);
-					const answer = paintings[0];
-					const distractors = paintings.slice(1);
 					const dto = factoryCreateQuizDto(
 						paintingStubs[0].id,
 						paintingStubs.slice(1, 4).map((d) => d.id) as StringLeast3,
@@ -1472,6 +1505,7 @@ describe("QuizController (e2e)", () => {
 
 			describe.each([
 				{
+					testName: "deliver not existed painting id as answerPaintingIds field ",
 					inValidDto: {
 						type: QUIZ_TYPE.ONE_CHOICE,
 						answerPaintingIds: [faker.string.uuid()],
@@ -1482,6 +1516,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver invalid  type ",
 					inValidDto: {
 						type: "invalid_enum",
 						answerPaintingIds: [paintingStubs[10].id],
@@ -1492,6 +1527,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver duplicated paintingId ",
 					inValidDto: {
 						type: QUIZ_TYPE.ONE_CHOICE,
 						answerPaintingIds: [paintingStubs[10].id],
@@ -1502,6 +1538,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver negative timeLimit ",
 					inValidDto: {
 						type: QUIZ_TYPE.ONE_CHOICE,
 						answerPaintingIds: [paintingStubs[10].id],
@@ -1512,6 +1549,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver undefined description ",
 					inValidDto: {
 						type: QUIZ_TYPE.ONE_CHOICE,
 						answerPaintingIds: [faker.string.uuid()],
@@ -1522,6 +1560,8 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName:
+						"deliver undefined answerPaintingIds , distractorPaintingIds and description ",
 					inValidDto: {
 						type: QUIZ_TYPE.ONE_CHOICE,
 						answerPaintingIds: undefined,
@@ -1532,6 +1572,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver null answerPaintingIds field",
 					inValidDto: {
 						type: QUIZ_TYPE.ONE_CHOICE,
 						answerPaintingIds: null,
@@ -1542,6 +1583,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver deleted Painting id as answerPaintingIds field",
 					inValidDto: {
 						type: QUIZ_TYPE.ONE_CHOICE,
 						answerPaintingIds: deletedPaintingStub.id,
@@ -1552,6 +1594,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver deleted Painting id as distractorPaintingIds field",
 					inValidDto: {
 						type: QUIZ_TYPE.ONE_CHOICE,
 						answerPaintingIds: [paintingStubs[0].id],
@@ -1565,6 +1608,7 @@ describe("QuizController (e2e)", () => {
 					},
 				},
 				{
+					testName: "deliver too much distractorPaintingIds ",
 					inValidDto: {
 						type: QUIZ_TYPE.ONE_CHOICE,
 						answerPaintingIds: [paintingStubs[0].id],
@@ -1577,7 +1621,7 @@ describe("QuizController (e2e)", () => {
 						description: faker.commerce.productDescription(),
 					},
 				},
-			])("input : %o", ({ inValidDto }) => {
+			])("test : $testName", ({ inValidDto }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestCreateQuiz>>;
 
 				beforeAll(async () => {
