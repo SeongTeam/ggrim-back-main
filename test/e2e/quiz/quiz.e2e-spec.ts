@@ -665,7 +665,9 @@ describe("QuizController (e2e)", () => {
 					},
 				]);
 
-				await quizService.softDeleteQuiz(dbService.getQueryRunner(), deletedQuizId);
+				const qr = dbService.getQueryRunner();
+				await quizService.softDeleteQuiz(qr, deletedQuizId);
+				await qr.release();
 			});
 
 			describe.each([
