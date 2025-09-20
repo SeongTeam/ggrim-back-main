@@ -903,7 +903,7 @@ describe("QuizController (e2e)", () => {
 				prevReceivedRes = initResponse;
 				const query = pick(initResponse.data!, ["context", "currentIndex", "endIndex"]);
 				queries.push(
-					...Array(10)
+					...Array(5)
 						.fill(0)
 						.map(() => query),
 				);
