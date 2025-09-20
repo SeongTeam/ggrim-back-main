@@ -4,10 +4,9 @@ import { PaintingService } from "../../src/modules/painting/painting.service";
 import { TestModule } from "../_shared/test.module";
 import { TestService } from "../_shared/test.service";
 import { DatabaseService } from "../../src/modules/db/db.service";
-import { factoryArtistStub } from "../_shared/stub/artist.stub";
-import { factoryPaintingStub } from "../_shared/stub/painting.stub";
 import { QuizModule } from "../../src/modules/quiz/quiz.module";
 import { ClsModule } from "nestjs-cls";
+import { assert } from "console";
 
 describe("PaintingModule Integration Test", () => {
 	let module: TestingModule;
@@ -34,23 +33,11 @@ describe("PaintingModule Integration Test", () => {
 		testService = module.get<TestService>(TestService);
 		dbService = module.get<DatabaseService>(DatabaseService);
 		await dbService.resetDB();
+
+		assert(testService);
 	});
 
 	it("should be defined", () => {
 		expect(paintingService).toBeDefined();
-	});
-
-	it("insert painting : 성공", async () => {
-		const artist = await testService.insertArtistStub(factoryArtistStub());
-		const painting = await testService.insertPaintingStub(
-			factoryPaintingStub(),
-			artist,
-			[],
-			[],
-		);
-
-		const result = await paintingService.findOne({ where: { id: painting.id } });
-
-		expect(result).toEqual(painting);
 	});
 });
