@@ -83,6 +83,7 @@ describe("QuizController (e2e)", () => {
 	let quizService: QuizService;
 	let quizBatchService: QuizBatchService;
 	let quizScheduleService: QuizScheduleService;
+	let userService: UserService;
 	const port = 3001;
 	const client = createClient<paths>({ baseUrl: `http://localhost:${port}` });
 
