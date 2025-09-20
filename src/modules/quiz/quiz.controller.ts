@@ -283,7 +283,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	@HttpCode(HttpStatus.OK)
 	@Get(":id")
 	async getDetailQuiz(
-		@Param("id") id: string,
+		@Param("id", ParseUUIDPipe) id: string,
 		@Query() query: GetQuizQueryDTO,
 	): Promise<DetailQuizResponse> {
 		let quiz = await this.service.findOne({ where: { id } });
