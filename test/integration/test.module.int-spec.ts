@@ -82,7 +82,7 @@ describe("TestModule Integration Test", () => {
 			const styles = await testService.seedStyles(1);
 
 			const paintingDummy = factoryPaintingStub();
-			const paintings = await testService.insertPaintingStub([
+			const paintings = await testService.insertPaintingStubs([
 				{
 					paintingDummy,
 					tags,
