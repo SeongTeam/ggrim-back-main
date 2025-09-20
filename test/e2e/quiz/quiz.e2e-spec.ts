@@ -975,18 +975,6 @@ describe("QuizController (e2e)", () => {
 						endIndex: 100,
 					},
 				},
-				{
-					testName: "deliver query medium page ",
-					specialQuery: {
-						context: {
-							style: styleStubs.reverse()[0].name,
-							artist: artistStubs.reverse()[0].name,
-							page: 10,
-						},
-						currentIndex: 0,
-						endIndex: 10,
-					},
-				},
 			])("test : $testName", ({ specialQuery }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestReadScheduleQuiz>>;
 				beforeAll(async () => {
@@ -1009,6 +997,24 @@ describe("QuizController (e2e)", () => {
 		describe.skip("success when deliver special case query( difficult to test)", () => {
 			describe.each([
 				{
+					/**
+					 * @description context may be changed. because no quiz search satisfies context.
+					 */
+					testName: "deliver query medium page ",
+					specialQuery: {
+						context: {
+							style: styleStubs.reverse()[0].name,
+							artist: artistStubs.reverse()[0].name,
+							page: 10,
+						},
+						currentIndex: 0,
+						endIndex: 10,
+					},
+				},
+				{
+					/**
+					 * @description context must be changed. because no quiz search satisfies context,
+					 */
 					testName: "deliver big page",
 					specialQuery: {
 						context: {
