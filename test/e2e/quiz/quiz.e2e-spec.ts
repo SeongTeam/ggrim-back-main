@@ -2433,6 +2433,7 @@ describe("QuizController (e2e)", () => {
 			const ownerStub = factoryUserStub(userType);
 			const deletedPaintingStub = factoryPaintingStub();
 			let owner: User;
+			const deletedQuizStub = factoryQuizStub();
 
 			beforeAll(async () => {
 				owner = await testService.insertStubUser(ownerStub);
@@ -2469,9 +2470,44 @@ describe("QuizController (e2e)", () => {
 
 				const qr = dbService.getQueryRunner();
 				await paintingService.deleteOne(qr, deletedPainting);
+				const [deletedQuiz] = await testService.insertOneChoiceQuizStubs([
+					{
+						answer,
+						owner,
+						quizStub: deletedQuizStub,
+						distractors,
+					},
+				]);
+				assert(deletedQuiz !== undefined);
+
+				await quizService.softDeleteQuiz(qr, deletedQuiz.id);
 				await qr.release();
 			});
 			describe.each([
+				{
+					testName: "invalid quizId",
+					invalidId: faker.string.uuid(),
+					invalidDto: {
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
+						distractorPaintingIds: paintingStubs.slice(1, 4).map((p) => p.id),
+						title: faker.book.title(),
+						timeLimit: faker.number.int({ min: 0, max: 100 }),
+						description: faker.commerce.productDescription(),
+					},
+					userId: ownerStub.id,
+				},
+				{
+					testName: "deleted quizId",
+					invalidId: deletedQuizStub.id,
+					invalidDto: {
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
+						distractorPaintingIds: paintingStubs.slice(1, 4).map((p) => p.id),
+						title: faker.book.title(),
+						timeLimit: faker.number.int({ min: 0, max: 100 }),
+						description: faker.commerce.productDescription(),
+					},
+					userId: ownerStub.id,
+				},
 				{
 					testName: "deleted paintingId in answer",
 					invalidId: quizStub.id,
@@ -2562,7 +2598,6 @@ describe("QuizController (e2e)", () => {
 			//-[x] 다른 사람 리소스 수정 시도
 			const quizStub = factoryQuizStub();
 			const ownerStub = factoryUserStub(userType);
-			const deletedQuizStub = factoryQuizStub();
 			const otherUserStub = factoryUserStub("user");
 			const otherAdminStub = factoryUserStub("admin");
 			let owner: User;
@@ -2587,48 +2622,10 @@ describe("QuizController (e2e)", () => {
 					},
 				]);
 
-				const [deletedQuiz] = await testService.insertOneChoiceQuizStubs([
-					{
-						answer,
-						owner,
-						quizStub: deletedQuizStub,
-						distractors,
-					},
-				]);
-				assert(deletedQuiz !== undefined);
-
-				const qr = dbService.getQueryRunner();
-				await quizService.softDeleteQuiz(qr, deletedQuiz.id);
-				await qr.release();
-
 				await testService.insertStubUser(otherUserStub);
 				await testService.insertStubUser(otherAdminStub);
 			});
 			describe.each([
-				{
-					testName: "invalid quizId",
-					invalidId: faker.string.uuid(),
-					invalidDto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
-						distractorPaintingIds: paintingStubs.slice(1, 4).map((p) => p.id),
-						title: faker.book.title(),
-						timeLimit: faker.number.int({ min: 0, max: 100 }),
-						description: faker.commerce.productDescription(),
-					},
-					userId: ownerStub.id,
-				},
-				{
-					testName: "deleted quizId",
-					invalidId: deletedQuizStub.id,
-					invalidDto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
-						distractorPaintingIds: paintingStubs.slice(1, 4).map((p) => p.id),
-						title: faker.book.title(),
-						timeLimit: faker.number.int({ min: 0, max: 100 }),
-						description: faker.commerce.productDescription(),
-					},
-					userId: ownerStub.id,
-				},
 				{
 					testName: "tried by other user",
 					invalidId: quizStub.id,
