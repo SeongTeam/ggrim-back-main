@@ -1421,17 +1421,6 @@ describe("QuizController (e2e)", () => {
 						description: "anything what you can",
 					},
 				},
-				{
-					testName: "deliver MULTIPLE_CHOICE type",
-					dto: {
-						type: QUIZ_TYPE.MULTIPLE_CHOICE,
-						answerPaintingIds: [paintingStubs[10].id],
-						distractorPaintingIds: paintingStubs.slice(0, 3).map((stub) => stub.id),
-						title: faker.person.fullName(),
-						timeLimit: 20,
-						description: faker.commerce.productDescription(),
-					},
-				},
 			])("test : $testName", ({ dto }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestCreateQuiz>>;
 
@@ -1509,7 +1498,7 @@ describe("QuizController (e2e)", () => {
 			{
 				userType: USER_ROLE.ADMIN,
 			},
-		])("fail when invalid referring wrong painting", ({ userType }) => {
+		])("fail when invalid dto", ({ userType }) => {
 			//TODO 비유효 body dto 테스트 케이스 구현
 			//- [x] 잘못된 painting ID 데이터
 			//- [x] 중복된 painting ID 데이터
@@ -1518,6 +1507,17 @@ describe("QuizController (e2e)", () => {
 			//- [x] 삭제된 Painting ID 참조
 
 			describe.each([
+				{
+					testName: "deliver MULTIPLE_CHOICE type",
+					dto: {
+						type: QUIZ_TYPE.MULTIPLE_CHOICE,
+						answerPaintingIds: [paintingStubs[10].id],
+						distractorPaintingIds: paintingStubs.slice(0, 3).map((stub) => stub.id),
+						title: faker.person.fullName(),
+						timeLimit: 20,
+						description: faker.commerce.productDescription(),
+					},
+				},
 				{
 					testName: "deliver not existed painting id as answerPaintingIds field ",
 					inValidDto: {
