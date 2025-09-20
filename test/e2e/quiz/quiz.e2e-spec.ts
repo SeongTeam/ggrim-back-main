@@ -45,7 +45,7 @@ import {
 import { zPagination } from "../_common/zodSchema";
 import { DetailQuizResponse } from "../../../src/modules/quiz/dto/response/detailQuiz.response";
 import { QuizScheduleService } from "../../../src/modules/quiz/schedule/quizSchedule.service";
-import { ExpectedQuizPart, expectQuizEqual } from "../../_shared/expect";
+import { ExpectedQuizPart, expectQuizEqual, expectShowQuizResponse } from "../../_shared/expect";
 import { USER_ROLE } from "../../../src/modules/user/const";
 import { User } from "../../../src/modules/user/entity/user.entity";
 import z from "zod";
@@ -1458,8 +1458,10 @@ describe("QuizController (e2e)", () => {
 				});
 
 				it("quiz should be created and to be expected", () => {
+					const expectedShowQuizResponse = new ShowQuizResponse(receivedQuiz!);
+					const receivedShowQuizResponse = receivedRes.data!;
 					expect(receivedQuiz).toBeDefined();
-					expect(receivedRes.data).toEqual(new ShowQuizResponse(receivedQuiz!));
+					expectShowQuizResponse(receivedShowQuizResponse, expectedShowQuizResponse);
 					expectQuizEqual(receivedQuiz!, expectedQuizPart);
 				});
 			});
@@ -2009,24 +2011,10 @@ describe("QuizController (e2e)", () => {
 				});
 
 				it("received quiz should be expected", () => {
-					const expectedQuizResponse = new ShowQuizResponse(expectedQuiz);
-					const receivedQuizResponse = receivedRes.data!.quiz;
+					const expectedData = new ShowQuizResponse(expectedQuiz);
+					const receivedData = receivedRes.data!.quiz;
 
-					const relationFields = [
-						"artists",
-						"tags",
-						"styles",
-						"answer_paintings",
-						"distractor_paintings",
-						"example_painting",
-					] as const;
-					relationFields.forEach((field) => {
-						expect(receivedQuizResponse[field]).toEqual(expectedQuizResponse[field]);
-					});
-
-					expect(omit(receivedQuizResponse, relationFields)).toEqual(
-						omit(expectedQuizResponse, relationFields),
-					);
+					expectShowQuizResponse(receivedData, expectedData);
 				});
 			});
 		});
@@ -2107,26 +2095,10 @@ describe("QuizController (e2e)", () => {
 							reactionType,
 						);
 
-						const expectedQuizResponse = expectedData.quiz;
-						const receivedQuizResponse = receivedRes.data!.quiz;
+						const expectedShowQuizResponse = expectedData.quiz;
+						const receivedShowQuizResponse = receivedRes.data!.quiz;
 
-						const relationFields = [
-							"artists",
-							"tags",
-							"styles",
-							"answer_paintings",
-							"distractor_paintings",
-							"example_painting",
-						] as const;
-						relationFields.forEach((field) => {
-							expect(receivedQuizResponse[field]).toEqual(
-								expectedQuizResponse[field],
-							);
-						});
-
-						expect(omit(receivedQuizResponse, relationFields)).toEqual(
-							omit(expectedQuizResponse, relationFields),
-						);
+						expectShowQuizResponse(receivedShowQuizResponse, expectedShowQuizResponse);
 						expect(receivedRes.data!.reactionCount).toEqual(expectedData.reactionCount);
 						expect(receivedRes.data!.userReaction).toEqual(expectedData.userReaction);
 					});
@@ -2205,10 +2177,9 @@ describe("QuizController (e2e)", () => {
 					expectResponseBody(zDetailQuizResponse, receivedRes.data);
 				});
 				it("received quiz should be expected", () => {
-					const expectedQuizResponse = new ShowQuizResponse(expectedQuiz);
-					expect(receivedRes.data?.quiz).toEqual(
-						omit(expectedQuizResponse, ["example_painting"]),
-					);
+					const expectedData = new ShowQuizResponse(expectedQuiz);
+					const receivedData = receivedRes.data!.quiz;
+					expectShowQuizResponse(receivedData, expectedData);
 				});
 			});
 		});
@@ -2448,9 +2419,10 @@ describe("QuizController (e2e)", () => {
 
 				it("response should match openapi doc", () => {
 					expect(receivedRes.response.status).toBe(HttpStatus.OK);
-					const body = receivedRes.data;
-					expectResponseBody(zShowQuizResponse, body);
-					expect(body).toEqual(new ShowQuizResponse(receivedQuiz));
+					const receivedShowQuizResponse = receivedRes.data!;
+					const expectedShowQuizResponse = new ShowQuizResponse(receivedQuiz);
+					expectResponseBody(zShowQuizResponse, receivedShowQuizResponse);
+					expectShowQuizResponse(receivedShowQuizResponse, expectedShowQuizResponse);
 				});
 				it("quiz should be replaced", () => {
 					expectQuizEqual(receivedQuiz, expectedQuizPart);

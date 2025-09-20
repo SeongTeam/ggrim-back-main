@@ -4,6 +4,8 @@ import { Quiz } from "../../src/modules/quiz/entities/quiz.entity";
 import { Style } from "../../src/modules/style/entities/style.entity";
 import { Tag } from "../../src/modules/tag/entities/tag.entity";
 import { deduplicate, omit, pick, sortById } from "../../src/utils/object";
+import { isArray } from "class-validator";
+import { ShowQuizResponse } from "../../src/modules/quiz/dto/response/showQuiz.response";
 
 const ESSENTIAL_QUIZ__FIELD = [
 	"answer_paintings",
@@ -82,4 +84,26 @@ export function expectQuizEqual(receivedQuiz: Quiz, expectedQuizPart: ExpectedQu
 	expect(sortById(cloneReceivedQuiz.artists)).toEqual(sortById(expectedArtists));
 	expect(sortById(cloneReceivedQuiz.styles)).toEqual(sortById(expectedStyles));
 	expect(sortById(cloneReceivedQuiz.tags)).toEqual(sortById(expectedTags));
+}
+
+export function expectShowQuizResponse(received: ShowQuizResponse, expected: ShowQuizResponse) {
+	const relationFields = [
+		"artists",
+		"tags",
+		"styles",
+		"answer_paintings",
+		"distractor_paintings",
+		"example_painting",
+	] as const;
+	relationFields.forEach((field) => {
+		const r = received[field];
+		const e = expected[field];
+		if (isArray(r) && isArray(e)) {
+			expect(r.sort((a, b) => a.id.localeCompare(b.id))).toEqual(
+				e.sort((a, b) => a.id.localeCompare(b.id)),
+			);
+		}
+	});
+
+	expect(omit(received, relationFields)).toEqual(omit(expected, relationFields));
 }
