@@ -195,6 +195,15 @@ describe("TestModule Integration Test", () => {
 		);
 	});
 
+	describe("test DB constraint", () => {
+		test.skip("insert same Id (primary key)", async () => {
+			const stub = factoryUserStub("user");
+			await expect(async () => {
+				await testService.insertUserStubs([stub, stub]);
+			}).rejects.toThrow();
+		});
+	});
+
 	describe("test seed limitation", () => {
 		describe.each([{ count: 5 }, { count: 10 }, { count: 20 }, { count: 40 }, { count: 80 }])(
 			"should seed user limitation  : [$count]",
