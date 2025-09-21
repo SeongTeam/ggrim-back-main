@@ -3429,6 +3429,7 @@ export interface operations {
 				/** @description all fields exist. service handle query as all fields not exist same time when one of fields is missed */
 				currentIndex?: number;
 				endIndex?: number;
+				/** @description @description serialization format is deepObject */
 				context?: components["schemas"]["QuizContextDTO"];
 			};
 			header?: never;
@@ -3507,8 +3508,23 @@ export interface operations {
 	QuizController_searchQuiz: {
 		parameters: {
 			query?: {
+				/**
+				 * @description @description follow openapi query serialization spec.
+				 * @example /route?artists=name1
+				 * @example /route?artists=name1&artists=name2
+				 */
 				artists?: string[];
+				/**
+				 * @description @description follow openapi query serialization spec.
+				 * @example /route?tags=name1
+				 * @example /route?tags=name1&tags=name2
+				 */
 				tags?: string[];
+				/**
+				 * @description @description follow openapi query serialization spec.
+				 * @example /route?styles=name1
+				 * @example /route?styles=name1&tags=name2
+				 */
 				styles?: string[];
 				page?: number;
 				count?: number;
@@ -3613,6 +3629,7 @@ export interface operations {
 	QuizController_getDetailQuiz: {
 		parameters: {
 			query?: {
+				/** @description @description this field always transform invalid value or type into default value */
 				isS3Access?: boolean;
 				userId?: string;
 			};
@@ -3798,8 +3815,6 @@ export enum QUIZ_REACTION {
 }
 export enum QUIZ_TYPE {
 	ONE_CHOICE = "ONE_CHOICE",
-	MULTIPLE_CHOICE = "MULTIPLE_CHOICE",
-	TRUE_FALSE = "TRUE_FALSE",
 }
 export enum ApiPaths {
 	AppController_getHello = "/",
