@@ -1510,7 +1510,7 @@ describe("QuizController (e2e)", () => {
 				{
 					testName: "deliver MULTIPLE_CHOICE type",
 					dto: {
-						type: QUIZ_TYPE.MULTIPLE_CHOICE,
+						type: "MULTIPLE_CHOICE",
 						answerPaintingIds: [paintingStubs[10].id],
 						distractorPaintingIds: paintingStubs.slice(0, 3).map((stub) => stub.id),
 						title: faker.person.fullName(),
