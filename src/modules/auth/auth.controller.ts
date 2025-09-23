@@ -178,10 +178,8 @@ export class AuthController {
 		const isVerified = await this.service.isHashMatched(pinCode, latestVerification.pin_code);
 
 		if (!isVerified) {
-			await this.service.updateVerification(qr, latestVerification.id, {
-				last_verified_date: now,
-			});
-			throw new ServiceException("BASE", "FORBIDDEN", `Check pin-code again`);
+			await this.service.recordLastVerifiedDate(latestVerification, now);
+			throw new ServiceException("BASE", "BAD_REQUEST", `Check pin-code again`);
 		}
 		await this.service.updateVerification(qr, latestVerification.id, {
 			last_verified_date: now,

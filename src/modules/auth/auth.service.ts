@@ -248,6 +248,12 @@ export class AuthService {
 		}
 	}
 
+	async recordLastVerifiedDate(verification: Verification, last_verified_date: Date) {
+		await this.verificationRepo.update(verification.id, {
+			last_verified_date,
+		});
+	}
+
 	// return delay second
 	getVerifyDelay(lastVerification: Verification): number {
 		const now = new Date();
