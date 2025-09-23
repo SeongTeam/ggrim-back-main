@@ -29,6 +29,7 @@ import { deduplicate } from "../../src/utils/object";
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
 import { EntityTarget, TypeORMError } from "typeorm";
 import { USER_ROLE, UserRole } from "../../src/modules/user/const";
+import { ReadonlyDeep, WritableDeep } from "type-fest";
 
 // TODO: 데이터 시딩 로직 개선하기
 // - [x] connection pool 최대한 활용하기
@@ -80,7 +81,7 @@ export class TestService {
 		}
 	}
 
-	getBearerAuthCredential(user: User): string {
+	getBearerAuthCredential(user: ReadonlyDeep<User>): string {
 		const token = this.authService.signToken({
 			email: user.email,
 			role: user.role,
@@ -115,15 +116,19 @@ export class TestService {
 		return jwt;
 	}
 
-	async createOneTimeToken(user: User, purpose: OneTimeTokenPurpose): Promise<OneTimeToken> {
+	async createOneTimeToken(
+		user: ReadonlyDeep<User>,
+		purpose: ReadonlyDeep<OneTimeTokenPurpose>,
+	): Promise<OneTimeToken> {
 		let jwt = new OneTimeToken();
+		const clonedUser = structuredClone(user) as User;
 
 		try {
 			jwt = await this.authService.signOneTimeJWTWithUser(
 				this.dbService.getQueryRunner(),
 				user.email,
 				purpose,
-				user,
+				clonedUser,
 			);
 		} catch (e) {
 			this.handleInsertError(e, { user, purpose });
@@ -134,16 +139,15 @@ export class TestService {
 		return jwt;
 	}
 
-	async useOneTimeToken(oneTimeToken: OneTimeToken): Promise<OneTimeToken> {
+	async useOneTimeToken(oneTimeToken: ReadonlyDeep<OneTimeToken>): Promise<void> {
 		try {
 			await this.authService.markOneTimeJWT(this.dbService.getQueryRunner(), oneTimeToken.id);
 		} catch (e) {
 			this.handleInsertError(e, oneTimeToken);
 		}
-		return oneTimeToken;
 	}
 
-	async insertStubUser(userStub: UserDummy): Promise<User> {
+	async insertStubUser(userStub: ReadonlyDeep<UserDummy>): Promise<User> {
 		const repo = this.dbService.getRepository(User);
 		let user = new User();
 		try {
@@ -163,11 +167,11 @@ export class TestService {
 		return user;
 	}
 
-	async insertUserStubs(userStubs: UserDummy[]): Promise<User[]> {
+	async insertUserStubs(userStubs: ReadonlyDeep<UserDummy[]>): Promise<User[]> {
 		assert(userStubs.length > 0);
 
 		const repo = this.dbService.getRepository(User);
-		const stubs = structuredClone(userStubs);
+		const stubs = structuredClone(userStubs) as UserDummy[];
 		let users: User[] = [];
 
 		try {
@@ -193,13 +197,14 @@ export class TestService {
 		return users;
 	}
 
-	async insertTagStubs(tagStubs: TagDummy[]) {
+	async insertTagStubs(tagStubs: ReadonlyDeep<TagDummy[]>) {
 		assert(tagStubs.length > 0);
 		const manager = this.dbService.getManager();
 
+		const stubs = structuredClone(tagStubs) as TagDummy[];
 		let tags: Tag[] = [];
 		try {
-			const result = await manager.insert(Tag, tagStubs);
+			const result = await manager.insert(Tag, stubs);
 			const ids = result.generatedMaps.map((t) => (t as Tag).id);
 
 			tags = await manager
@@ -215,13 +220,14 @@ export class TestService {
 
 		return tags;
 	}
-	async insertArtistStubs(artistStubs: ArtistDummy[]) {
+	async insertArtistStubs(artistStubs: ReadonlyDeep<ArtistDummy[]>) {
 		assert(artistStubs.length > 0);
 		const manager = this.dbService.getManager();
 		let artists: Artist[] = [];
 
+		const stubs = structuredClone(artistStubs) as ArtistDummy[];
 		try {
-			const result = await manager.insert(Artist, artistStubs);
+			const result = await manager.insert(Artist, stubs);
 			const ids = result.generatedMaps.map((a) => (a as Artist).id);
 
 			artists = await manager
@@ -237,12 +243,13 @@ export class TestService {
 
 		return artists;
 	}
-	async insertStyleStubs(styleStubs: StyleDummy[]) {
+	async insertStyleStubs(styleStubs: ReadonlyDeep<StyleDummy[]>) {
 		assert(styleStubs.length > 0);
 		let styles: Style[] = [];
 		const manager = this.dbService.getManager();
+		const stubs = structuredClone(styleStubs) as StyleDummy[];
 		try {
-			const result = await manager.insert(Style, styleStubs);
+			const result = await manager.insert(Style, stubs);
 			const ids = result.generatedMaps.map((s) => (s as Style).id);
 
 			styles = await manager
@@ -258,9 +265,11 @@ export class TestService {
 		return styles;
 	}
 
-	async insertPaintingStubs(paintingStubs: InsertPaintingArgs[]) {
+	async insertPaintingStubs(paintingStubs: ReadonlyDeep<InsertPaintingArgs[]>) {
 		const manager = this.dbService.getManager();
 		let paintingWithRelation: Painting[] = [];
+
+		const clonedPaintingStubs = structuredClone(paintingStubs) as InsertPaintingArgs[];
 		const insertRelations = async (painting: Painting, relations: PaintingRelations) => {
 			const { artist, tags, styles } = relations;
 			await manager
@@ -278,7 +287,7 @@ export class TestService {
 		try {
 			const relationMap: Map<string, PaintingRelations> = new Map();
 
-			for (const stub of paintingStubs) {
+			for (const stub of clonedPaintingStubs) {
 				const { artist, tags, styles, paintingDummy } = stub;
 				const id = paintingDummy.id;
 				if (!relationMap.has(id)) {
@@ -308,7 +317,7 @@ export class TestService {
 		return paintingWithRelation;
 	}
 
-	async insertOneChoiceQuizStubs(quizStubs: InsertOneChoiceQuizzesArgs[]) {
+	async insertOneChoiceQuizStubs(quizStubs: ReadonlyDeep<InsertOneChoiceQuizzesArgs[]>) {
 		const extractRelations = (stub: InsertOneChoiceQuizzesArgs) => {
 			const { answer, distractors, owner } = stub;
 			const paintings = [answer, ...distractors];
@@ -338,12 +347,13 @@ export class TestService {
 			);
 		};
 
+		assert(quizStubs.length > 0);
+		const clonedStubs = structuredClone(quizStubs) as InsertOneChoiceQuizzesArgs[];
 		const relationMap: Map<string, OneChoiceQuizzesRelations> = new Map();
 
 		let quizWithRelations: Quiz[] = [];
-		assert(quizStubs.length > 0);
 
-		for (const stub of quizStubs) {
+		for (const stub of clonedStubs) {
 			const id = stub.quizStub.id;
 
 			if (!relationMap.has(id)) {
@@ -353,7 +363,7 @@ export class TestService {
 		}
 
 		const manager = this.dbService.getManager();
-		const insertDataList = quizStubs.map((stub) => ({
+		const insertDataList = clonedStubs.map((stub) => ({
 			...stub.quizStub,
 			owner_id: stub.owner.id,
 		}));
@@ -382,7 +392,7 @@ export class TestService {
 			this.handleInsertError(error, quizStubs);
 		}
 
-		assert(quizStubs.length === quizWithRelations.length);
+		assert(clonedStubs.length === quizWithRelations.length);
 		return quizWithRelations;
 	}
 
@@ -483,11 +493,11 @@ export class TestService {
 	 * */
 	async seedPaintings(
 		count: number,
-		relations?: {
+		relations?: ReadonlyDeep<{
 			tags: Tag[];
 			styles: Style[];
 			artists: Artist[];
-		},
+		}>,
 	): Promise<Painting[]> {
 		assert(count > 0);
 		assert(count < 1000);
@@ -508,9 +518,14 @@ export class TestService {
 			styles.push(...newStyles);
 			artists.push(...newArtists);
 		} else {
-			tags.push(...relations.tags);
-			styles.push(...relations.styles);
-			artists.push(...relations.artists);
+			const clonedRelations = structuredClone(relations) as WritableDeep<{
+				tags: Tag[];
+				styles: Style[];
+				artists: Artist[];
+			}>;
+			tags.push(...clonedRelations.tags);
+			styles.push(...clonedRelations.styles);
+			artists.push(...clonedRelations.artists);
 		}
 
 		const seedArgsList: InsertPaintingArgs[] = Array(count)
@@ -571,10 +586,11 @@ export class TestService {
 
 	async seedOneChoiceQuizzes(
 		count: number,
-		relations?: {
+		relations?: ReadonlyDeep<{
 			owners: [User, ...User[]];
 			paintings: [Painting, Painting, Painting, Painting, ...Painting[]];
-		},
+		}>,
+
 		userType: UserRole = USER_ROLE.USER,
 	) {
 		assert(count > 0);
@@ -589,8 +605,9 @@ export class TestService {
 				this.seedUsersSingleInsert(userCount, userType),
 			]);
 		} else {
-			paintings = relations.paintings;
-			owners = relations.owners;
+			const clonedRelations = structuredClone(relations) as WritableDeep<typeof relations>;
+			paintings = clonedRelations.paintings;
+			owners = clonedRelations.owners;
 		}
 
 		const paintingSelectCount = 4;
