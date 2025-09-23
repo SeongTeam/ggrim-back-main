@@ -138,6 +138,12 @@ export class AuthController {
 		@DBQueryRunner() qr: QueryRunner,
 		@Body() dto: VerifyDTO,
 	): Promise<ShowOneTimeTokenResponse> {
+		//TODO : 예외상황 익셉션 구현하기
+		//- [x] 이미 계정이 생성된 이메일 전달된 경우
+		//- [x Verification이 생성되지 않은 email이 전달된 경우
+		//- [x 만료된 핀코드 전달된 경우
+		//- [x] 짧은 시간내에 여러번 인증 시도한 경우
+		//- [x] 이미 사용된 핀코드 전달한 경우
 		const { email, pinCode } = dto;
 
 		const existedUser = await this.userService.findOne({ where: { email } });
