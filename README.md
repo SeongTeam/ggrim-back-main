@@ -111,7 +111,7 @@
         - `User` 객체 를 추상화한 함수이면 `User`와 관련된 객체 타입을 매개변수에 사용한다.
         - 그게 아니라면, 각각의 데이터를 개별적으로 매개변수를 받도록 함수를 작성한다.  
 
-**1. Module** 
+**1. Module Class** 
 - 각각의 모듈은 별도의 파일로 관리한다.
 - 모듈은 `src/modules/<domain>/` 도메인 이름에 해당하는 폴더에 위치해야한다.
 - 폴더의 이름은 `kebab-case` 형식이다. 
@@ -121,7 +121,7 @@
 - 서브 모듈 생성보다는 서비스 클래스 추가를 지향한다.
     - 서브 모듈이 필요한 상황이라면, 서브 모듈을 추가한다.
 
-**2. Controller**
+**2. Controller Class**
 - 각각의 컨트롤러는 별도의 파일로 관리한다.
 - 컨트롤러는 해당 컨트롤러의 `import` 모듈과 동일한 폴더 또는 그 하위 폴더에 위치해야한다.
 - 파일의 이름은 `<camelCase>.controller.ts` 형식이다.
@@ -131,22 +131,24 @@
     - 단, `HTTP API` 메소드의 마운트 순서를 바꾸기 위해서라면, 그룹화를 무시할 수 있다.
 - 컨트롤러의 `base url`은 컨트롤러의 이름을 `kebab-case`형식으로 설정해야한다. 
 
-**3. Provider**
+**3. Provider Class**
 - 각각의 프로바이더는 별도의 파일로 관리한다.
 - 프로바이더는 해당 프로바이더의 `import` 모듈과 동일한 폴더 또는 그 하위 폴더에 위치해야한다.
 - 파일의 이름은 `<camelCase>.<provider>.ts` 형식이다.
     - 예시 : `painting.service.ts` , `auth.exception.filter.ts` , `auth.interceptor.ts`;
 - 클래스 이름은 `<PascalCase><Provider>` 형식이다.
     - 예시 : `PaintingService` , `AuthExceptionFilter` , `AuthInterceptor`;
-- Service
+- **Service Class**
     - DB entity 접근은 오직 `Service`만을 통해 진행한다.
+    - Entity 생성,수정,삭제 로직에는 반드시 원자성을 보장한다.
+        - 예시 : 단일 트랜잭션, INSERT 쿼리 1회 
     - 외부 모듈의 컨트롤러, 프로바이더에서 재사용할 로직은 서비스에만 정의한다.
-- Guard
+- **Guard Class**
     - Guard 로직은 true 만을 반환한다. 예외 상황시에는 Exception을 던진다.
-- Pipe
+- **Pipe Class**
     - 입력 DTO의 데이터 유효성 검사 및 형변환 로직만 정의한다.
  
-**4. Entity**
+**4. Entity Class**
 - 각각의 엔티티는 별도의 파일로 관리한다.
 - 엔티티 파일은 헤당 엔티티를 관리하는 서비스 파일과 같은 폴더 내에서 `entity` 폴더 내에 정의한다.
 - 엔티티 파일 이름은 `<camelCase>.entity.ts` 형식이다.
@@ -242,6 +244,11 @@
             @Query() dto: QuizReactionQueryDTO,
         )
         ```
+- `GET` 메소드 리소스(Entity) 읽기에 사용하며 응답으로 Entity를 반환한다.
+- `POST` 메소드는 리소스(Entity) 쓰기에 사용하며 응답으로 Entity를 반환하거나 적절한 데이터를 반환한다.
+- `PUT` 메소드는 리소스(Entity) 갱신에 사용하며 응답으로 변경된 Entity를 반환한다.
+- `DELETE` 메소드는 리소스(Entity) 삭제에 사용하며 응답으로 적절한 데이터를 반환한다.
+    - 절대 삭제된 Entity를 응답으로 반환하지 않는다.
 
 
 **11. 그외는 다음 규칙을 따른다.**
