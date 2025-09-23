@@ -156,7 +156,7 @@ export class AuthController {
 		if (isArrayEmpty(verifications)) {
 			throw new ServiceException(
 				"ENTITY_NOT_FOUND",
-				"FORBIDDEN",
+				"BAD_REQUEST",
 				`${email} is not registered`,
 			);
 		}
@@ -164,7 +164,7 @@ export class AuthController {
 		const now = new Date();
 		const latestVerification: Verification = verifications[0];
 		if (now > latestVerification.pin_code_expired_date) {
-			throw new ServiceException("BASE", "FORBIDDEN", `expired verification`);
+			throw new ServiceException("BASE", "BAD_REQUEST", `expired verification`);
 		}
 		const delay = this.service.getVerifyDelay(latestVerification);
 		if (delay > 0) {
@@ -172,7 +172,7 @@ export class AuthController {
 		}
 
 		if (isNotEmpty(latestVerification.verification_success_date)) {
-			throw new ServiceException("BASE", "FORBIDDEN", `already verified pin-code`);
+			throw new ServiceException("BASE", "BAD_REQUEST", `already verified pin-code`);
 		}
 
 		const isVerified = await this.service.isHashMatched(pinCode, latestVerification.pin_code);
@@ -223,7 +223,7 @@ export class AuthController {
 		if (!user) {
 			throw new ServiceException(
 				"ENTITY_NOT_FOUND",
-				"FORBIDDEN",
+				"BAD_REQUEST",
 				`user is not existed. ${email}`,
 			);
 		}
