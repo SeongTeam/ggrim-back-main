@@ -168,7 +168,7 @@ export class AuthController {
 		}
 		const delay = this.service.getVerifyDelay(latestVerification);
 		if (delay > 0) {
-			throw new ServiceException("BASE", "TOO_MANY_REQUESTS", `please retry ${delay}s`);
+			throw new ServiceException("BASE", "TOO_MANY_REQUESTS", `please retry later ${delay}s`);
 		}
 
 		if (isNotEmpty(latestVerification.verification_success_date)) {
