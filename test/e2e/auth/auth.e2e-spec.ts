@@ -475,7 +475,7 @@ describe("AuthController (e2e)", () => {
 					const receivedData = receivedRes.data!;
 					expect(receivedData.purpose).toBe(ONE_TIME_TOKEN_PURPOSE.sign_up);
 
-					expectResponseBody(zShowOneTimeToken, body);
+					expectResponseBody(zShowOneTimeToken, receivedData);
 				});
 
 				it("entity should be created in DB", async () => {
