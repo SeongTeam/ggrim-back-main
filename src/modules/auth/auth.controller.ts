@@ -91,6 +91,12 @@ export class AuthController {
 	// ? 질문: registerMethod에서 이미 인증된 계정인 경우, 어떻게 해야하는가?
 	// * 참고: <관련 정보나 링크>
 
+	/**
+	 *
+	 * @description 계정 생성 전, 사용자 이메일로 핀코드를 전송한다.
+	 * @throws {HttpStatus.FORBIDDEN} 이미 인증된 사용자가 인증하려는 경우,
+	 * @throws {HttpStatus.TOO_MANY_REQUESTS} 짧은 시간내에 여러번 인증을 시도한 경우.
+	 */
 	@ApiCreatedResponse({ type: ShowVerificationResponse })
 	@HttpCode(HttpStatus.CREATED)
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -130,6 +136,12 @@ export class AuthController {
 	// TODO 이메일 인증 로직 개선
 	// [x] : oneTimeToken을 발행하여 인증 여부 확인하기.
 
+	/**
+	 *
+	 * @description 사용자 이메일로 전송된 핀코드와 사용자 이메일을 인증한다. 해당 요청 후, 사용자 계정 생성이 가능하다.
+	 * @throws {HttpStatus.FORBIDDEN} 이미 인증된 사용자가 인증하려는 경우,
+	 * @throws {HttpStatus.TOO_MANY_REQUESTS} 짧은 시간내에 여러번 인증을 시도한 경우.
+	 */
 	@ApiCreatedResponse({ type: ShowOneTimeTokenResponse })
 	@HttpCode(HttpStatus.CREATED)
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -195,6 +207,13 @@ export class AuthController {
 		return new ShowOneTimeTokenResponse(oneTimeToken);
 	}
 
+	/**
+	 *
+	 * @description 민감한 동작에 사용되는 1회용 jwt를 발급한다
+	 * @returns 목적별 인증용 1회용 jwt 반환
+	 * @throws {HttpStatus.TOO_MANY_REQUESTS} 짧은 시간내에 요청을 발생시킨 경우
+	 *
+	 */
 	@ApiCreatedResponse({ type: ShowOneTimeTokenResponse })
 	@HttpCode(HttpStatus.CREATED)
 	@UseBasicAuthGuard()
@@ -213,6 +232,12 @@ export class AuthController {
 
 		return new ShowOneTimeTokenResponse(securityToken);
 	}
+	/**
+	 *
+	 * @description 사용자 인증을 위한 1회용 jwt와 사용될 domain url을 이메일로 전송한다.
+	 * @throws {HttpStatus.TOO_MANY_REQUESTS} 짧은 시간내에 요청을 발생시킨 경우
+	 *
+	 */
 
 	@ApiCreatedResponse({})
 	@HttpCode(HttpStatus.CREATED)
@@ -259,6 +284,13 @@ export class AuthController {
 		}
 	}
 
+	/**
+	 *
+	 * @description 사용자 이메일로 전송된 1회용 jwt와 사용될 domain url을 검증하여, 새로운 jwt를 발급한다.
+	 * @returns 목적별 인증용 1회용 jwt 반환
+	 * @throws {HttpStatus.TOO_MANY_REQUESTS} 짧은 시간내에 요청을 발생시킨 경우
+	 *
+	 */
 	@ApiCreatedResponse({ type: ShowOneTimeTokenResponse })
 	@HttpCode(HttpStatus.CREATED)
 	@UseSecurityTokenGuard("email-verification", { withDeleted: true })
