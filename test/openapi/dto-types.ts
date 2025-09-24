@@ -170,6 +170,7 @@ export type paths = {
 		};
 		get?: never;
 		put?: never;
+		/** @description 민감한 동작에 사용되는 1회용 jwt를 발급한다 */
 		post: operations["AuthController_generateSecurityActionToken"];
 		delete?: never;
 		options?: never;
@@ -186,6 +187,7 @@ export type paths = {
 		};
 		get?: never;
 		put?: never;
+		/** @description 사용자 인증을 위한 1회용 jwt와 사용될 domain url을 이메일로 전송한다. */
 		post: operations["AuthController_sendSecurityActionToken"];
 		delete?: never;
 		options?: never;
@@ -202,6 +204,7 @@ export type paths = {
 		};
 		get?: never;
 		put?: never;
+		/** @description 사용자 이메일로 전송된 1회용 jwt와 사용될 domain url을 검증하여, 새로운 jwt를 발급한다. */
 		post: operations["AuthController_generateSecurityTokenByEmailVerification"];
 		delete?: never;
 		options?: never;
@@ -710,12 +713,13 @@ export type components = {
 		};
 		ShowVerificationResponse: {
 			id: string;
-			/** Format: date-time */
+			/**
+			 * @description @format IsoDateTime
+			 * @example 2011-10-05T14:48:00.000Z
+			 */
 			verification_success_date: string | null;
-			/** Format: date-time */
 			last_verified_date: string | null;
 			hashedPinCode: string;
-			/** Format: date-time */
 			pin_code_expired_date: string;
 		};
 		VerifyDTO: {
@@ -728,9 +732,15 @@ export type components = {
 			purpose: components["schemas"]["ONE_TIME_TOKEN_PURPOSE"];
 			id: string;
 			token: string;
-			/** Format: date-time */
+			/**
+			 * @description @format IsoDateTime
+			 * @example 2011-10-05T14:48:00.000Z
+			 */
 			used_date: string | null;
-			/** Format: date-time */
+			/**
+			 * @description @format IsoDateTime
+			 * @example 2011-10-05T14:48:00.000Z
+			 */
 			expired_date: string;
 		};
 		CreateOneTimeTokenDTO: {
@@ -746,9 +756,15 @@ export type components = {
 			purpose: components["schemas"]["ONE_TIME_TOKEN_PURPOSE"];
 			id: string;
 			hashedToken: string;
-			/** Format: date-time */
+			/**
+			 * @description @format IsoDateTime
+			 * @example 2011-10-05T14:48:00.000Z
+			 */
 			used_date: string | null;
-			/** Format: date-time */
+			/**
+			 * @description @format IsoDateTime
+			 * @example 2011-10-05T14:48:00.000Z
+			 */
 			expired_date: string;
 		};
 		CreateUserDTO: {
@@ -1783,7 +1799,7 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content: {
-					"application/json": components["schemas"]["ShowOneTimeTokenResponse"];
+					"application/json": components["schemas"]["HashedOneTimeTokenResponse"];
 				};
 			};
 			/** @description when invalid path(route) or url query or dto body */
