@@ -34,6 +34,7 @@ import { OneTimeToken } from "../../../src/modules/auth/entity/oneTimeToken.enti
 import { omit } from "../../../src/utils/object";
 import { ShowOneTimeTokenResponse } from "../../../src/modules/auth/dto/response/showOneTimeToken.response";
 import { ShowVerificationResponse } from "../../../src/modules/auth/dto/response/showVerfication.response";
+import { HashedOneTimeTokenResponse } from "../../../src/modules/auth/dto/response/hashedOneTimeToken.response";
 
 describe("AuthController (e2e)", () => {
 	function sleep(ms: number) {
@@ -1216,18 +1217,25 @@ describe("AuthController (e2e)", () => {
 				beforeAll(async () => {
 					const userStub = factoryUserStub(userType);
 					const user = await testService.insertStubUser(userStub);
-					receivedEntity = await testService.createOneTimeToken(user, "update-password");
+					const oneTimeToken = await testService.createOneTimeToken(
+						user,
+						"update-password",
+					);
+					receivedEntity = (await authService.findOneTimeToken({
+						where: { id: oneTimeToken.id },
+					}))!;
+					assert(receivedEntity !== null);
 
 					receivedRes = await requestGetSecurityToken({ ...userStub }, receivedEntity.id);
 				});
 
-				it("response should match openapi", async () => {
+				it("response should match openapi", () => {
 					expect(receivedRes.response.status).toBe(HttpStatus.OK);
 					const receivedData = receivedRes.data;
 
 					expect(receivedData).toBeDefined();
 					expectResponseBody(zHashedOneTimeToken, receivedData);
-					await expectOneTimeToken(receivedData!, receivedEntity);
+					expect(receivedData!).toEqual(new HashedOneTimeTokenResponse(receivedEntity));
 				});
 			},
 		);
