@@ -80,12 +80,12 @@ describe("AuthController (e2e)", () => {
 		await manager.delete(Verification, condition);
 	}
 
-	async function deleteAllUsers(
-		condition: Partial<{
-			[K in keyof User]: User[K];
-		}>,
-	) {
+	async function deleteAllUsers(condition: { email: string }) {
 		const manager = dbService.getManager();
+		const users = await manager.find(User, { where: condition });
+
+		//delete relation table
+		await Promise.all(users.map((user) => manager.delete(OneTimeToken, { user_id: user.id })));
 
 		await manager.delete(User, condition);
 	}
@@ -818,8 +818,8 @@ describe("AuthController (e2e)", () => {
 
 	describe("/auth/security-token/email-verification (POST)  ", () => {
 		//TODO /auth/security-token/email-verification 테스트 구현
-		//- [ ] 좋은 데이터 테스트
-		//- [ ] 나쁜 데이터 테스트 ( 비유효 body)
+		//- [x] 좋은 데이터 테스트
+		//- [x] 나쁜 데이터 테스트 ( 비유효 body)
 		//- [ ] 특수 상항 데이터 테스트( 삭제된 계정 테스트)
 
 		async function requestSecurityTokenEmailVerification(body: {
@@ -839,10 +839,10 @@ describe("AuthController (e2e)", () => {
 				const userStub = factoryUserStub(userType);
 				userStub.email = targetEmail;
 
-				beforeAll(async () => {
+				async function arrange() {
 					await deleteAllUsers({ email: targetEmail });
 					await testService.insertStubUser(userStub);
-				});
+				}
 
 				describe.each([
 					{
@@ -864,6 +864,7 @@ describe("AuthController (e2e)", () => {
 						ReturnType<typeof requestSecurityTokenEmailVerification>
 					>;
 					beforeAll(async () => {
+						await arrange();
 						receivedRes = await requestSecurityTokenEmailVerification(body);
 					});
 
@@ -878,8 +879,8 @@ describe("AuthController (e2e)", () => {
 						});
 
 						expect(receivedEntity).toBeDefined();
-						const receivedPurpose = ONE_TIME_TOKEN_PURPOSE.email_verification;
-						const expectedPurpose = body.purpose;
+						const receivedPurpose = receivedEntity?.purpose;
+						const expectedPurpose = ONE_TIME_TOKEN_PURPOSE.email_verification;
 
 						//TODO API 테스트 자동화 구현하기
 						//[ ] 이메일 전송 결과와 DB에 저장된 결과 검증하기
@@ -897,19 +898,19 @@ describe("AuthController (e2e)", () => {
 			"fail when deliver invalid body",
 			({ userType }) => {
 				//TODO 나쁜 데이터 테스트
-				//- [ ] 빈 객체 body 데이터
-				//- [ ] 비유효 purpose 데이터
-				//- [ ] 존재하지 않는 사용자 이메일 데이터
+				//- [x] 빈 객체 body 데이터
+				//- [x] 비유효 purpose 데이터
+				//- [x] 존재하지 않는 사용자 이메일 데이터
 				const targetEmail = process.env[ENV_EMAIL_TEST_ADDRESS]!;
 				const userStub = factoryUserStub(userType);
 				const notExistUserStub = factoryUserStub(userType);
 				userStub.email = targetEmail;
 
-				beforeAll(async () => {
+				async function arrange() {
 					await deleteAllOneTimeTokens({ email: targetEmail });
 					await deleteAllUsers({ email: targetEmail });
 					await testService.insertStubUser(userStub);
-				});
+				}
 
 				describe.each([
 					{
@@ -935,6 +936,7 @@ describe("AuthController (e2e)", () => {
 						ReturnType<typeof requestSecurityTokenEmailVerification>
 					>;
 					beforeAll(async () => {
+						await arrange();
 						receivedRes = await requestSecurityTokenEmailVerification(
 							invalidBody as {
 								email: string;
@@ -1010,14 +1012,13 @@ describe("AuthController (e2e)", () => {
 					});
 
 					it("OneTimeToken entity should be created", async () => {
-						//check testEmail.
 						const receivedEntity = await authService.findOneTimeToken({
 							where: { email: body.email },
 						});
 
 						expect(receivedEntity).toBeDefined();
-						const receivedPurpose = ONE_TIME_TOKEN_PURPOSE.email_verification;
-						const expectedPurpose = body.purpose;
+						const receivedPurpose = receivedEntity?.purpose;
+						const expectedPurpose = ONE_TIME_TOKEN_PURPOSE.email_verification;
 
 						expect(receivedPurpose).toBe(expectedPurpose);
 					});
