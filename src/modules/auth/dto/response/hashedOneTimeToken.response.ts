@@ -6,8 +6,18 @@ import { ONE_TIME_TOKEN_PURPOSE } from "../../const";
 export class HashedOneTimeTokenResponse {
 	readonly id: string;
 	readonly hashedToken: string;
-	readonly used_date: Date | null;
-	readonly expired_date: Date;
+
+	/**
+	 * @format IsoDateTime
+	 * @example 2011-10-05T14:48:00.000Z
+	 */
+	readonly used_date: string | null;
+
+	/**
+	 * @format IsoDateTime
+	 * @example 2011-10-05T14:48:00.000Z
+	 */
+	readonly expired_date: string;
 	@ApiProperty({
 		enum: Object.values(ONE_TIME_TOKEN_PURPOSE),
 		enumName: "ONE_TIME_TOKEN_PURPOSE",
@@ -17,8 +27,8 @@ export class HashedOneTimeTokenResponse {
 	constructor(oneTimeToken: OneTimeToken) {
 		this.id = oneTimeToken.id;
 		this.hashedToken = oneTimeToken.token;
-		this.used_date = oneTimeToken.used_date;
-		this.expired_date = oneTimeToken.expired_date;
+		this.used_date = oneTimeToken.used_date ? oneTimeToken.used_date.toISOString() : null;
+		this.expired_date = oneTimeToken.expired_date.toISOString();
 		this.purpose = oneTimeToken.purpose;
 	}
 }
