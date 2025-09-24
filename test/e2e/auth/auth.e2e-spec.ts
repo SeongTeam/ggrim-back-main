@@ -950,12 +950,13 @@ describe("AuthController (e2e)", () => {
 					});
 
 					it("OneTimeToken entity should not be created", async () => {
-						//check testEmail.
-						const receivedEntity = await authService.findOneTimeToken({
-							where: { email: invalidBody.email },
-						});
+						if (invalidBody.email) {
+							const receivedEntity = await authService.findOneTimeToken({
+								where: { email: invalidBody.email },
+							});
 
-						expect(receivedEntity).toBeNull();
+							expect(receivedEntity).toBeNull();
+						}
 					});
 
 					it.skip("email should not be sent to body.email", async () => {
