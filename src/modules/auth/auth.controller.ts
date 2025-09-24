@@ -315,7 +315,7 @@ export class AuthController {
 		return new ShowOneTimeTokenResponse(securityToken);
 	}
 
-	@ApiOkResponse({ type: ShowOneTimeTokenResponse })
+	@ApiOkResponse({ type: HashedOneTimeTokenResponse })
 	@HttpCode(HttpStatus.OK)
 	@UseOwnerGuard(
 		{ guard: BasicGuard },
