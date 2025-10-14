@@ -70,23 +70,6 @@ describe("ArtistController (e2e)", () => {
 			return result;
 		}
 
-		// function factoryCreateArtistDto(): CreateArtistDto {
-		// 	const start = new Date(1000, 0, 1); // 1000-01-01
-		// 	const end = new Date(1900, 11, 31); // 1900-12-31
-
-		// 	// 생일 생성
-		// 	const birthDate = faker.date.between({ from: start, to: end });
-
-		// 	// 사망일은 생일 이후 ~ 1900-12-31 사이
-		// 	const deathDate = faker.date.between({ from: birthDate, to: end });
-		// 	return {
-		// 		name: faker.person.fullName(),
-		// 		birth_date: birthDate.toISOString(),
-		// 		death_date: deathDate.toISOString(),
-		// 		image_url: faker.internet.url(),
-		// 		info_url: faker.internet.url(),
-		// 	};
-		// }
 		describe("success when create artist by admin", () => {
 			let dto: CreateArtistDto;
 			let expectedArtistSubset: Pick<
