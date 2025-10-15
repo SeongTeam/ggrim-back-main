@@ -1085,7 +1085,7 @@ describe("AuthController (e2e)", () => {
 							purpose: ONE_TIME_TOKEN_PURPOSE.update_password,
 						},
 					},
-				])("test : %testName", ({ userId, body }) => {
+				])("test : $testName", ({ userId, body }) => {
 					let receivedRes: Awaited<
 						ReturnType<typeof requestSecurityTokenFromEmailVerification>
 					>;
@@ -1149,7 +1149,7 @@ describe("AuthController (e2e)", () => {
 						userId: userStub.id,
 						inValidBody: {},
 					},
-				])("test : %testName", ({ userId, inValidBody }) => {
+				])("test : $testName", ({ userId, inValidBody }) => {
 					let receivedRes: Awaited<
 						ReturnType<typeof requestSecurityTokenFromEmailVerification>
 					>;
