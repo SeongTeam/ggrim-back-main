@@ -754,13 +754,16 @@ describe("PaintingController (e2e)", () => {
 			const paintingStubs = Array(5)
 				.fill(0)
 				.map(() => factoryPaintingStub());
+			const tagsIndexRange = [0, 2];
+			const stylesIndexRange = [0, 2];
+			const artistIndex = 0;
 			let admin: User;
 			beforeAll(async () => {
 				const insertPaintingArgs = paintingStubs.map((stub) => ({
 					paintingDummy: stub,
-					tags: selectRandomElements(_tags, 2),
-					styles: selectRandomElements(_styles, 2),
-					artist: getRandomElement(_artists)!,
+					tags: _tags.slice(tagsIndexRange[0], tagsIndexRange[1]),
+					styles: _styles.slice(stylesIndexRange[0], stylesIndexRange[1]),
+					artist: _artists[artistIndex],
 				}));
 				await testService.insertPaintingStubs(insertPaintingArgs);
 				[admin] = await testService.seedUsersSingleInsert(1, "admin");
@@ -773,20 +776,20 @@ describe("PaintingController (e2e)", () => {
 					body: {
 						...transformToReplaceDto(
 							paintingStubs[0],
-							_tagStubs.slice(0, 3),
-							_styleStubs.slice(0, 3),
-							_artistStubs[0],
+							_tagStubs.slice(tagsIndexRange[0], tagsIndexRange[1] + 1),
+							_styleStubs.slice(stylesIndexRange[0], stylesIndexRange[1] + 1),
+							_artistStubs[1],
 						),
 					},
 				},
 				{
-					testName: "deliver updated title",
-					id: paintingStubs[0].id,
+					testName: "deliver updated title ",
+					id: paintingStubs[1].id,
 					body: {
 						...transformToReplaceDto(
-							paintingStubs[0],
-							_tagStubs.slice(0, 3),
-							_styleStubs.slice(0, 3),
+							paintingStubs[1],
+							_tagStubs.slice(tagsIndexRange[0], tagsIndexRange[1] + 1),
+							_styleStubs.slice(stylesIndexRange[0], stylesIndexRange[1] + 1),
 							_artistStubs[0],
 						),
 						title: "update title ",
