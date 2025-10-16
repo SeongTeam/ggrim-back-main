@@ -28,6 +28,7 @@ import { Artist } from "../../../src/modules/artist/entities/artist.entity";
 import { Style } from "../../../src/modules/style/entities/style.entity";
 import { Tag } from "../../../src/modules/tag/entities/tag.entity";
 import { sortByLocale } from "../../../src/utils/array";
+import { zPagination } from "../_common/zodSchema";
 
 if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 	console.log("Set setTimeout for debugging");
@@ -272,7 +273,7 @@ describe("PaintingController (e2e)", () => {
 					expect(response.response.status).toBe(HttpStatus.OK);
 					const receivedResBody = response.data;
 					expect(response.data).toBeDefined();
-					expectResponseBody(z.array(zShowPainting), receivedResBody);
+					expectResponseBody(zPagination(zShowPainting), receivedResBody);
 				});
 				it("paintings should meet query", async () => {
 					const receivedResponseData = response["data"];
@@ -305,6 +306,10 @@ describe("PaintingController (e2e)", () => {
 				await testService.insertPaintingStubs(insertPaintingArgs);
 			});
 
+			/**
+			 * @description backed http api follow  form style and explode
+			 * @example single query or array query having one element is serialized into `route?key=val1`
+			 */
 			describe.each([
 				{
 					testName: "deliver not array tags",
@@ -320,7 +325,7 @@ describe("PaintingController (e2e)", () => {
 				},
 				{
 					testName: "deliver array artistName",
-					invalidQuery: {
+					query: {
 						artistName: ["array type"],
 					},
 				},
@@ -333,8 +338,8 @@ describe("PaintingController (e2e)", () => {
 				it("response should match openapi spec", () => {
 					expect(response.response.status).toBe(HttpStatus.OK);
 					const receivedResBody = response.data;
-					expect(response.data).toBeDefined();
-					expectResponseBody(z.array(zShowPainting), receivedResBody);
+					expect(receivedResBody).toBeDefined();
+					expectResponseBody(zPagination(zShowPainting), receivedResBody);
 				});
 				// it("paintings should meet query", async () => {
 				// 	const receivedResponseData = response["data"];
