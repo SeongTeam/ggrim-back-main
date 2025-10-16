@@ -287,7 +287,7 @@ export class PaintingService {
 			return;
 		}
 
-		const tags: Tag[] = await this.getTagsByName(tagNames);
+		const tags: Tag[] = await this.getTagsByName(tagNamesToAdd);
 
 		const query = createTransactionQueryBuilder(queryRunner, Painting)
 			.relation(Painting, "tags")
@@ -324,7 +324,7 @@ export class PaintingService {
 			return;
 		}
 
-		const stylesToAdd: Style[] = await this.getStylesByName(styleNames);
+		const stylesToAdd: Style[] = await this.getStylesByName(styleNamesToAdd);
 
 		const query = createTransactionQueryBuilder(queryRunner, Painting)
 			.relation(Painting, "styles")
