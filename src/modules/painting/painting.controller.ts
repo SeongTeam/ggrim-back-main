@@ -127,6 +127,10 @@ export class PaintingController {
 		return new ShowPainting(newPainting);
 	}
 
+	// TODO: PUT Http API의 DB 리소스 ACID 보장
+	// - [ ] 동일한 리소스의 병렬 수정 작업 ACID 보장 확인하기
+	// ? 질문: DB Query Transaction 사용시, API 요청에 대한 모든 Query 작업을 Transaction으로 결합해야지 ACID가 보장되는가? 다른 방법은 없는가?
+	// * 참고: https://tailwindcss.com/docs/animation
 	@ApiOkResponse({ type: ShowPaintingResponse })
 	@HttpCode(HttpStatus.OK)
 	@UseRolesGuard("admin")
