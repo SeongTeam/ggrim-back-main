@@ -222,12 +222,18 @@ export class PaintingService {
 
 	/**
 	 * @returns 모든 relation 필드를 갖는 painting 배열
-	 * @description Exception 발생 : 전달된 id 배열에 매칭되는 Painting을 찾지 못한 경우.
+	 * @description ids[i]에 매칭되는 Painting을 찾지 못한 경우, 제외됨
 	 */
 	async getManyByIds(ids: string[]): Promise<Painting[]> {
 		//TODO : 전달된 id 배열에 대응되는 Painting 반환하는 함수 구현
-		//-[ ] : id가 중복되는 상황 예방
+		//-[x] : id가 중복되는 상황 예방
 		//-[ ] : id에 해당하는 Painting을 찾지 못한 상황 예외처리
+		// -> 현재 상황에서는 필요없다고 판단되어 삭제함.
+		//-[x] : ids.length === 0 일때, 예외 상황 처리
+
+		if (isArrayEmpty(ids)) {
+			return [];
+		}
 
 		const targetIdSet = new Set<string>(ids);
 		const query = this.repo
@@ -235,13 +241,18 @@ export class PaintingService {
 			.leftJoinAndSelect("p.tags", "tags")
 			.leftJoinAndSelect("p.styles", "styles")
 			.leftJoinAndSelect("p.artist", "artist")
-			.where("p.id IN (:...ids)", { ids: [...targetIdSet] });
-
-		Logger.debug(query.getSql());
+			.where("p.id IN (:...ids)", { ids: Array.from(targetIdSet) });
 
 		const paintings: Painting[] = await query.getMany();
-		const foundIdSet = new Set<string>(paintings.map((p) => p.id));
 
+		return paintings;
+	}
+
+	async validatePaintingIds(ids: string[]) {
+		const targetIdSet = new Set<string>(ids);
+
+		const paintings = await this.getManyByIds(Array.from(targetIdSet));
+		const foundIdSet = new Set<string>(paintings.map((p) => p.id));
 		if (targetIdSet.size !== foundIdSet.size) {
 			const notFoundIdSet = new Set<string>();
 
@@ -257,7 +268,6 @@ export class PaintingService {
 				`Can Not found ids : ${[...notFoundIdSet].join(", ")}`,
 			);
 		}
-		return paintings;
 	}
 
 	async relateToTag(

@@ -458,7 +458,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		const { answerPaintingIds, distractorPaintingIds } = dto;
 		const ids = [...answerPaintingIds, ...distractorPaintingIds];
 
-		await this.paintingService.getManyByIds(ids);
+		await this.paintingService.validatePaintingIds(ids);
 
 		if (dto.type === QUIZ_TYPE.ONE_CHOICE) {
 			this.validateOneChoiceQuizBodyDto(dto);
@@ -474,7 +474,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		const { answerPaintingIds, distractorPaintingIds } = dto;
 		const ids = [...answerPaintingIds, ...distractorPaintingIds];
 
-		await this.paintingService.getManyByIds(ids);
+		await this.paintingService.validatePaintingIds(ids);
 
 		if (type === QUIZ_TYPE.ONE_CHOICE) {
 			this.validateOneChoiceQuizBodyDto(dto);
