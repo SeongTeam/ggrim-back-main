@@ -676,13 +676,13 @@ describe("PaintingController (e2e)", () => {
 		// - [ ] 특수 상황 테스트 ( Huge query.page)
 		function transformToReplaceDto(
 			paintingStub: PaintingDummy,
-			_tagStubs: TagDummy[],
-			_styleStubs: StyleDummy[],
+			tagStubs: TagDummy[],
+			styleStubs: StyleDummy[],
 			artistStub: ArtistDummy,
 		): ReplacePaintingDto {
 			const dto = {
-				tags: _tagStubs.map((stub) => stub.name),
-				styles: _styleStubs.map((stub) => stub.name),
+				tags: tagStubs.map((stub) => stub.name),
+				styles: styleStubs.map((stub) => stub.name),
 				completition_year: paintingStub.completition_year!,
 				title: paintingStub.title,
 				image_url: paintingStub.image_url,
