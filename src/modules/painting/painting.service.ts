@@ -437,6 +437,11 @@ export class PaintingService {
 		return result.affected;
 	}
 
+	/**
+	 *
+	 * @param options
+	 * @returns painting with relation fields(artist,tags,styles)
+	 */
 	public async findOne(options: FindOneOptions<Painting>): Promise<Painting | null> {
 		const painting = await this.repo.findOne({
 			...options,
