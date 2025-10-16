@@ -536,11 +536,12 @@ describe("PaintingController (e2e)", () => {
 
 			describe.each([
 				{
-					testName: "deliver without relations field",
+					testName: "deliver without relations tags,styles",
 					body: {
 						...factoryBaseCreateDto(),
 						tags: [],
 						styles: [],
+						artistName: _artistStubs[0].name,
 					},
 				},
 				{
