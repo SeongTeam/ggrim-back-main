@@ -932,8 +932,8 @@ describe("PaintingController (e2e)", () => {
 		describe("/painting/:id (DELETE)", () => {
 			// TODO: "/painting/:id (PUT)" e2e 테스트 구현
 			// - [x] 공통 로직 구현
-			// - [ ] 좋은 데이터 테스트
-			// - [ ] 나쁜 데이터 테스트 (비유효 body, 비유효 id path)
+			// - [x] 좋은 데이터 테스트
+			// - [x] 나쁜 데이터 테스트 (비유효 body, 비유효 id path)
 			// - [ ] 비권한 사용자 요청 테스트
 			// - [ ] 특수 상황 테스트 ( Huge query.page)
 			async function requestDeletePainting(id: string, admin: User) {
