@@ -14,9 +14,8 @@ export class CreatePaintingDTO {
 	@IsString()
 	description!: string;
 
-	@IsOptionalProperty()
 	@IsString()
-	artistName?: string;
+	artistName!: string;
 
 	@IsNumber()
 	width!: number;
