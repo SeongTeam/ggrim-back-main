@@ -101,12 +101,10 @@ export class TestService {
 
 	async createSignUpOneTimeToken(email: string): Promise<OneTimeToken> {
 		let jwt = new OneTimeToken();
+		const qr = this.dbService.getQueryRunner();
 		try {
-			jwt = await this.authService.signOneTimeJWTWithoutUser(
-				this.dbService.getQueryRunner(),
-				email,
-				"sign-up",
-			);
+			jwt = await this.authService.signOneTimeJWTWithoutUser(qr, email, "sign-up");
+			await qr.release();
 		} catch (e) {
 			this.handleInsertError(e, { email });
 		}
@@ -122,14 +120,15 @@ export class TestService {
 	): Promise<OneTimeToken> {
 		let jwt = new OneTimeToken();
 		const clonedUser = structuredClone(user) as User;
-
+		const qr = this.dbService.getQueryRunner();
 		try {
 			jwt = await this.authService.signOneTimeJWTWithUser(
-				this.dbService.getQueryRunner(),
+				qr,
 				user.email,
 				purpose,
 				clonedUser,
 			);
+			await qr.release();
 		} catch (e) {
 			this.handleInsertError(e, { user, purpose });
 		}
@@ -140,8 +139,10 @@ export class TestService {
 	}
 
 	async useOneTimeToken(oneTimeToken: ReadonlyDeep<OneTimeToken>): Promise<void> {
+		const qr = this.dbService.getQueryRunner();
 		try {
-			await this.authService.markOneTimeJWT(this.dbService.getQueryRunner(), oneTimeToken.id);
+			await this.authService.markOneTimeJWT(qr, oneTimeToken.id);
+			await qr.release();
 		} catch (e) {
 			this.handleInsertError(e, oneTimeToken);
 		}
@@ -167,32 +168,13 @@ export class TestService {
 		return user;
 	}
 
+	//TODO : insertUserStubs 로직 개선하기
+	// [x] : hash 알고리즘 병목으로 인한 성능 저하 문제 해결하기
+	//		-> 방향 : insertStubUser 를 병렬 호출하여 해결 예정
 	async insertUserStubs(userStubs: ReadonlyDeep<UserDummy[]>): Promise<User[]> {
 		assert(userStubs.length > 0);
 
-		const repo = this.dbService.getRepository(User);
-		const stubs = structuredClone(userStubs) as UserDummy[];
-		let users: User[] = [];
-
-		try {
-			for (const stub of stubs) {
-				const hashedPassword = await this.authService.hash(stub.password);
-				stub.password = hashedPassword;
-			}
-
-			const result = await repo.insert(stubs);
-
-			const ids = result.generatedMaps.map((val) => (val as User).id);
-			users = await repo
-				.createQueryBuilder()
-				.select("user")
-				.from(User, "user")
-				.where("user.id IN (:...ids)", { ids })
-				.getMany();
-		} catch (e) {
-			this.handleInsertError(e, userStubs);
-		}
-		assert(users.length === userStubs.length);
+		const users = Promise.all(userStubs.map((stub) => this.insertStubUser(stub)));
 
 		return users;
 	}
