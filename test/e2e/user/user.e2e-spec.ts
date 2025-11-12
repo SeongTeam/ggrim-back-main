@@ -100,9 +100,10 @@ describe("UserController (e2e)", () => {
 	}
 
 	async function arrangeDeletedUser(deletedUserStub: UserDummy) {
-		const deletedUser = await testService.insertStubUser(deletedUserStub);
+		const targetUser = await userService.findOne({ where: { email: deletedUserStub.email } });
+		assert(targetUser !== null);
 		const qr = dbService.getQueryRunner();
-		await userService.softDeleteUser(qr, deletedUser.id);
+		await userService.softDeleteUser(qr, targetUser.id);
 		await qr.release();
 	}
 
@@ -157,6 +158,7 @@ describe("UserController (e2e)", () => {
 			const deletedUserStub = factoryUserStub("user");
 			const deletedAdminStub = factoryUserStub("admin");
 			beforeAll(async () => {
+				await testService.insertUserStubs([deletedUserStub, deletedAdminStub]);
 				await arrangeDeletedUser(deletedUserStub);
 				await arrangeDeletedUser(deletedAdminStub);
 			});
@@ -478,20 +480,17 @@ describe("UserController (e2e)", () => {
 			},
 		);
 
-		describe("fail when special case for header", () => {
+		describe("fail when deliver invalid oneTimeToken", () => {
 			const userStubs = Array(5)
 				.fill(0)
 				.map(() => factoryUserStub("admin"));
 			const adminStubs = Array(5)
 				.fill(0)
 				.map(() => factoryUserStub("user"));
-			const deletedUserStub = factoryUserStub("user");
 
 			beforeAll(async () => {
 				const stubs = userStubs.concat(adminStubs);
 				await Promise.all(stubs.map((stub) => testService.insertStubUser(stub)));
-
-				await arrangeDeletedUser(deletedUserStub);
 			});
 			describe.each([
 				{
@@ -501,6 +500,7 @@ describe("UserController (e2e)", () => {
 					body: {
 						password: "updatedPassword",
 					},
+					expectedStatus: HttpStatus.FORBIDDEN, // result from OwnerGuard
 				},
 				{
 					testName: "request by other admin",
@@ -509,14 +509,7 @@ describe("UserController (e2e)", () => {
 					body: {
 						password: "updatedPassword",
 					},
-				},
-				{
-					testName: "request by deleted user",
-					userEmail: userStubs[0].email,
-					requestUserEmail: deletedUserStub.email,
-					body: {
-						password: "updatedPassword",
-					},
+					expectedStatus: HttpStatus.FORBIDDEN, // result from OwnerGuard
 				},
 				{
 					testName: "deliver used oneTimeToken",
@@ -528,22 +521,49 @@ describe("UserController (e2e)", () => {
 					oneTimeTokenOption: {
 						isUsed: true,
 					},
+					expectedStatus: HttpStatus.UNAUTHORIZED, // result from SecurityTokenGuard
 				},
-			])("test : $testName", ({ userEmail, requestUserEmail, body, oneTimeTokenOption }) => {
-				let receivedRes: Awaited<ReturnType<typeof requestUpdatePassword>>;
-				beforeAll(async () => {
-					const header = await getOneTimeTokenHeader(
-						requestUserEmail,
-						"update-password",
-						oneTimeTokenOption,
-					);
+			])(
+				"test : $testName",
+				({ userEmail, requestUserEmail, body, oneTimeTokenOption, expectedStatus }) => {
+					let receivedRes: Awaited<ReturnType<typeof requestUpdatePassword>>;
+					beforeAll(async () => {
+						const header = await getOneTimeTokenHeader(
+							requestUserEmail,
+							"update-password",
+							oneTimeTokenOption,
+						);
 
-					receivedRes = await requestUpdatePassword(userEmail, body, header);
-				});
+						receivedRes = await requestUpdatePassword(userEmail, body, header);
+					});
 
-				it("response should match the OpenAPI documentation. doc", () => {
-					expect(receivedRes.response.status).toBe(HttpStatus.FORBIDDEN);
-				});
+					it("response should match the OpenAPI documentation", () => {
+						expect(receivedRes.response.status).toBe(expectedStatus);
+					});
+				},
+			);
+		});
+
+		describe("fail when special case", () => {
+			it("deliver oneTimeToken from deleted user", async () => {
+				//1. arrange
+				const deletedUserStub = factoryUserStub("user");
+				const targetEmail = deletedUserStub.email;
+				await testService.insertStubUser(deletedUserStub);
+				const header = await getOneTimeTokenHeader(
+					deletedUserStub.email,
+					"update-password",
+				);
+				const body = {
+					password: "updatedPassword",
+				};
+				await arrangeDeletedUser(deletedUserStub);
+
+				//2. action
+				const receivedRes = await requestUpdatePassword(targetEmail, body, header);
+
+				//3. assert
+				expect(receivedRes.response.status).toBe(HttpStatus.UNAUTHORIZED);
 			});
 		});
 	});
@@ -700,9 +720,12 @@ describe("UserController (e2e)", () => {
 			const adminStub = factoryUserStub("admin");
 			const deletedAdminStub = factoryUserStub("admin");
 			beforeAll(async () => {
-				await testService.insertStubUser(userStub);
-				await testService.insertStubUser(otherUserStub);
-				await testService.insertStubUser(adminStub);
+				await testService.insertUserStubs([
+					userStub,
+					otherUserStub,
+					adminStub,
+					deletedAdminStub,
+				]);
 				await arrangeDeletedUser(deletedAdminStub);
 			});
 			describe.each([
@@ -718,14 +741,6 @@ describe("UserController (e2e)", () => {
 					testName: "request by other admin",
 					email: userStub.email,
 					requestUserEmail: adminStub.email,
-					body: {
-						username: "updatedUsername",
-					},
-				},
-				{
-					testName: "request by deleted admin",
-					email: userStub.email,
-					requestUserEmail: deletedAdminStub.email,
 					body: {
 						username: "updatedUsername",
 					},
@@ -924,9 +939,12 @@ describe("UserController (e2e)", () => {
 				const deletedAdminStub = factoryUserStub("admin");
 
 				beforeAll(async () => {
-					await testService.insertStubUser(targetUserStub);
-					await testService.insertStubUser(requestUserStub);
-					await testService.insertStubUser(normalUserStub);
+					await testService.insertUserStubs([
+						targetUserStub,
+						requestUserStub,
+						normalUserStub,
+						deletedAdminStub,
+					]);
 
 					await arrangeDeletedUser(deletedAdminStub);
 				});
@@ -1075,14 +1093,11 @@ describe("UserController (e2e)", () => {
 				const targetUserStub = factoryUserStub(userType);
 				const adminStub = factoryUserStub("admin");
 				const normalUserStub = factoryUserStub("user");
-				const deletedAdminStub = factoryUserStub("admin");
 
 				beforeAll(async () => {
 					await testService.insertStubUser(targetUserStub);
 					await testService.insertStubUser(adminStub);
 					await testService.insertStubUser(normalUserStub);
-
-					await arrangeDeletedUser(deletedAdminStub);
 				});
 
 				describe.each([
@@ -1097,14 +1112,9 @@ describe("UserController (e2e)", () => {
 						requestUserEmail: adminStub.email,
 					},
 					{
-						testName: "request by deleted admin",
-						email: targetUserStub.email,
-						requestUserEmail: deletedAdminStub.email,
-					},
-					{
 						testName: "deliver used oneTimeToken",
 						email: targetUserStub.email,
-						requestUserEmail: deletedAdminStub.email,
+						requestUserEmail: normalUserStub.email,
 						oneTimeTokenOption: {
 							isUsed: true,
 						},
@@ -1172,6 +1182,7 @@ describe("UserController (e2e)", () => {
 				const targetUserStub = factoryUserStub(userType);
 
 				beforeAll(async () => {
+					await testService.insertStubUser(targetUserStub);
 					await arrangeDeletedUser(targetUserStub);
 				});
 
@@ -1212,6 +1223,7 @@ describe("UserController (e2e)", () => {
 				const targetUserStub = factoryUserStub(userType);
 
 				beforeAll(async () => {
+					await testService.insertStubUser(targetUserStub);
 					await arrangeDeletedUser(targetUserStub);
 				});
 
@@ -1250,6 +1262,7 @@ describe("UserController (e2e)", () => {
 				const targetUserStub = factoryUserStub(userType);
 
 				beforeAll(async () => {
+					await testService.insertStubUser(targetUserStub);
 					await arrangeDeletedUser(targetUserStub);
 				});
 
@@ -1287,14 +1300,18 @@ describe("UserController (e2e)", () => {
 				const targetUserStub = factoryUserStub(userType);
 				const adminStub = factoryUserStub("admin");
 				const userStub = factoryUserStub("user");
-				const deletedAdminStub = factoryUserStub("admin");
 				const activeUserStub = factoryUserStub(userType);
 
 				beforeAll(async () => {
+					await testService.insertUserStubs([
+						targetUserStub,
+						adminStub,
+						userStub,
+						activeUserStub,
+					]);
 					await arrangeDeletedUser(targetUserStub);
 					await testService.insertStubUser(adminStub);
 					await testService.insertStubUser(userStub);
-					await arrangeDeletedUser(deletedAdminStub);
 					await testService.insertStubUser(activeUserStub);
 				});
 
@@ -1310,14 +1327,9 @@ describe("UserController (e2e)", () => {
 						requestUserEmail: adminStub.email,
 					},
 					{
-						testName: "request by deleted admin",
-						email: targetUserStub.email,
-						requestUserEmail: deletedAdminStub.email,
-					},
-					{
 						testName: "deliver oneTimeToken already used admin",
 						email: targetUserStub.email,
-						requestUserEmail: deletedAdminStub.email,
+						requestUserEmail: adminStub.email,
 						oneTimeTokenOption: { isUsed: true },
 					},
 					{
@@ -1343,5 +1355,6 @@ describe("UserController (e2e)", () => {
 				});
 			},
 		);
+
 	});
 });
