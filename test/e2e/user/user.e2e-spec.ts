@@ -19,6 +19,11 @@ import assert from "assert";
 import { OneTimeTokenPurpose } from "../../../src/modules/auth/types/oneTimeToken";
 import { OneTimeToken } from "../../../src/modules/auth/entity/oneTimeToken.entity";
 
+if (process.env.VSCODE_INSPECTOR_OPTIONS) {
+	console.log("Set setTimeout for debugging");
+	jest.setTimeout(60 * 1000 * 10); // 10 minutes
+}
+
 describe("UserController (e2e)", () => {
 	let app: INestApplication;
 	let dbService: DatabaseService;
