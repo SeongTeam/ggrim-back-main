@@ -218,9 +218,9 @@ describe("UserController (e2e)", () => {
 			describe.each([
 				{
 					testName: "deliver body and header",
-					email: faker.internet.email(),
+					email: faker.internet.email({ firstName: "testing" }),
 					body: {
-						username: faker.internet.username(),
+						username: faker.internet.username({ firstName: "iniT" }),
 						password: faker.internet.password(),
 					},
 				},
@@ -610,7 +610,7 @@ describe("UserController (e2e)", () => {
 						testName: "deliver valid email path and body",
 						email: userStub.email,
 						body: {
-							username: "updated" + faker.person.lastName(),
+							username: faker.internet.username({ firstName: "upDate" }),
 						},
 					},
 				])("test : $testName", ({ email, body }) => {
