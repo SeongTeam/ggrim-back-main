@@ -1259,7 +1259,7 @@ describe("UserController (e2e)", () => {
 					beforeAll(async () => {
 						const header = await getOneTimeTokenHeader(
 							requestUserEmail,
-							"delete-account",
+							"recover-account",
 						);
 						receivedRes = await requestRecoverUser(email, header);
 					});
@@ -1305,7 +1305,7 @@ describe("UserController (e2e)", () => {
 					beforeAll(async () => {
 						const header = await getOneTimeTokenHeader(
 							requestUserEmail,
-							"delete-account",
+							"recover-account",
 						);
 						receivedRes = await requestRecoverUser(email, header);
 					});
@@ -1356,7 +1356,7 @@ describe("UserController (e2e)", () => {
 		);
 
 		describe.each([{ userType: USER_ROLE.user }, { userType: USER_ROLE.admin }])(
-			"fail when deliver special case by $userType",
+			"fail when deliver invalid case by $userType",
 			({ userType }) => {
 				const targetUserStub = factoryUserStub(userType);
 				const adminStub = factoryUserStub("admin");
@@ -1371,9 +1371,6 @@ describe("UserController (e2e)", () => {
 						activeUserStub,
 					]);
 					await arrangeDeletedUser(targetUserStub);
-					await testService.insertStubUser(adminStub);
-					await testService.insertStubUser(userStub);
-					await testService.insertStubUser(activeUserStub);
 				});
 
 				describe.each([
@@ -1381,39 +1378,46 @@ describe("UserController (e2e)", () => {
 						testName: "request by other user",
 						email: targetUserStub.email,
 						requestUserEmail: userStub.email,
+						expectedHttpStatus: HttpStatus.FORBIDDEN, // result from OwnerGuard
 					},
 					{
 						testName: "request by other admin",
 						email: targetUserStub.email,
 						requestUserEmail: adminStub.email,
-					},
-					{
-						testName: "deliver oneTimeToken already used admin",
-						email: targetUserStub.email,
-						requestUserEmail: adminStub.email,
-						oneTimeTokenOption: { isUsed: true },
+						expectedHttpStatus: HttpStatus.FORBIDDEN, // result from OwnerGuard
 					},
 					{
 						testName: "request by not deleted user",
 						email: activeUserStub.email,
 						requestUserEmail: activeUserStub.email,
+						expectedHttpStatus: HttpStatus.FORBIDDEN, // result from OwnerGuard
 					},
-				])("test : $testName ", ({ email, requestUserEmail, oneTimeTokenOption }) => {
-					let receivedRes: Awaited<ReturnType<typeof requestRecoverUser>>;
+					{
+						testName: "deliver admin oneTimeToken already used ",
+						email: targetUserStub.email,
+						requestUserEmail: adminStub.email,
+						oneTimeTokenOption: { isUsed: true },
+						expectedHttpStatus: HttpStatus.UNAUTHORIZED, // result from securityTokenGuard
+					},
+				])(
+					"test : $testName ",
+					({ email, requestUserEmail, oneTimeTokenOption, expectedHttpStatus }) => {
+						let receivedRes: Awaited<ReturnType<typeof requestRecoverUser>>;
 
-					beforeAll(async () => {
-						const header = await getOneTimeTokenHeader(
-							requestUserEmail,
-							"delete-account",
-							oneTimeTokenOption,
-						);
-						receivedRes = await requestRecoverUser(email, header);
-					});
+						beforeAll(async () => {
+							const header = await getOneTimeTokenHeader(
+								requestUserEmail,
+								"recover-account",
+								oneTimeTokenOption,
+							);
+							receivedRes = await requestRecoverUser(email, header);
+						});
 
-					it("response should match the OpenAPI documentation.", () => {
-						expect(receivedRes.response.status).toBe(HttpStatus.FORBIDDEN);
-					});
-				});
+						it("response should match the OpenAPI documentation.", () => {
+							expect(receivedRes.response.status).toBe(expectedHttpStatus);
+						});
+					},
+				);
 			},
 		);
 
@@ -1429,13 +1433,14 @@ describe("UserController (e2e)", () => {
 					"recover-account",
 				);
 
+				await arrangeDeletedUser(targetUserStub);
 				await arrangeDeletedUser(deletedUserStub);
 
 				//2. action
 				const receivedRes = await requestRecoverUser(targetEmail, header);
 
 				//3. assert
-				expect(receivedRes.response.status).toBe(HttpStatus.UNAUTHORIZED);
+				expect(receivedRes.response.status).toBe(HttpStatus.FORBIDDEN); // result from OwnerGuard
 			});
 		});
 	});
