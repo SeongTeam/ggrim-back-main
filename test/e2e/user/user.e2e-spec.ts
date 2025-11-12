@@ -1138,6 +1138,41 @@ describe("UserController (e2e)", () => {
 			},
 		);
 
+		describe("fail when special case", () => {
+			it("request from already deleted user", async () => {
+				//1. arrange
+				const deletedUserStub = factoryUserStub("user");
+				const targetEmail = deletedUserStub.email;
+				await testService.insertStubUser(deletedUserStub);
+				const header = await getOneTimeTokenHeader(deletedUserStub.email, "delete-account");
+
+				await arrangeDeletedUser(deletedUserStub);
+
+				//2. action
+				const receivedRes = await requestDeleteUser(targetEmail, header);
+
+				//3. assert
+				expect(receivedRes.response.status).toBe(HttpStatus.UNAUTHORIZED);
+			});
+
+			it("deliver oneTimeToken from deleted user", async () => {
+				//1. arrange
+				const targetUserStub = factoryUserStub("user");
+				const deletedUserStub = factoryUserStub("user");
+				const targetEmail = targetUserStub.email;
+				await testService.insertUserStubs([targetUserStub, deletedUserStub]);
+				const header = await getOneTimeTokenHeader(deletedUserStub.email, "delete-account");
+
+				await arrangeDeletedUser(deletedUserStub);
+
+				//2. action
+				const receivedRes = await requestDeleteUser(targetEmail, header);
+
+				//3. assert
+				expect(receivedRes.response.status).toBe(HttpStatus.UNAUTHORIZED);
+			});
+		});
+
 		it.each([{ userType: USER_ROLE.user }, { userType: USER_ROLE.admin }])(
 			"fail when deliver incorrect oneTimeToken by $userType",
 			async ({ userType }) => {
@@ -1356,5 +1391,26 @@ describe("UserController (e2e)", () => {
 			},
 		);
 
+		describe("fail when special case", () => {
+			it("deliver oneTimeToken from deleted user", async () => {
+				//1. arrange
+				const targetUserStub = factoryUserStub("user");
+				const deletedUserStub = factoryUserStub("user");
+				const targetEmail = targetUserStub.email;
+				await testService.insertUserStubs([targetUserStub, deletedUserStub]);
+				const header = await getOneTimeTokenHeader(
+					deletedUserStub.email,
+					"recover-account",
+				);
+
+				await arrangeDeletedUser(deletedUserStub);
+
+				//2. action
+				const receivedRes = await requestRecoverUser(targetEmail, header);
+
+				//3. assert
+				expect(receivedRes.response.status).toBe(HttpStatus.UNAUTHORIZED);
+			});
+		});
 	});
 });
