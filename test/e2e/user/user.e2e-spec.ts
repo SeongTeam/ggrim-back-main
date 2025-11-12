@@ -1125,11 +1125,13 @@ describe("UserController (e2e)", () => {
 						testName: "request by normal user",
 						email: targetUserStub.email,
 						requestUserEmail: normalUserStub.email,
+						expectedHttpStatus: HttpStatus.FORBIDDEN,
 					},
 					{
 						testName: "request by admin",
 						email: targetUserStub.email,
 						requestUserEmail: adminStub.email,
+						expectedHttpStatus: HttpStatus.FORBIDDEN,
 					},
 					{
 						testName: "deliver used oneTimeToken",
@@ -1138,23 +1140,27 @@ describe("UserController (e2e)", () => {
 						oneTimeTokenOption: {
 							isUsed: true,
 						},
+						expectedHttpStatus: HttpStatus.UNAUTHORIZED,
 					},
-				])("test : $testName", ({ email, requestUserEmail, oneTimeTokenOption }) => {
-					let receivedRes: Awaited<ReturnType<typeof requestDeleteUser>>;
+				])(
+					"test : $testName",
+					({ email, requestUserEmail, oneTimeTokenOption, expectedHttpStatus }) => {
+						let receivedRes: Awaited<ReturnType<typeof requestDeleteUser>>;
 
-					beforeAll(async () => {
-						const header = await getOneTimeTokenHeader(
-							requestUserEmail,
-							"delete-account",
-							oneTimeTokenOption,
-						);
-						receivedRes = await requestDeleteUser(email, header);
-					});
+						beforeAll(async () => {
+							const header = await getOneTimeTokenHeader(
+								requestUserEmail,
+								"delete-account",
+								oneTimeTokenOption,
+							);
+							receivedRes = await requestDeleteUser(email, header);
+						});
 
-					it("response should match the OpenAPI documentation.", () => {
-						expect(receivedRes.response.status).toBe(HttpStatus.FORBIDDEN);
-					});
-				});
+						it("response should match the OpenAPI documentation.", () => {
+							expect(receivedRes.response.status).toBe(expectedHttpStatus);
+						});
+					},
+				);
 			},
 		);
 
@@ -1204,7 +1210,7 @@ describe("UserController (e2e)", () => {
 				const receivedRes = await requestDeleteUser(targetUser.email, header);
 
 				//3.assert
-				expect(receivedRes.response.status).toBe(HttpStatus.FORBIDDEN);
+				expect(receivedRes.response.status).toBe(HttpStatus.UNAUTHORIZED);
 			},
 		);
 	});
