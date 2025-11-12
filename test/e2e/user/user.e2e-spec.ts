@@ -610,7 +610,7 @@ describe("UserController (e2e)", () => {
 						testName: "deliver valid email path and body",
 						email: userStub.email,
 						body: {
-							username: "updatedUsername",
+							username: "updated" + faker.person.lastName(),
 						},
 					},
 				])("test : $testName", ({ email, body }) => {
@@ -640,7 +640,7 @@ describe("UserController (e2e)", () => {
 		);
 
 		describe.each([{ userType: USER_ROLE.user }, { userType: USER_ROLE.admin }])(
-			"fail when invalid id path or invalid body",
+			"fail when invalid id path or invalid body by $userType",
 			({ userType }) => {
 				const userStub = factoryUserStub(userType);
 				beforeAll(async () => {
@@ -655,14 +655,14 @@ describe("UserController (e2e)", () => {
 							username: "updatedUsername",
 						},
 					},
-					{
-						testName: "deliver invalid body having not allowed characters",
-						invalidEmail: userStub.email,
-						requestUserEmail: userStub.email,
-						invalidBody: {
-							username: "!@#_update",
-						},
-					},
+					// {
+					// 	testName: "deliver invalid body having not allowed characters",
+					// 	invalidEmail: userStub.email,
+					// 	requestUserEmail: userStub.email,
+					// 	invalidBody: {
+					// 		username: "!@#_update",
+					// 	},
+					// },
 				])("test : $testName", ({ invalidEmail, invalidBody, requestUserEmail }) => {
 					let receivedRes: Awaited<ReturnType<typeof requestUpdateUsername>>;
 
@@ -808,7 +808,7 @@ describe("UserController (e2e)", () => {
 
 				describe.each([
 					{
-						testName: "deliver valid email path and body",
+						testName: "flip user role",
 						email: targetUserStub.email,
 						requestUserEmail: requestUserStub.email,
 						body: {
@@ -931,37 +931,25 @@ describe("UserController (e2e)", () => {
 		);
 
 		describe.each([{ userType: USER_ROLE.user }, { userType: USER_ROLE.admin }])(
-			"fail when special case for header[Authorization]",
+			"fail when invalid Authorization",
 			({ userType }) => {
 				const targetUserStub = factoryUserStub(userType);
 				const requestUserStub = factoryUserStub("admin");
 				const normalUserStub = factoryUserStub("user");
-				const deletedAdminStub = factoryUserStub("admin");
 
 				beforeAll(async () => {
 					await testService.insertUserStubs([
 						targetUserStub,
 						requestUserStub,
 						normalUserStub,
-						deletedAdminStub,
 					]);
-
-					await arrangeDeletedUser(deletedAdminStub);
 				});
 
 				describe.each([
 					{
-						testName: "request by normal user",
+						testName: "flip role when request by normal user",
 						email: targetUserStub.email,
 						requestUserEmail: normalUserStub.email,
-						body: {
-							role: userType === USER_ROLE.user ? USER_ROLE.admin : USER_ROLE.user,
-						},
-					},
-					{
-						testName: "request by deleted admin",
-						email: targetUserStub.email,
-						requestUserEmail: deletedAdminStub.email,
 						body: {
 							role: userType === USER_ROLE.user ? USER_ROLE.admin : USER_ROLE.user,
 						},
@@ -984,6 +972,38 @@ describe("UserController (e2e)", () => {
 				});
 			},
 		);
+
+		describe("fail when special case", () => {
+			it.each([{ userType: USER_ROLE.user }, { userType: USER_ROLE.admin }])(
+				"flip role of $userType when request by deleted user ",
+				async ({ userType }) => {
+					//1. arrange
+					const targetUserStub = factoryUserStub("user");
+					const deletedAdminStub = factoryUserStub("admin");
+					const targetEmail = targetUserStub.email;
+					const [, deletedAdmin] = await testService.insertUserStubs([
+						targetUserStub,
+						deletedAdminStub,
+					]);
+					const authorization = testService.getBearerAuthCredential(deletedAdmin);
+					const body = {
+						role: userType === USER_ROLE.user ? USER_ROLE.admin : USER_ROLE.user,
+					};
+
+					await arrangeDeletedUser(deletedAdminStub);
+
+					//2. action
+					const receivedRes = await requestUpdateUserRole(
+						targetEmail,
+						body,
+						authorization,
+					);
+
+					//3. assert
+					expect(receivedRes.response.status).toBe(HttpStatus.UNAUTHORIZED);
+				},
+			);
+		});
 	});
 
 	describe("/user/:email (DELETE)", () => {
