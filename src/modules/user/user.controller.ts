@@ -216,15 +216,16 @@ export class UserController implements CrudController<User> {
 	@Put(":email/role")
 	async replaceRole(
 		@DBQueryRunner() qr: QueryRunner,
-		@Req() request: Request,
 		@Param("email") email: string,
 		@Body() dto: ReplaceRoleDTO,
 	) {
 		if (!isEmail(email)) {
 			throw new HttpException(`${email} is not valid`, HttpStatus.BAD_REQUEST);
 		}
-		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
-		const { user } = authUserPayload;
+		const user = await this.service.findOne({ where: { email } });
+		if (!user) {
+			throw new ServiceException("ENTITY_NOT_FOUND", `BAD_REQUEST`, `${email} is not exist`);
+		}
 
 		await this.service.updateUser(qr, user.id, dto);
 	}
