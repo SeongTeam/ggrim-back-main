@@ -85,8 +85,8 @@ describe("UserController (e2e)", () => {
 			oneTimeToken = await testService.createOneTimeToken(deletedUser, "recover-account");
 		} else {
 			const user = await userService.findOne({ where: { email: userEmail } });
-			assert(user !== undefined);
-			oneTimeToken = await testService.createOneTimeToken(user!, purpose);
+			assert(user !== null);
+			oneTimeToken = await testService.createOneTimeToken(user, purpose);
 		}
 
 		header["x-one-time-token-identifier"] = oneTimeToken.id;
