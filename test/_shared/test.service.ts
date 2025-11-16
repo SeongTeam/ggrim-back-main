@@ -114,6 +114,12 @@ export class TestService {
 		return jwt;
 	}
 
+	/**
+	 *
+	 * @param user
+	 * @param purpose
+	 * @returns oneTimeToken entity having not encrypted token field
+	 */
 	async createOneTimeToken(
 		user: ReadonlyDeep<User>,
 		purpose: ReadonlyDeep<OneTimeTokenPurpose>,
