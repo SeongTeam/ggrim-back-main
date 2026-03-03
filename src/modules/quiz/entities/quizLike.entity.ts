@@ -2,12 +2,15 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique }
 import { CustomBaseEntity } from "../../db/entity/customBase.entity";
 import { User } from "../../user/entity/user.entity";
 import { Quiz } from "./quiz.entity";
+import { QUIZ_REACTION } from "../const";
 
 // TODO : 쿼리 성능 개선
 // - [ ] : 조회성능 향상을 위해 user_id와 quiz_id에 대한 복합키 고려하기
 @Entity()
 @Unique(["user_id", "quiz_id"])
 export class QuizLike extends CustomBaseEntity {
+	readonly _type = QUIZ_REACTION.LIKE;
+
 	@PrimaryGeneratedColumn("uuid")
 	id!: string;
 

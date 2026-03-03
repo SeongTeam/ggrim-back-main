@@ -2,10 +2,13 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique }
 import { CustomBaseEntity } from "../../db/entity/customBase.entity";
 import { User } from "../../user/entity/user.entity";
 import { Quiz } from "./quiz.entity";
+import { QUIZ_REACTION } from "../const";
 
 @Entity()
 @Unique(["user", "quiz"])
 export class QuizDislike extends CustomBaseEntity {
+	readonly _type = QUIZ_REACTION.DISLIKE;
+
 	@PrimaryGeneratedColumn("uuid")
 	id!: string;
 

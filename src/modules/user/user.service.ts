@@ -41,14 +41,6 @@ export class UserService extends TypeOrmCrudService<User> {
 	//  -> insertResult.generateMaps[0]은 직접삽입한 값은 포함되지 않기 때문에 returning() 적용필요.
 
 	async createUser(queryRunner: QueryRunner, dto: DeepPartial<User>): Promise<User> {
-		const returnColumn: (keyof User)[] = [
-			"id",
-			"email",
-			"last_login_date",
-			"role",
-			"oauth_provider",
-			"oauth_provider_id",
-		];
 		try {
 			const result = await createTransactionQueryBuilder(queryRunner, User)
 				.insert()
@@ -58,7 +50,7 @@ export class UserService extends TypeOrmCrudService<User> {
 						...dto,
 					},
 				])
-				.returning(returnColumn)
+				.returning("*")
 				.execute();
 			return result.generatedMaps[0] as User;
 		} catch (error) {

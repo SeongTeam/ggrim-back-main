@@ -3,50 +3,47 @@ import {
 	Controller,
 	forwardRef,
 	Get,
+	HttpCode,
+	HttpStatus,
 	Inject,
 	Param,
 	ParseUUIDPipe,
 	Post,
 	Req,
-	UseGuards,
 	UseInterceptors,
-	UsePipes,
-	ValidationPipe,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { isNotEmpty } from "class-validator";
 import { QueryRunner } from "typeorm";
-import {
-	ENV_EMAIL_TEST_ADDRESS,
-	FRONT_ROUTE_USER_EMAIL_VERIFICATION,
-} from "../_common/const/envKeys";
+import { FRONT_ROUTE_USER_EMAIL_VERIFICATION } from "../_common/const/envKeys";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner";
 import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
 import { MailService } from "../mail/mail.service";
 import { User } from "../user/entity/user.entity";
 import { UserService } from "../user/user.service";
-import { isArrayEmpty } from "../../utils/validator";
+import { isArrayEmpty, isFalsy } from "../../utils/validator";
 import { AuthService } from "./auth.service";
-import { CheckOwner } from "./metadata/owner";
-import { PurposeOneTimeToken } from "./metadata/purposeOneTimeToken";
-import { SecurityTokenGuardOptions } from "./metadata/securityTokenGuardOption";
-import { CreateOneTimeTokenDTO } from "./dto/request/createOneTimeTokenDTO";
-import { requestVerificationDTO } from "./dto/request/requestVerificationDTO";
-import { SignInResponse } from "./dto/response/signInResponse";
-import { SendOneTimeTokenDTO } from "./dto/request/sendOneTimeTokenDTO";
+import { CreateOneTimeTokenDTO } from "./dto/request/createOneTimeToken.dto";
+import { requestVerificationDTO } from "./dto/request/requestVerification.dto";
+import { SignInResponse } from "./dto/response/signIn.response";
+import { SendOneTimeTokenDTO } from "./dto/request/sendOneTimeToken.dto";
 import { VerifyDTO } from "./dto/request/verify.dto";
-import { OneTimeToken, OneTimeTokenPurpose } from "./entity/oneTimeToken.entity";
+import { OneTimeToken } from "./entity/oneTimeToken.entity";
+import { OneTimeTokenPurpose } from "./types/oneTimeToken";
 import { Verification } from "./entity/verification.entity";
 import { BasicGuard } from "./guard/authentication/basic.guard";
-import { SecurityTokenGuard } from "./guard/authentication/securityToken.guard";
-import { OwnerGuard } from "./guard/authorization/owner.guard";
 import { AuthUserPayload, SecurityTokenPayload } from "./guard/types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "./guard/const";
 import { Request } from "express";
+import { ShowVerificationResponse } from "./dto/response/showVerfication.response";
+import { ShowOneTimeTokenResponse } from "./dto/response/showOneTimeToken.response";
+import { UseOwnerGuard } from "./guard/decorator/authorization";
+import { UseBasicAuthGuard, UseSecurityTokenGuard } from "./guard/decorator/authentication";
+import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
+import { HashedOneTimeTokenResponse } from "./dto/response/hashedOneTimeToken.response";
 
 @Controller("auth")
-@UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class AuthController {
 	constructor(
 		@Inject(AuthService) private readonly service: AuthService,
@@ -59,8 +56,10 @@ export class AuthController {
 	// - [x] : 로그인 성공시, 사용자 정보 응답하기
 	// - [ ] : 로그인 성공 또는 실패에 대한 기록 저장하기
 
+	@ApiCreatedResponse({ type: SignInResponse })
+	@HttpCode(HttpStatus.CREATED)
+	@UseBasicAuthGuard()
 	@Post("sign-in")
-	@UseGuards(BasicGuard)
 	signin(@Req() request: Request) {
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = userPayload;
@@ -92,12 +91,20 @@ export class AuthController {
 	// ? 질문: registerMethod에서 이미 인증된 계정인 경우, 어떻게 해야하는가?
 	// * 참고: <관련 정보나 링크>
 
-	@Post("request-verification")
+	/**
+	 *
+	 * @description 계정 생성 전, 사용자 이메일로 핀코드를 전송한다.
+	 * @throws {HttpStatus.FORBIDDEN} 이미 인증된 사용자가 인증하려는 경우,
+	 * @throws {HttpStatus.TOO_MANY_REQUESTS} 짧은 시간내에 여러번 인증을 시도한 경우.
+	 */
+	@ApiCreatedResponse({ type: ShowVerificationResponse })
+	@HttpCode(HttpStatus.CREATED)
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Post("request-verification")
 	async register(
 		@DBQueryRunner() qr: QueryRunner,
 		@Body() registerDTO: requestVerificationDTO,
-	): Promise<Verification> {
+	): Promise<ShowVerificationResponse> {
 		const { email } = registerDTO;
 
 		const existedUser = await this.userService.findOne({ where: { email } });
@@ -123,17 +130,32 @@ export class AuthController {
 		await this.mailService.sendVerificationPinCode(email, pinCode);
 		// verification.pin_code = pinCode;
 
-		return verification;
+		return new ShowVerificationResponse(verification);
 	}
 
 	// TODO 이메일 인증 로직 개선
 	// [x] : oneTimeToken을 발행하여 인증 여부 확인하기.
-	@Post("verify")
+
+	/**
+	 *
+	 * @description 사용자 이메일로 전송된 핀코드와 사용자 이메일을 인증한다. 해당 요청 후, 사용자 계정 생성이 가능하다.
+	 * @throws {HttpStatus.FORBIDDEN} 이미 인증된 사용자가 인증하려는 경우,
+	 * @throws {HttpStatus.TOO_MANY_REQUESTS} 짧은 시간내에 여러번 인증을 시도한 경우.
+	 */
+	@ApiCreatedResponse({ type: ShowOneTimeTokenResponse })
+	@HttpCode(HttpStatus.CREATED)
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Post("verify")
 	async verify(
 		@DBQueryRunner() qr: QueryRunner,
 		@Body() dto: VerifyDTO,
-	): Promise<OneTimeToken | null> {
+	): Promise<ShowOneTimeTokenResponse> {
+		//TODO : 예외상황 익셉션 구현하기
+		//- [x] 이미 계정이 생성된 이메일 전달된 경우
+		//- [x Verification이 생성되지 않은 email이 전달된 경우
+		//- [x 만료된 핀코드 전달된 경우
+		//- [x] 짧은 시간내에 여러번 인증 시도한 경우
+		//- [x] 이미 사용된 핀코드 전달한 경우
 		const { email, pinCode } = dto;
 
 		const existedUser = await this.userService.findOne({ where: { email } });
@@ -152,7 +174,7 @@ export class AuthController {
 		if (isArrayEmpty(verifications)) {
 			throw new ServiceException(
 				"ENTITY_NOT_FOUND",
-				"FORBIDDEN",
+				"BAD_REQUEST",
 				`${email} is not registered`,
 			);
 		}
@@ -160,56 +182,71 @@ export class AuthController {
 		const now = new Date();
 		const latestVerification: Verification = verifications[0];
 		if (now > latestVerification.pin_code_expired_date) {
-			throw new ServiceException("BASE", "FORBIDDEN", `expired verification`);
+			throw new ServiceException("BASE", "BAD_REQUEST", `expired verification`);
 		}
 		const delay = this.service.getVerifyDelay(latestVerification);
 		if (delay > 0) {
-			throw new ServiceException("BASE", "TOO_MANY_REQUESTS", `please retry ${delay}s`);
+			throw new ServiceException("BASE", "TOO_MANY_REQUESTS", `please retry later ${delay}s`);
 		}
 
 		if (isNotEmpty(latestVerification.verification_success_date)) {
-			throw new ServiceException("BASE", "FORBIDDEN", `already verified pin-code`);
+			throw new ServiceException("BASE", "BAD_REQUEST", `already verified pin-code`);
 		}
 
 		const isVerified = await this.service.isHashMatched(pinCode, latestVerification.pin_code);
 
 		if (!isVerified) {
-			await this.service.updateVerification(qr, latestVerification.id, {
-				last_verified_date: now,
-			});
-			throw new ServiceException("BASE", "FORBIDDEN", `Check pin-code again`);
+			await this.service.recordLastVerifiedDate(latestVerification, now);
+			throw new ServiceException("BASE", "BAD_REQUEST", `Check pin-code again`);
 		}
 		await this.service.updateVerification(qr, latestVerification.id, {
 			last_verified_date: now,
 			verification_success_date: now,
 		});
 		const oneTimeToken: OneTimeToken = await this.createOneTimeToken(qr, email, "sign-up");
-		return oneTimeToken;
+		return new ShowOneTimeTokenResponse(oneTimeToken);
 	}
 
-	@Post("security-token")
-	@UseGuards(BasicGuard)
+	/**
+	 *
+	 * @description 민감한 동작에 사용되는 1회용 jwt를 발급한다
+	 * @returns 목적별 인증용 1회용 jwt 반환
+	 * @throws {HttpStatus.TOO_MANY_REQUESTS} 짧은 시간내에 요청을 발생시킨 경우
+	 *
+	 */
+	@ApiCreatedResponse({ type: ShowOneTimeTokenResponse })
+	@HttpCode(HttpStatus.CREATED)
+	@UseBasicAuthGuard()
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Post("security-token")
 	async generateSecurityActionToken(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
 		@Body() dto: CreateOneTimeTokenDTO,
-	): Promise<OneTimeToken> {
+	): Promise<ShowOneTimeTokenResponse> {
 		const { purpose } = dto;
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER] as AuthUserPayload;
 		const user = userPayload.user;
 		const { email } = user;
 		const securityToken = await this.createOneTimeToken(qr, email, purpose, user);
 
-		return securityToken;
+		return new ShowOneTimeTokenResponse(securityToken);
 	}
+	/**
+	 *
+	 * @description 사용자 인증을 위한 1회용 jwt와 사용될 domain url을 이메일로 전송한다.
+	 * @throws {HttpStatus.TOO_MANY_REQUESTS} 짧은 시간내에 요청을 발생시킨 경우
+	 *
+	 */
 
-	@Post("security-token/email-verification")
+	@ApiCreatedResponse({})
+	@HttpCode(HttpStatus.CREATED)
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Post("security-token/email-verification")
 	async sendSecurityActionToken(
 		@DBQueryRunner() qr: QueryRunner,
 		@Body() dto: SendOneTimeTokenDTO,
-	): Promise<string> {
+	) {
 		const { email, purpose } = dto;
 		const withDeleted = true;
 		const user: User | null = await this.userService.findOne({ where: { email }, withDeleted });
@@ -217,7 +254,7 @@ export class AuthController {
 		if (!user) {
 			throw new ServiceException(
 				"ENTITY_NOT_FOUND",
-				"FORBIDDEN",
+				"BAD_REQUEST",
 				`user is not existed. ${email}`,
 			);
 		}
@@ -245,20 +282,25 @@ export class AuthController {
 					"logic is partially implemented",
 				);
 		}
-
-		return "send email";
 	}
 
-	@Post("security-token/from-email-verification")
+	/**
+	 *
+	 * @description 사용자 이메일로 전송된 1회용 jwt와 사용될 domain url을 검증하여, 새로운 jwt를 발급한다.
+	 * @returns 목적별 인증용 1회용 jwt 반환
+	 * @throws {HttpStatus.TOO_MANY_REQUESTS} 짧은 시간내에 요청을 발생시킨 경우
+	 *
+	 */
+	@ApiCreatedResponse({ type: ShowOneTimeTokenResponse })
+	@HttpCode(HttpStatus.CREATED)
+	@UseSecurityTokenGuard("email-verification", { withDeleted: true })
 	@UseInterceptors(QueryRunnerInterceptor)
-	@PurposeOneTimeToken("email-verification")
-	@SecurityTokenGuardOptions({ withDeleted: true })
-	@UseGuards(SecurityTokenGuard)
+	@Post("security-token/from-email-verification")
 	async generateSecurityTokenByEmailVerification(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
 		@Body() dto: CreateOneTimeTokenDTO,
-	): Promise<OneTimeToken> {
+	): Promise<ShowOneTimeTokenResponse> {
 		const { purpose } = dto;
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const securityTokenPayload: SecurityTokenPayload =
@@ -270,45 +312,31 @@ export class AuthController {
 		const { email } = user;
 		const securityToken = await this.createOneTimeToken(qr, email, purpose, user);
 
-		return securityToken;
+		return new ShowOneTimeTokenResponse(securityToken);
 	}
 
-	@Get("emailTest")
-	async sendEmail() {
-		const testCode = `12345`;
-		const email = process.env[ENV_EMAIL_TEST_ADDRESS]!;
-
-		await this.mailService.sendVerificationPinCode(email, testCode);
-
-		return true;
-	}
-
-	@Post("test/one-time-token-guard")
-	@PurposeOneTimeToken("delete-account")
-	@UseGuards(SecurityTokenGuard)
-	@UseInterceptors(QueryRunnerInterceptor)
-	async testSecurityTokenGuard(@DBQueryRunner() qr: QueryRunner, @Req() request: Request) {
-		const SecurityTokenGuardResult: SecurityTokenPayload =
-			request[AUTH_GUARD_PAYLOAD.SECURITY_TOKEN]!;
-		await this.service.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
-
-		//do next task.
-
-		return true;
-	}
-
+	@ApiOkResponse({ type: HashedOneTimeTokenResponse })
+	@HttpCode(HttpStatus.OK)
+	@UseOwnerGuard(
+		{ guard: BasicGuard },
+		{
+			serviceClass: AuthService,
+			idParam: "id",
+			ownerField: "user_id",
+			serviceMethod: "findOneTimeTokenByID",
+		},
+	)
 	@Get("one-time-token/:id")
-	@CheckOwner({
-		serviceClass: AuthService,
-		idParam: "id",
-		ownerField: "user_id",
-		serviceMethod: "findOneTimeTokenByID",
-	})
-	@UseGuards(BasicGuard, OwnerGuard)
-	async getOneTimeToken(@Param("id", ParseUUIDPipe) id: string): Promise<OneTimeToken | null> {
+	async getOneTimeToken(
+		@Param("id", ParseUUIDPipe) id: string,
+	): Promise<HashedOneTimeTokenResponse> {
 		const findOne = await this.service.findOneTimeToken({ where: { id } });
 
-		return findOne;
+		if (isFalsy(findOne)) {
+			throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST");
+		}
+
+		return new HashedOneTimeTokenResponse(findOne);
 	}
 
 	private async createOneTimeToken(

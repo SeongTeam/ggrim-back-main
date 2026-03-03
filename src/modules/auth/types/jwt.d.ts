@@ -1,5 +1,5 @@
 import { UserRole } from "../../user/entity/user.entity";
-import { OneTimeTokenPurpose } from "../entity/oneTimeToken.entity";
+import { OneTimeTokenPurpose } from "./oneTimeToken";
 
 export type TokenType = "REFRESH" | "ACCESS" | "ONE_TIME";
 export type StandardTokenPurpose = "access" | "refresh";

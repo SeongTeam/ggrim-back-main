@@ -1,36 +1,28 @@
-import { Crud, CrudController, CrudRequest, Override, ParsedRequest } from "@dataui/crud";
 import {
 	Body,
 	Controller,
-	DefaultValuePipe,
 	Delete,
 	Get,
+	HttpCode,
+	HttpStatus,
 	Inject,
 	Logger,
 	OnApplicationBootstrap,
 	OnModuleDestroy,
 	Param,
-	ParseBoolPipe,
-	ParseIntPipe,
 	ParseUUIDPipe,
 	Post,
 	Put,
 	Query,
 	Req,
-	UseGuards,
 	UseInterceptors,
-	UsePipes,
-	ValidationPipe,
 } from "@nestjs/common";
 import { QueryRunner } from "typeorm";
 import { LoggerService } from "../logger/logger.service";
-import { CONFIG_FILE_PATH } from "../_common/const/defaultValue";
-import { AWS_BUCKET, AWS_BUCKET_ARTWORK, AWS_INIT_FILE_KEY_PREFIX } from "../_common/const/envKeys";
+import { AWS_BUCKET_ARTWORK, NODE_ENV } from "../_common/const/envKeys";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { ArtistService } from "../artist/artist.service";
-import { CheckOwner } from "../auth/metadata/owner";
 import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
-import { OwnerGuard } from "../auth/guard/authorization/owner.guard";
 import { AuthUserPayload } from "../auth/guard/types/requestPayload";
 import { AUTH_GUARD_PAYLOAD } from "../auth/guard/const";
 import { S3Service } from "../aws/s3.service";
@@ -39,72 +31,38 @@ import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.intercept
 import { PaintingService } from "../painting/painting.service";
 import { StyleService } from "../style/style.service";
 import { TagService } from "../tag/tag.service";
-import { getLatestMonday } from "../../utils/date";
-import { SearchQuizDTO } from "./dto/request/SearchQuizDTO";
-import { CreateQuizDTO } from "./dto/request/createQuizDTO";
-import { DetailQuizResponse } from "./dto/response/detailQuizResponse";
-import { QuizResponse } from "./dto/response/quizResponse";
-import { QuizContextDTO } from "./dto/request/quizContextDTO";
-import { QuizReactionDTO, QuizReactionType } from "./dto/request/quizReactionDTO";
-import { QuizReactionQueryDTO } from "./dto/request/quizReactionQueryDTO";
-import { ScheduleQuizQueryDTO } from "./dto/request/scheduleQuiz.QueryDTO";
-import { QuizSubmitDTO } from "./dto/request/quizSubmitDTO";
-import { UpdateQuizDTO } from "./dto/request/updateQuizDTO";
-import { QuizDislike } from "./entities/quizDislike.entity";
-import { QuizLike } from "./entities/quizLike.entity";
+import { SearchQuizQueryDTO } from "./dto/request/searchQuiz.query.dto";
+import { CreateQuizDTO } from "./dto/request/createQuiz.dto";
+import { DetailQuizResponse } from "./dto/response/detailQuiz.response";
+import { ScheduleQuizResponse } from "./dto/response/scheduleQuiz.response";
+import { QuizContextDTO } from "./dto/request/quizContext.dto";
+import { CreateQuizReactionDTO } from "./dto/request/createQuizReaction.dto";
+import { QUIZ_TYPE, QuizReactionType } from "./const";
+import { QuizReactionQueryDTO } from "./dto/request/getQuizReaction.query.dto";
+import { ScheduleQuizQueryDTO } from "./dto/request/scheduleQuiz.query.dto";
+import { SubmitQuizDTO } from "./dto/request/submitQuiz.dto";
+import { ReplaceQuizDTO } from "./dto/request/replaceQuiz.dto";
 import { Quiz } from "./entities/quiz.entity";
-import { QuizContext } from "./types/quizContext";
-import { ShortQuiz } from "./types/shortQuiz";
-import { QuizScheduleService } from "./quizSchedule.service";
+import { QuizContext } from "./schedule/type";
+import { QuizScheduleService } from "./schedule/quizSchedule.service";
 import { QuizService } from "./quiz.service";
 import { Request } from "express";
+import { Pagination } from "../_common/types";
+import { ApiPaginationResponse } from "../_common/decorator/swagger/apiPaginationResponse";
+import { ShowQuiz, ShowQuizResponse } from "./dto/response/showQuiz.response";
+import { UseOwnerGuard } from "../auth/guard/decorator/authorization";
+import { UseTokenAuthGuard } from "../auth/guard/decorator/authentication";
+import { GetQuizQueryDTO } from "./dto/request/getQuiz.query.dto";
+import { ShowQuizReactionResponse } from "./dto/response/showQuizReaction.response";
+import { ConfigService } from "@nestjs/config";
+import { ApiCreatedResponse, ApiOkResponse, ApiQuery } from "@nestjs/swagger";
+import { QuizBatchService } from "./batch/quiz.batch.service";
+import { isNotFalsy } from "../../utils/validator";
+import { QuizType } from "./type";
 
-@Crud({
-	model: {
-		type: Quiz,
-	},
-	routes: {
-		only: ["getOneBase"],
-	},
-	params: {
-		id: {
-			field: "id",
-			type: "uuid",
-			primary: true,
-		},
-	},
-	query: {
-		join: {
-			distractor_paintings: {
-				eager: true,
-			},
-			answer_paintings: {
-				eager: true,
-			},
-			example_paintings: {
-				eager: true,
-			},
-			styles: {
-				eager: true,
-			},
-			artists: {
-				eager: true,
-			},
-			tags: {
-				eager: true,
-			},
-			owner: {
-				eager: true,
-			},
-		},
-	},
-})
 //TODO whitelist 옵션 추가하여 보안강화 고려하기
-@UsePipes(new ValidationPipe({ transform: true }))
 @Controller("quiz")
-export class QuizController
-	implements CrudController<Quiz>, OnApplicationBootstrap, OnModuleDestroy
-{
+export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	constructor(
 		public service: QuizService,
 		@Inject(QuizScheduleService) private readonly scheduleService: QuizScheduleService,
@@ -114,73 +72,89 @@ export class QuizController
 		@Inject(PaintingService) private readonly paintingService: PaintingService,
 		@Inject(S3Service) private readonly s3Service: S3Service,
 		@Inject(LoggerService) private readonly logger: LoggerService,
+		@Inject(ConfigService) private configService: ConfigService,
+		@Inject(QuizBatchService) private batchService: QuizBatchService,
 	) {}
 
 	async onModuleDestroy() {
 		Logger.log(`[OnModuleDestroy] run `, QuizController.name);
 		const MAX_RETRY = 3;
 		for (let i = 0; i < MAX_RETRY; i++) {
-			const isEmpty = await this.service.isViewMapEmpty();
+			const isEmpty = await this.batchService.isViewMapEmpty();
 			if (isEmpty) {
 				break;
 			}
-			await this.service.flushViewMap();
+			await this.batchService.flushViewMap();
 		}
 
 		for (let i = 0; i < MAX_RETRY; i++) {
-			const isEmpty = await this.service.isSubmissionMapEmpty();
+			const isEmpty = await this.batchService.isSubmissionMapEmpty();
 			if (isEmpty) {
 				break;
 			}
-			await this.service.flushSubmissionMap();
+			await this.batchService.flushSubmissionMap();
 		}
 		Logger.log(`[OnModuleDestroy] done `, QuizController.name);
 	}
 
+	@HttpCode(HttpStatus.CREATED)
 	@Post("submit/:id")
-	async submitQuiz(@Param("id", ParseUUIDPipe) id: string, @Body() dto: QuizSubmitDTO) {
-		await this.service.insertSubmission(id, dto.isCorrect);
-		return true;
+	async submitQuiz(@Param("id", ParseUUIDPipe) id: string, @Body() dto: SubmitQuizDTO) {
+		const target = await this.service.findOne({ where: { id } });
+
+		if (!target) {
+			throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST");
+		}
+
+		await this.batchService.insertSubmission(target.id, dto.isCorrect);
 	}
 
+	@ApiOkResponse({ type: ShowQuizReactionResponse, isArray: true })
+	@HttpCode(HttpStatus.OK)
 	@Get(":id/reactions")
 	async getQuizReactions(
-		@Param("id") id: string,
+		@Param("id", ParseUUIDPipe) id: string,
 		@Query() dto: QuizReactionQueryDTO,
-	): Promise<QuizDislike[] | QuizLike[]> {
+	): Promise<ShowQuizReactionResponse[]> {
+		const target = await this.service.findOne({ where: { id } });
+
+		if (!target) {
+			throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST");
+		}
+
 		const pageCount = 30;
 
-		const { page, type, user_id } = dto;
+		const { page } = dto;
 
 		const baseOptions = {
 			take: pageCount,
 			skip: page,
-			where: { quiz_id: id, user_id },
+			where: { quiz_id: target.id },
 			relations: ["user"],
 		};
 
-		switch (type) {
-			case "dislike":
-				return this.service.findQuizDislikes(baseOptions);
-			case "like":
-				return this.service.findQuizLikes(baseOptions);
-			default:
-				throw new ServiceException(
-					"NOT_IMPLEMENTED",
-					"NOT_IMPLEMENTED",
-					"access not implemented logic",
-				);
-		}
+		const [likes, dislikes] = await Promise.all([
+			this.service.findQuizLikes(baseOptions),
+			this.service.findQuizDislikes(baseOptions),
+		]);
+
+		const res = [
+			...likes.map((lk) => new ShowQuizReactionResponse(lk)),
+			...dislikes.map((dlk) => new ShowQuizReactionResponse(dlk)),
+		];
+
+		return res;
 	}
 
-	@Post(":id/reaction")
-	@UseGuards(TokenAuthGuard)
+	@HttpCode(HttpStatus.CREATED)
+	@UseTokenAuthGuard()
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Post(":id/reaction")
 	async createQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		@Param("id") id: string,
-		@Body() dto: QuizReactionDTO,
+		@Param("id", ParseUUIDPipe) id: string,
+		@Body() dto: CreateQuizReactionDTO,
 	): Promise<void> {
 		const userPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = userPayload;
@@ -196,24 +170,19 @@ export class QuizController
 		const { type } = dto;
 		if (type === "like") {
 			await this.service.likeQuiz(qr, user, quiz);
-		} else if (type === "dislike") {
-			await this.service.dislikeQuiz(qr, user, quiz);
 		} else {
-			throw new ServiceException(
-				"NOT_IMPLEMENTED",
-				"NOT_IMPLEMENTED",
-				"access not implemented logic",
-			);
+			await this.service.dislikeQuiz(qr, user, quiz);
 		}
 	}
 
-	@Delete(":id/reaction")
-	@UseGuards(TokenAuthGuard)
+	@HttpCode(HttpStatus.OK)
+	@UseTokenAuthGuard()
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Delete(":id/reaction")
 	async deleteQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		@Param("id") id: string,
+		@Param("id", ParseUUIDPipe) id: string,
 	): Promise<void> {
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = userPayload;
@@ -229,34 +198,47 @@ export class QuizController
 		await this.service.removeReaction(qr, user, quiz);
 	}
 
+	@ApiQuery({
+		name: "currentIndex",
+		required: false,
+		description:
+			"all fields exist. service handle query as all fields not exist same time when one of fields is missed",
+		examples: {
+			"All fields Exist": {
+				currentIndex: 0,
+				endIndex: 0,
+				context: {
+					artist: "example artist",
+					page: 0,
+				},
+			},
+			"All fields not exist": {},
+		},
+	})
+	@ApiOkResponse({ type: ScheduleQuizResponse })
+	@HttpCode(HttpStatus.OK)
 	@Get("schedule")
-	async getScheduledQuiz(@Query() dto: ScheduleQuizQueryDTO): Promise<QuizResponse> {
-		Logger.log(`context : `, dto.context);
-		const QUIZ_PAGINATION = 20;
+	async getScheduledQuiz(
+		@Query()
+		query: ScheduleQuizQueryDTO,
+	): Promise<ScheduleQuizResponse> {
 		const MAX_RETRY = 10;
 		let attempt = 0;
 		for (attempt = 0; attempt < MAX_RETRY; attempt++) {
-			const context: QuizContext = await this.extractContext(dto);
+			const context: QuizContext = await this.extractContext(query);
 
-			const searchDTO: SearchQuizDTO = this.buildSearchDTO(context);
+			const search = this.buildSearchDTO(context, context.page);
 
-			const pagination = await this.service.searchQuiz(
-				searchDTO,
-				context.page,
-				QUIZ_PAGINATION,
-			);
+			const pagination = await this.service.searchQuiz(search);
 
-			const quizList: ShortQuiz[] = pagination.data;
+			const quizList: ShowQuiz[] = pagination.data.map((q) => new ShowQuiz(q));
 			if (quizList.length === 0) {
 				await this.scheduleService.requestDeleteContext(context);
-				dto.context = undefined;
+				query.context = undefined;
 				continue;
 			}
 
-			const isContextChanged = dto.context !== context;
-			const currentIndex = isContextChanged ? undefined : dto.currentIndex;
-
-			return new QuizResponse(quizList, context, currentIndex);
+			return new ScheduleQuizResponse(quizList, context);
 		}
 		throw new ServiceException(
 			`SERVICE_RUN_ERROR`,
@@ -266,11 +248,12 @@ export class QuizController
 	}
 	// TODO: 응답 객체 개선하기
 	// ? 질문: context 삽입 결과를 요청자에게 알려줄 필요가있는가? 성공할 수도 실패할 수 도 있는데.
+	@HttpCode(HttpStatus.CREATED)
 	@Post("schedule")
 	async addQuizContext(@Body() dto: QuizContextDTO) {
 		await this.validateQuizContextDTO(dto);
 
-		return this.scheduleService.requestAddContext([dto]);
+		await this.scheduleService.requestAddContext([dto]);
 	}
 
 	// TODO: Quiz 변경 로직 개선하기
@@ -278,35 +261,44 @@ export class QuizController
 	// - [x] DB transaction 로직 추가하기
 	// - [x] 삭제 로직 추가
 
-	@Post()
-	@UseGuards(TokenAuthGuard)
+	@ApiCreatedResponse({ type: ShowQuizResponse })
+	@HttpCode(HttpStatus.CREATED)
+	@UseTokenAuthGuard()
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Post()
 	async create(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-
 		@Body() dto: CreateQuizDTO,
-	) {
+	): Promise<ShowQuizResponse> {
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 
-		return this.service.createQuiz(qr, dto, userPayload.user);
+		await this.validateCreateQuizDto(dto);
+		const quiz = await this.service.createQuiz(qr, dto, userPayload.user);
+
+		return new ShowQuizResponse(quiz);
 	}
 
-	@Override("getOneBase")
-	async getQuizAndIncreaseView(
-		@Param("id") id: string,
-		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
-		@ParsedRequest() req: CrudRequest,
-		@Query("user-id") userId: string | undefined,
+	@ApiOkResponse({ type: DetailQuizResponse })
+	@HttpCode(HttpStatus.OK)
+	@Get(":id")
+	async getDetailQuiz(
+		@Param("id", ParseUUIDPipe) id: string,
+		@Query() query: GetQuizQueryDTO,
 	): Promise<DetailQuizResponse> {
-		let quiz = await this.service.getOne(req);
+		let quiz = await this.service.findOne({ where: { id } });
+		if (!quiz) {
+			throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST");
+		}
+
+		const { isS3Access, userId } = query;
 
 		if (isS3Access) {
 			quiz = await this.replaceImageSrcToS3(quiz);
 		}
 
 		const [, reactionCount] = await Promise.all([
-			this.service.increaseView(id),
+			this.batchService.insertView(id),
 			this.service.getQuizReactionCounts(id),
 		]);
 
@@ -318,35 +310,49 @@ export class QuizController
 		return new DetailQuizResponse(quiz, reactionCount, userReaction);
 	}
 
-	@Put(":id")
-	@CheckOwner({
-		serviceClass: QuizService,
-		idParam: "id",
-		ownerField: "owner_id",
-		serviceMethod: "getQuizById",
-	})
-	@UseGuards(TokenAuthGuard, OwnerGuard)
+	@ApiOkResponse({ type: ShowQuizResponse })
+	@HttpCode(HttpStatus.OK)
+	@UseOwnerGuard(
+		{ guard: TokenAuthGuard },
+		{
+			serviceClass: QuizService,
+			idParam: "id",
+			ownerField: "owner_id",
+			serviceMethod: "getQuizById",
+		},
+	)
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Put(":id")
 	async update(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
 		@Param("id", ParseUUIDPipe) id: string,
-		@Body() dto: UpdateQuizDTO,
-	) {
-		return await this.service.updateQuiz(qr, id, dto);
+		@Body() dto: ReplaceQuizDTO,
+	): Promise<ShowQuizResponse> {
+		const quiz = await this.service.findOne({ where: { id } });
+
+		if (!quiz) {
+			throw new ServiceException("BASE", "BAD_REQUEST", `Not Found quiz ${id} `);
+		}
+		await this.validateReplaceQuizDto(quiz.type, dto);
+		const updatedQuiz = await this.service.updateQuiz(qr, quiz, dto);
+		return new ShowQuizResponse(updatedQuiz);
 	}
 
-	@Delete(":id")
-	@CheckOwner({
-		serviceClass: QuizService,
-		idParam: "id",
-		ownerField: "owner_id",
-		serviceMethod: "getQuizById",
-	})
-	@UseGuards(TokenAuthGuard, OwnerGuard)
+	@HttpCode(HttpStatus.OK)
+	@UseOwnerGuard(
+		{ guard: TokenAuthGuard },
+		{
+			serviceClass: QuizService,
+			idParam: "id",
+			ownerField: "owner_id",
+			serviceMethod: "getQuizById",
+		},
+	)
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Delete(":id")
 	async delete(@DBQueryRunner() qr: QueryRunner, @Param("id", ParseUUIDPipe) id: string) {
-		return this.service.softDeleteQuiz(qr, id);
+		await this.service.softDeleteQuiz(qr, id);
 	}
 
 	// TODO: 퀴즈 검색 로직 개선
@@ -356,42 +362,17 @@ export class QuizController
 	// ? 질문: <의문점 또는 개선 방향>
 	// * 참고: <관련 정보나 링크>
 
+	@ApiPaginationResponse(ShowQuiz)
+	@HttpCode(HttpStatus.OK)
 	@Get("")
-	async searchQuiz(
-		@Query() dto: SearchQuizDTO,
-		@Query("page", new DefaultValuePipe(0), ParseIntPipe) page: number,
-		@Query("count", new DefaultValuePipe(20), ParseIntPipe) count: number,
-	) {
-		const ret = await this.service.searchQuiz(dto, page, count);
+	async searchQuiz(@Query() dto: SearchQuizQueryDTO): Promise<Pagination<ShowQuiz>> {
+		const result = await this.service.searchQuiz(dto);
+		const ret = {
+			...result,
+			data: result.data.map((quiz) => new ShowQuiz(quiz)),
+		};
 
 		return ret;
-	}
-
-	@Get("init")
-	async initFile(): Promise<string> {
-		const latestMonday: string = getLatestMonday();
-		const quizFileName: string = `quiz_of_week_${latestMonday}.json`;
-		const bucketName = process.env[AWS_BUCKET] || "no bucket";
-		const prefixKey = process.env[AWS_INIT_FILE_KEY_PREFIX];
-
-		try {
-			await this.s3Service.downloadFile(
-				bucketName,
-				prefixKey + quizFileName,
-				CONFIG_FILE_PATH + quizFileName,
-			);
-
-			return "success init";
-		} catch (err: unknown) {
-			throw new ServiceException(
-				"EXTERNAL_SERVICE_FAILED",
-				"INTERNAL_SERVER_ERROR",
-				`${this.initFile.name}() failed. need to check config`,
-				{
-					cause: err,
-				},
-			);
-		}
 	}
 
 	// TODO : 퀴즈 사용자 상호작용 기능 추가
@@ -401,6 +382,9 @@ export class QuizController
 	// - [x] : 사용자의 퀴즈 싫어요/ 좋아요 기록
 
 	async onApplicationBootstrap() {
+		if (this.configService.get<string>(NODE_ENV) === "test") {
+			return;
+		}
 		Logger.log(`[onApplicationBootstrap] run`, QuizController.name);
 		const weeklyPaintings = await this.paintingService.getWeeklyPaintings();
 
@@ -437,9 +421,13 @@ export class QuizController
 	}
 
 	private async extractContext(dto: ScheduleQuizQueryDTO): Promise<QuizContext> {
+		//TODO context 추출 로직 구현
+		//-[x] context 검증
+		//-[x] 미유효 index 입력시, 새로운 context 반환
 		const { context, currentIndex, endIndex } = dto;
-		if (context && currentIndex && endIndex) {
-			if (currentIndex !== endIndex) {
+
+		if (isNotFalsy(context) && isNotFalsy(currentIndex) && isNotFalsy(endIndex)) {
+			if (currentIndex < endIndex) {
 				await this.validateQuizContextDTO(context);
 				return context;
 			}
@@ -447,12 +435,97 @@ export class QuizController
 		return await this.scheduleService.scheduleContext();
 	}
 
-	private buildSearchDTO(context: QuizContext): SearchQuizDTO {
+	private buildSearchDTO(
+		context: QuizContext,
+		page: number = 0,
+		pageCount: number = 20,
+	): SearchQuizQueryDTO {
 		return {
 			artists: context.artist ? [context.artist] : [],
 			tags: context.tag ? [context.tag] : [],
 			styles: context.style ? [context.style] : [],
+			page,
+			count: pageCount,
 		};
+	}
+
+	private async validateCreateQuizDto(dto: CreateQuizDTO) {
+		//TODO CreateQuizDto 검증 로직 구현
+		//-[x] painting id 유효성 검증하기
+		//-[x] ONE_CHOICE 타입인 경우에 대한 검증 로직 추가하기
+		//-[ ]
+
+		const { answerPaintingIds, distractorPaintingIds } = dto;
+		const ids = [...answerPaintingIds, ...distractorPaintingIds];
+
+		await this.paintingService.validatePaintingIds(ids);
+
+		if (dto.type === QUIZ_TYPE.ONE_CHOICE) {
+			this.validateOneChoiceQuizBodyDto(dto);
+		} else {
+			throw new ServiceException("NOT_IMPLEMENTED", "NOT_IMPLEMENTED");
+		}
+	}
+
+	private async validateReplaceQuizDto(type: QuizType, dto: ReplaceQuizDTO) {
+		//TODO ReplaceQuizDto 검증 로직 구현
+		//-[x] ONE_CHOICE 타입인 경우에 대한 검증 로직 추가하기
+
+		const { answerPaintingIds, distractorPaintingIds } = dto;
+		const ids = [...answerPaintingIds, ...distractorPaintingIds];
+
+		await this.paintingService.validatePaintingIds(ids);
+
+		if (type === QUIZ_TYPE.ONE_CHOICE) {
+			this.validateOneChoiceQuizBodyDto(dto);
+		} else {
+			throw new ServiceException("NOT_IMPLEMENTED", "NOT_IMPLEMENTED");
+		}
+	}
+
+	private validateOneChoiceQuizBodyDto(dto: Omit<CreateQuizDTO, "type">) {
+		//TODO ONE_CHOICE Quiz 생성 수정 Dto 검증하기
+		//	-[x] answer id 개수 1개인지 검사하기
+		//  -[x] distractor id 개수 3개인지 검사하기
+		//  -[x] quiz Id 중복 검사하기
+
+		const { answerPaintingIds, distractorPaintingIds } = dto;
+		const EXPECTED = { answer: 1, distractor: 3 };
+
+		// 개수 검증
+		const checks: [string, string[], number][] = [
+			["answer", answerPaintingIds, EXPECTED.answer],
+			["distractor", distractorPaintingIds, EXPECTED.distractor],
+		];
+
+		for (const [label, ids, expected] of checks) {
+			if (ids.length !== expected) {
+				throw new ServiceException(
+					"BASE",
+					"BAD_REQUEST",
+					`${label} painting count must be ${expected}, got ${ids.length}`,
+				);
+			}
+		}
+
+		const ids = [...answerPaintingIds, ...distractorPaintingIds];
+		const seen = new Set<string>();
+		const duplicates = new Set<string>();
+
+		for (const id of ids) {
+			if (seen.has(id)) {
+				duplicates.add(id);
+			}
+			seen.add(id);
+		}
+
+		if (duplicates.size) {
+			throw new ServiceException(
+				"BASE",
+				"BAD_REQUEST",
+				`Duplicated painting ids: ${[...duplicates].join(", ")}`,
+			);
+		}
 	}
 
 	async replaceImageSrcToS3(quiz: Quiz) {

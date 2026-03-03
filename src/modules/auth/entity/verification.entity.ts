@@ -12,11 +12,11 @@ export class Verification extends CustomBaseEntity {
 	@Column()
 	email!: string;
 
-	@Column({ nullable: true })
-	verification_success_date!: Date;
+	@Column({ type: "timestamp without time zone", nullable: true })
+	verification_success_date!: Date | null;
 
-	@Column({ nullable: true })
-	last_verified_date!: Date;
+	@Column({ type: "timestamp without time zone", nullable: true })
+	last_verified_date!: Date | null;
 
 	@Column()
 	pin_code!: string;

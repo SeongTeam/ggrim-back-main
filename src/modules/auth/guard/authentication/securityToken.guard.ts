@@ -16,7 +16,7 @@ import {
 	SECURITY_TOKEN_GUARD_OPTIONS,
 	SecurityTokenGuardOptions,
 } from "../../metadata/securityTokenGuardOption";
-import { OneTimeTokenPurpose } from "../../entity/oneTimeToken.entity";
+import { OneTimeTokenPurpose } from "../../types/oneTimeToken";
 import { AccessTokenPayload, AuthUserPayload, SecurityTokenPayload } from "../types/requestPayload";
 import { AUTH_GUARD_PAYLOAD, ONE_TIME_TOKEN_HEADER } from "../const";
 import { Request } from "express";

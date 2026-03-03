@@ -45,3 +45,43 @@ export function updateProperty<T>(obj: T, key: keyof T, value: T[keyof T] | unde
 		obj[key] = value;
 	}
 }
+
+export function pick<T extends object, K extends keyof T>(
+	obj: T,
+	selectedKeys: readonly K[],
+): Pick<T, K> {
+	const ret = Object.fromEntries(
+		Object.entries(obj).filter(([key]) => selectedKeys.includes(key as K)),
+	);
+
+	return ret as Pick<T, K>;
+}
+
+export function omit<T extends object, K extends keyof T>(
+	obj: T,
+	exclusiveKeys: readonly K[],
+): Omit<T, K> {
+	const ret = Object.fromEntries(
+		Object.entries(obj).filter(([key]) => !exclusiveKeys.includes(key as K)),
+	);
+
+	return ret as Omit<T, K>;
+}
+
+export function sortById<O extends object & { id: string }>(objs: O[]) {
+	const clones = structuredClone(objs);
+
+	return clones.sort((o1, o2) => o1.id.localeCompare(o2.id));
+}
+
+export function deduplicate<O extends object & { id: string }>(objs: O[]) {
+	const map = new Map<string, O>();
+
+	for (const obj of objs) {
+		if (!map.has(obj.id)) {
+			map.set(obj.id, obj);
+		}
+	}
+
+	return [...map.values()];
+}

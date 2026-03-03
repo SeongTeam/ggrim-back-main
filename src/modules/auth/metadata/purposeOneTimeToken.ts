@@ -1,6 +1,6 @@
 // decorators/check-ownership.decorator.ts
 import { SetMetadata } from "@nestjs/common";
-import { OneTimeTokenPurpose } from "../entity/oneTimeToken.entity";
+import { OneTimeTokenPurpose } from "../types/oneTimeToken";
 
 export const PURPOSE_ONE_TIME_TOKEN_KEY = "purpose_one_time_token_key";
 

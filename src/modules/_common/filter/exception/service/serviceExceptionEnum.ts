@@ -17,4 +17,9 @@ export const ServiceExceptionEnum = {
 	DB_CONFLICT: 38004, // Conflict in resource (e.g., unique constraint violation)
 
 	DB_INCONSISTENCY: 39000,
+
+	//Relation to Auth
+	UNAUTHENTICATED: 40000,
+
+	UNEXPECTED_JWT_ERROR: 41000,
 } as const;

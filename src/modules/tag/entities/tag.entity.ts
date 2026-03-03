@@ -11,8 +11,8 @@ export class Tag extends CustomBaseEntity {
 	@Column() // need to distinct value
 	name!: string;
 
-	@Column({ nullable: true })
-	info_url!: string;
+	@Column({ type: "character varying", nullable: true })
+	info_url!: string | null;
 
 	@ManyToMany(() => Painting, (painting) => painting.tags)
 	paintings!: Painting[];

@@ -1,10 +1,14 @@
-import { TypeOrmCrudService } from "@dataui/crud-typeorm";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Mutex } from "async-mutex";
-import { FindManyOptions, QueryRunner, Repository } from "typeorm";
+import {
+	FindManyOptions,
+	FindOneOptions,
+	FindOptionsRelations,
+	QueryRunner,
+	Repository,
+} from "typeorm";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
-import { IPaginationResult } from "../_common/types";
+import { Pagination } from "../_common/types";
 import { Artist } from "../artist/entities/artist.entity";
 import { createTransactionQueryBuilder } from "../db/query-runner/queryRunner.lib";
 import { Painting } from "../painting/entities/painting.entity";
@@ -14,33 +18,26 @@ import { Tag } from "../tag/entities/tag.entity";
 import { User } from "../user/entity/user.entity";
 import { updateProperty } from "../../utils/object";
 import { isArrayEmpty, isNotFalsy } from "../../utils/validator";
-import { SearchQuizDTO } from "./dto/request/SearchQuizDTO";
-import { CreateQuizDTO } from "./dto/request/createQuizDTO";
-import { QuizReactionType } from "./dto/request/quizReactionDTO";
-import { UpdateQuizDTO } from "./dto/request/updateQuizDTO";
+import { SearchQuizQueryDTO } from "./dto/request/searchQuiz.query.dto";
+import { CreateQuizDTO } from "./dto/request/createQuiz.dto";
+import { QuizReactionType } from "./const";
+import { ReplaceQuizDTO } from "./dto/request/replaceQuiz.dto";
 import { QuizDislike } from "./entities/quizDislike.entity";
 import { QuizLike } from "./entities/quizLike.entity";
 import { Quiz } from "./entities/quiz.entity";
-import { QuizSubmission } from "./types/quizSubmission";
-import { QuizReactionCount } from "./types/reactionCount";
-import { RelatedPaintings } from "./types/relatedPaintings";
-import { RelatedPaintingIds } from "./types/relatedPaintingIds";
-import { ShortQuiz } from "./types/shortQuiz";
-
+import { QuizReactionCount } from "./type";
+import { RelatedPaintings } from "./type";
+import { RelatedPaintingIds } from "./type";
+import { QuizSubmission } from "./batch/type";
+import { assert } from "console";
 @Injectable()
-export class QuizService extends TypeOrmCrudService<Quiz> {
-	private viewMap = new Map<string, number>();
-	private submissionMap = new Map<string, QuizSubmission>();
-	private viewMapMutex = new Mutex();
-	private submissionMapMutex = new Mutex();
+export class QuizService {
 	constructor(
-		@InjectRepository(Quiz) repo: Repository<Quiz>,
+		@InjectRepository(Quiz) private repo: Repository<Quiz>,
 		@Inject(PaintingService) private readonly paintingService: PaintingService,
 		@InjectRepository(QuizDislike) private readonly dislikeRepo: Repository<QuizDislike>,
 		@InjectRepository(QuizLike) private readonly likeRepo: Repository<QuizLike>,
-	) {
-		super(repo);
-	}
+	) {}
 
 	async createQuiz(queryRunner: QueryRunner, dto: CreateQuizDTO, owner: User) {
 		const { answerPaintings, distractorPaintings, examplePainting } =
@@ -52,7 +49,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		newQuiz.type = dto.type;
 		newQuiz.time_limit = dto.timeLimit;
 		newQuiz.title = dto.title;
-		newQuiz.example_painting = examplePainting;
+		newQuiz.example_painting = examplePainting === undefined ? null : examplePainting;
 		newQuiz.description = dto.description;
 		newQuiz.owner_id = owner.id;
 		newQuiz.owner = owner;
@@ -60,16 +57,7 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		return this.insertQuiz(queryRunner, newQuiz);
 	}
 
-	async updateQuiz(queryRunner: QueryRunner, id: string, dto: UpdateQuizDTO) {
-		const quiz = await this.repo.findOneByOrFail({ id });
-		if (!isNotFalsy(quiz)) {
-			throw new ServiceException(
-				"ENTITY_NOT_FOUND",
-				"BAD_REQUEST",
-				`Not found quiz.\n` + `id : ${id}`,
-			);
-		}
-
+	async updateQuiz(queryRunner: QueryRunner, quiz: Quiz, dto: ReplaceQuizDTO) {
 		updateProperty(quiz, "time_limit", dto.timeLimit);
 		updateProperty(quiz, "title", dto.title);
 		updateProperty(quiz, "description", dto.description);
@@ -78,23 +66,20 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 			await this.getRelatedPaintings({ ...dto });
 		quiz.answer_paintings = answerPaintings;
 		quiz.distractor_paintings = distractorPaintings;
-		quiz.example_painting = examplePainting;
+		quiz.example_painting = examplePainting === undefined ? null : examplePainting;
 
 		return this.insertQuiz(queryRunner, quiz);
 	}
 
-	async searchQuiz(
-		dto: SearchQuizDTO,
-		page: number,
-		paginationCount: number,
-	): Promise<IPaginationResult<ShortQuiz>> {
-		/*TODO 검색 로직 개선
-      - [ ]각 JSON 값이 string[]인지 확인 필요.
-      - [ ] 배열의 각 원소가 공백("")인지 확인 필요.
-        - 공백값이 삽입되어 DB QUERY에 적용되면, 공백값과 일치하는 조건이 추가됨.
-      - [ ] title, description 검색 고려하기
-    */
-		const { tags, styles, artists } = dto;
+	async searchQuiz(dto: SearchQuizQueryDTO): Promise<Pagination<Quiz>> {
+		//TODO 검색 로직 개선
+		//- [x] Dto 검증 구현
+		// -> controller 또는 호출자에서 검증
+		//- [ ] 배열의 각 원소가 공백("")인지 확인 필요.
+		//	-> 공백값이 삽입되어 DB QUERY에 적용되면, 공백값과 일치하는 조건이 추가됨.
+		//- [ ] title, description 검색 고려하기
+		//
+		const { tags, styles, artists, page, count: paginationCount } = dto;
 
 		const quizAlias = "q";
 		const queryBuilder = this.repo.createQueryBuilder("q").select();
@@ -175,11 +160,9 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 			.orderBy(`${quizAlias}.created_date`, "DESC")
 			.getManyAndCount();
 
-		const data = quizzes.map((quiz) => new ShortQuiz(quiz));
-
 		return {
-			data,
-			count: data.length,
+			data: quizzes,
+			count: quizzes.length,
 			total,
 			page,
 			pageCount:
@@ -187,8 +170,33 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		};
 	}
 
+	/**
+	 *
+	 * @param findOptions
+	 * @returns quiz with all relations when you no config relations
+	 */
+	async findOne(findOptions: FindOneOptions<Quiz>): Promise<Quiz | null> {
+		const defaultRelations: FindOptionsRelations<Quiz> = {
+			answer_paintings: true,
+			distractor_paintings: true,
+			artists: true,
+			example_painting: true,
+			tags: true,
+			styles: true,
+			owner: true,
+		};
+
+		if (!findOptions.relations) {
+			findOptions.relations = defaultRelations;
+		}
+
+		const quiz = await this.repo.findOne(findOptions);
+
+		return quiz;
+	}
+
 	async getQuizById(id: string): Promise<Quiz | null> {
-		const quiz = await this.findOne({ where: { id } });
+		const quiz = await this.repo.findOne({ where: { id } });
 
 		return quiz;
 	}
@@ -210,134 +218,23 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		}
 	}
 
-	// TODO : statistic Map 기능 개선
-	// [ ] : Nodejs 최대 정수값(2^53-1) overflow 고려하기
-	// [ ] : Update Query에 대해 트랜잭션 고려하기.
-	//  -> 트랜잭션으로 묶는 것보다, 별도의 쿼리를 여러개 보내서 병렬적으로 처리하는게 더 효과적이지 않을까?
-	// [x] : 앱 종료 훅 시점에, 플러시 실패에 대응 로직 추가하기
-	// [ ] : 시스템 확장시, CONNECTION_POOL_SIZE 증가도 고려하기
-	//  -> : MAX CONNECTION POOL 등의 앱 메모리 및 리소스 관리 고려할 것
-	// [ ] : Quiz Flush 로직 통합 또는 Redis 사용 고려하기
-
-	async flushViewMap() {
-		const key: keyof Quiz = "view_count";
-		const CONNECTION_POOL_SIZE = 5;
-		const buffer: [string, number][] = await this.viewMapMutex.runExclusive(() => {
-			const arr = Array.from(this.viewMap.entries());
-			this.viewMap.clear();
-			return arr;
-		});
-		const failed: [string, number][] = [];
-		Logger.log(`[flushViewMap]start flush. size : ${buffer.length}`, QuizService.name);
-
-		const groupCount = Math.ceil(buffer.length / CONNECTION_POOL_SIZE);
-
-		for (let i = 0; i < groupCount; i++) {
-			const start = i * CONNECTION_POOL_SIZE;
-			const end = (i + 1) * CONNECTION_POOL_SIZE;
-			const queries = buffer.slice(start, end);
-
-			const results = await Promise.allSettled(
-				queries.map(([id, number]) => this.repo.increment({ id }, key, number)),
-			);
-			results.forEach((result, index) => {
-				if (result.status === "rejected") {
-					Logger.error(
-						`flushViewMap() failed to increment id=${queries[index][0]}: ${result.reason}`,
-						QuizService.name,
-					);
-					failed.push(queries[index]);
-				}
-			});
-		}
-
-		Logger.log(`[flushViewMap] end flush. failed_size : ${failed.length}`, QuizService.name);
-
-		if (!isArrayEmpty(failed)) {
-			await this.viewMapMutex.runExclusive(() => {
-				failed.forEach(([id, count]) => {
-					const current = this.viewMap.get(id) || 0;
-					this.viewMap.set(id, current + count);
-				});
-			});
-		}
-	}
-
-	async flushSubmissionMap() {
-		const CONNECTION_POOL_SIZE = 5;
-		const buffer: [string, QuizSubmission][] = await this.submissionMapMutex.runExclusive(
-			() => {
-				const arr = Array.from(this.submissionMap.entries());
-				this.submissionMap.clear();
-				return arr;
-			},
-		);
-		const failed: [string, QuizSubmission][] = [];
-
-		Logger.log(`[flushSubmissionMap]start flush. size : ${buffer.length}`, QuizService.name);
-		const groupCount = Math.ceil(buffer.length / CONNECTION_POOL_SIZE);
-
-		for (let i = 0; i < groupCount; i++) {
-			const start = i * CONNECTION_POOL_SIZE;
-			const end = (i + 1) * CONNECTION_POOL_SIZE;
-			const queries = buffer.slice(start, end);
-
-			const results = await Promise.allSettled(
-				queries.map(([id, submission]) => this.repo.update(id, { ...submission })),
-			);
-
-			results.forEach((result, index) => {
-				if (result.status === "rejected") {
-					Logger.error(
-						`flushSubmissionMap() failed to increment id=${queries[index][0]}: ${result.reason}`,
-						QuizService.name,
-					);
-					failed.push(queries[index]);
-				}
-			});
-		}
-
-		Logger.log(
-			`[flushSubmissionMap] end flush. failed_size : ${failed.length}`,
-			QuizService.name,
-		);
-
-		if (!isArrayEmpty(failed)) {
-			await this.submissionMapMutex.runExclusive(() => {
-				failed.forEach(([id, submission]) => {
-					const current = this.submissionMap.get(id) ?? new QuizSubmission();
-					const next = {
-						correct_count: current.correct_count + submission.correct_count,
-						incorrect_count: current.incorrect_count + submission.incorrect_count,
-					};
-					this.submissionMap.set(id, next);
-				});
-			});
-		}
-	}
-	async insertSubmission(id: string, isCorrect: boolean): Promise<void> {
-		await this.submissionMapMutex.runExclusive(() => {
-			const current: QuizSubmission = this.submissionMap.get(id) ?? new QuizSubmission();
-			const key: keyof QuizSubmission = isCorrect ? "correct_count" : "incorrect_count";
-
-			current[key] += 1;
-
-			this.submissionMap.set(id, current);
+	async increaseSubmission(id: string, submission: QuizSubmission) {
+		const quiz = await this.repo.findOneOrFail({ where: { id } });
+		const incorrect_count = quiz.incorrect_count + submission.incorrect_count;
+		const correct_count = quiz.correct_count + submission.correct_count;
+		await this.repo.update(id, {
+			incorrect_count,
+			correct_count,
 		});
 	}
 
-	async isViewMapEmpty(): Promise<boolean> {
-		return await this.viewMapMutex.runExclusive(() => this.viewMap.size === 0);
-	}
+	async increaseViewCount(id: string, count: number) {
+		await this.repo.increment({ id }, "view_count", count);
 
-	async isSubmissionMapEmpty(): Promise<boolean> {
-		return await this.submissionMapMutex.runExclusive(() => this.submissionMap.size === 0);
-	}
-
-	async increaseView(id: string): Promise<void> {
-		await this.viewMapMutex.runExclusive(() => {
-			const current = this.viewMap.get(id) || 0;
-			this.viewMap.set(id, current + 1);
+		const quiz = await this.repo.findOneOrFail({ where: { id } });
+		const view_count = quiz.view_count + count;
+		await this.repo.update(id, {
+			view_count,
 		});
 	}
 
@@ -452,14 +349,31 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 		quiz.styles = [...styleMap.values()];
 		quiz.artists = [...artistMap.values()];
 
-		// return await this.repo.save(quiz);
-		return await queryRunner.manager.save(quiz);
+		await queryRunner.manager.save(quiz);
+
+		const insertedQuiz = await queryRunner.manager.findOne(Quiz, {
+			where: {
+				id: quiz.id,
+			},
+			relations: {
+				answer_paintings: true,
+				distractor_paintings: true,
+				tags: true,
+				styles: true,
+				artists: true,
+				owner: true,
+			},
+		});
+
+		assert(insertedQuiz !== null);
+
+		return insertedQuiz!;
 	}
 
 	private async createPaintingMap(paintingIds: string[]): Promise<Map<string, Painting>> {
 		const resultMap: Map<string, Painting> = new Map();
 		const idSet: Set<string> = new Set(paintingIds);
-		const paintings: Painting[] = await this.paintingService.getByIds([...idSet.values()]);
+		const paintings: Painting[] = await this.paintingService.getManyByIds([...idSet.values()]);
 
 		paintings.forEach((painting) => {
 			if (!resultMap.has(painting.id)) {
@@ -473,38 +387,27 @@ export class QuizService extends TypeOrmCrudService<Quiz> {
 	private async getRelatedPaintings(
 		relatedPaintingIds: RelatedPaintingIds,
 	): Promise<RelatedPaintings> {
+		/**
+		 * @requires relatedPaintingIds 유효성은 호출자에서 확인해야한다.
+		 */
 		const { answerPaintingIds, distractorPaintingIds, examplePaintingId } = relatedPaintingIds;
 		const ids: string[] = [...answerPaintingIds, ...distractorPaintingIds];
 		if (isNotFalsy(examplePaintingId)) {
 			ids.push(examplePaintingId);
 		}
-		const idToPaintingMap: Map<string, Painting> = await this.createPaintingMap(ids);
+		const paintingMap: Map<string, Painting> = new Map();
+		const paintings: Painting[] = await this.paintingService.getManyByIds(ids);
+
+		paintings.forEach((painting) => {
+			if (!paintingMap.has(painting.id)) {
+				paintingMap.set(painting.id, painting);
+			}
+		});
 
 		return {
-			answerPaintings: this.resolvePaintings(
-				relatedPaintingIds.answerPaintingIds,
-				idToPaintingMap,
-			),
-			distractorPaintings: this.resolvePaintings(
-				relatedPaintingIds.distractorPaintingIds,
-				idToPaintingMap,
-			),
-			examplePainting: relatedPaintingIds.examplePaintingId
-				? idToPaintingMap.get(relatedPaintingIds.examplePaintingId)
-				: undefined,
+			answerPaintings: answerPaintingIds.map((id) => paintingMap.get(id)!),
+			distractorPaintings: distractorPaintingIds.map((id) => paintingMap.get(id)!),
+			examplePainting: examplePaintingId ? paintingMap.get(examplePaintingId)! : undefined,
 		};
-	}
-	private resolvePaintings(ids: string[], paintingMap: Map<string, Painting>): Painting[] {
-		return ids.map((id) => {
-			const painting = paintingMap.get(id);
-			if (!painting) {
-				throw new ServiceException(
-					"ENTITY_NOT_FOUND",
-					"BAD_REQUEST",
-					`Painting not found with id: ${id}`,
-				);
-			}
-			return painting;
-		});
 	}
 }

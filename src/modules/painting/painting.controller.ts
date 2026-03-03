@@ -4,35 +4,35 @@ import {
 	DefaultValuePipe,
 	Delete,
 	Get,
+	HttpCode,
+	HttpStatus,
 	Inject,
 	Param,
 	ParseBoolPipe,
-	ParseIntPipe,
 	ParseUUIDPipe,
 	Post,
 	Put,
 	Query,
 	UseInterceptors,
-	UsePipes,
-	ValidationPipe,
 } from "@nestjs/common";
 import { QueryRunner } from "typeorm";
-import { CONFIG_FILE_PATH } from "../_common/const/defaultValue";
-import { AWS_BUCKET, AWS_BUCKET_ARTWORK, AWS_INIT_FILE_KEY_PREFIX } from "../_common/const/envKeys";
+import { AWS_BUCKET_ARTWORK } from "../_common/const/envKeys";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { S3Service } from "../aws/s3.service";
 import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner";
 import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
-import { getLatestMonday } from "../../utils/date";
-import { CreatePaintingDTO } from "./dto/request/createPaintingDTO";
-import { GetByIdsQueryDTO } from "./dto/request/getByIdsQueryDTO";
-import { ReplacePaintingDTO } from "./dto/request/replacePaintingDTO";
-import { SearchPaintingDTO } from "./dto/request/searchPaintingDTO";
+import { CreatePaintingDTO } from "./dto/request/createPainting.dto";
+import { ReplacePaintingDTO } from "./dto/request/replacePainting.dto";
 import { Painting } from "./entities/painting.entity";
-import { ShortPainting } from "./types/shortPainting";
 import { PaintingService } from "./painting.service";
+import { Pagination } from "../_common/types";
+import { ApiPaginationResponse } from "../_common/decorator/swagger/apiPaginationResponse";
+import { ShowPainting, ShowPaintingResponse } from "./dto/response/showPainting.response";
+import { UseRolesGuard } from "../auth/guard/decorator/authorization";
+import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
+import { GetByIdsQueryDTO } from "./dto/request/getByIds.query.dto";
+import { SearchPaintingQueryDTO } from "./dto/request/searchPainting.query.dto";
 
-@UsePipes(new ValidationPipe({ transform: true }))
 @Controller("painting")
 export class PaintingController {
 	constructor(
@@ -41,152 +41,133 @@ export class PaintingController {
 	) {}
 
 	/**
-	 * 사용법 {domain}/painting/by-ids?ids=id1&id2&id3
-	 * ex) http://localhost:3000/painting/by-ids?ids=409ba4c6-0553-4b72-a53a-d9b9857c253d&ids=4f4d9398-b10a-45b8-912c-6ccd0c6700ab
+	 * retrieve multiple paintings by id
+	 *
+	 * @remarks {domain}/painting/by-ids?ids=id1&id2&id3
+	 * Example:
+	 * ```
+	 * GET backend/painting/by-ids?ids=409ba4c6-0553-4b72-a53a-d9b9857c253d&ids=4f4d9398-b10a-45b8-912c-6ccd0c6700ab
+	 * ```
 	 */
+	@ApiOkResponse({ type: ShowPaintingResponse, isArray: true })
+	@HttpCode(HttpStatus.OK)
 	@Get("/by-ids")
-	async getByIds(
-		@Query(new ValidationPipe({ transform: true })) query: GetByIdsQueryDTO,
-		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
-	): Promise<Painting[]> {
-		let foundPaintings: Painting[] = await this.service.getByIds(query.ids);
+	async getManyByIds(@Query() query: GetByIdsQueryDTO): Promise<ShowPaintingResponse[]> {
+		const { ids, isS3Access } = query;
+		let foundPaintings: Painting[] = await this.service.getManyByIds(ids);
 
 		if (isS3Access) {
 			foundPaintings = await this.replaceImageSrcToS3(foundPaintings);
 		}
 
-		return foundPaintings;
+		return foundPaintings.map((p) => new ShowPaintingResponse(p));
 	}
 
+	@ApiOkResponse({ type: ShowPaintingResponse, isArray: true })
+	@HttpCode(HttpStatus.OK)
 	@Get("artwork-of-week")
 	async getWeeklyArtworkData(
 		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
-	) {
+	): Promise<ShowPaintingResponse[]> {
 		let paintings = await this.service.getWeeklyPaintings();
 
 		if (isS3Access) {
 			paintings = await this.replaceImageSrcToS3(paintings);
 		}
 
-		return paintings;
+		return paintings.map((p) => new ShowPaintingResponse(p));
 	}
 
-	/*TODO 
-  - [ ]`artwork_of_week_${latestMonday}.json` 파일 내용형식을 DB에 저장된 Painting ID로 명시하기
-  - [ ]artist 이름 표기 방식을 서양식으로 변경하기. 현재는 성 + 이름 으로 표기됨. 
-  - [ ]GUI 만들기? => DB의 painting id를 찾는 것은 어렵기에
-       - painting 검색 후 나온 그림을 클릭으로 .json에 추가하기
-  - [ ]API 예외 처리 => id가 없는 경우 response에 메세지 나옴/ 다른 그림의 id일 경우 예외 처리 필요
-   */
-
-	@Get("init")
-	async initFile(): Promise<string> {
-		const latestMonday: string = getLatestMonday();
-		const artworkFileName: string = `artwork_of_week_${latestMonday}.json`;
-		const bucketName = process.env[AWS_BUCKET] || "no bucket";
-		const prefixKey = process.env[AWS_INIT_FILE_KEY_PREFIX];
-
-		try {
-			await this.s3Service.downloadFile(
-				bucketName,
-				prefixKey + artworkFileName,
-				CONFIG_FILE_PATH + artworkFileName,
-			);
-
-			return "success init";
-		} catch (err: unknown) {
-			throw new ServiceException(
-				"EXTERNAL_SERVICE_FAILED",
-				"INTERNAL_SERVER_ERROR",
-				`${this.initFile.name}() failed. need to check config`,
-				{
-					cause: err,
-				},
-			);
-		}
-	}
-
+	@ApiOkResponse({ type: ShowPaintingResponse })
+	@HttpCode(HttpStatus.OK)
 	@Get(":id")
 	async getById(
 		@Param("id", ParseUUIDPipe) id: string,
 		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
-	) {
-		const paintings = await this.service.getByIds([id]);
+	): Promise<ShowPaintingResponse> {
+		let paintings = await this.service.getManyByIds([id]);
 
 		if (isS3Access) {
-			const ret = await this.replaceImageSrcToS3([paintings[0]]);
-			return ret[0];
+			paintings = await this.replaceImageSrcToS3([paintings[0]]);
 		}
 
-		return paintings[0];
+		return new ShowPaintingResponse(paintings[0]);
 	}
 
+	@ApiPaginationResponse(ShowPainting)
+	@HttpCode(HttpStatus.OK)
 	@Get("/")
-	async searchPainting(
-		@Query() dto: SearchPaintingDTO,
-		@Query("page", new DefaultValuePipe(0), ParseIntPipe) page: number,
-		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
-	) {
+	async searchMany(@Query() dto: SearchPaintingQueryDTO): Promise<Pagination<ShowPainting>> {
+		const { page, isS3Access } = dto;
 		const paginationCount = 50;
-		const ret = await this.service.searchPainting(dto, page, paginationCount);
+		const result = await this.service.searchMany(dto, page, paginationCount);
 		if (isS3Access) {
-			const replaced = await this.replaceImageSrcToS3(ret.data);
-			ret.data = replaced;
+			const replaced = await this.replaceImageSrcToS3(result.data);
+			result.data = replaced;
 		}
+
+		const ret = {
+			...result,
+			data: result.data.map((p) => new ShowPainting(p)),
+		};
 
 		return ret;
 	}
-	@Post()
+
+	@ApiCreatedResponse({ type: ShowPainting })
+	@HttpCode(HttpStatus.CREATED)
+	@UseRolesGuard("admin")
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Post()
 	async createPainting(
 		@DBQueryRunner() queryRunner: QueryRunner,
 		@Body() body: CreatePaintingDTO,
-	) {
-		try {
-			const newPaintingWithoutRelations = await this.service.create(queryRunner, body);
-			return newPaintingWithoutRelations;
-		} catch (error: unknown) {
-			/*TODO
-        - 비동기 함수의 에러를 캐치할수 있도록, await를 명시하도록 컨벤션을 정해야함.
-         - async 함수 내에서 에러가 발생한다면, await를 하지 않는 경우, try-catch문으로 에러를 캐치할수 없다.
-         - 방법1) prettier를 사용하여 promise를 처리하도록 규칙을 강제한다.
-      */
-			throw new ServiceException(
-				"ENTITY_CREATE_FAILED",
-				"INTERNAL_SERVER_ERROR",
-				"need to check internal logic",
-				{ cause: error },
-			);
-		}
+	): Promise<ShowPainting> {
+		const newPainting = await this.service.createOne(queryRunner, body);
+		return new ShowPainting(newPainting);
 	}
 
-	@Put("/:id")
+	// TODO: PUT Http API의 DB 리소스 ACID 보장
+	// - [ ] 동일한 리소스의 병렬 수정 작업 ACID 보장 확인하기
+	// ? 질문: DB Query Transaction 사용시, API 요청에 대한 모든 Query 작업을 Transaction으로 결합해야지 ACID가 보장되는가? 다른 방법은 없는가?
+	// * 참고: https://tailwindcss.com/docs/animation
+	@ApiOkResponse({ type: ShowPaintingResponse })
+	@HttpCode(HttpStatus.OK)
+	@UseRolesGuard("admin")
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Put("/:id")
 	async replacePainting(
 		@DBQueryRunner() queryRunner: QueryRunner,
 		@Param("id", ParseUUIDPipe) id: string,
 		@Body() dto: ReplacePaintingDTO,
 	) {
-		const targetPainting = await this.service.findPaintingOrThrow(id);
+		const targetPainting = await this.service.findOne({ where: { id } });
+		if (!targetPainting) {
+			throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST", `not found id(${id})`);
+		}
 
-		await this.service.replace(queryRunner, targetPainting, dto);
+		const replacedPainting = await this.service.replaceOne(queryRunner, targetPainting, dto);
 
-		const target = (await this.service.getByIds([id]))[0];
-
-		return target;
+		return new ShowPaintingResponse(replacedPainting);
 	}
 
-	@Delete("/:id")
+	@HttpCode(HttpStatus.OK)
+	@UseRolesGuard("admin")
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Delete("/:id")
 	async deletePainting(
 		@DBQueryRunner() queryRunner: QueryRunner,
 		@Param("id", ParseUUIDPipe) id: string,
 	) {
-		const targetPainting = await this.service.findPaintingOrThrow(id);
-		return this.service.deleteOne(queryRunner, targetPainting);
+		const targetPainting = await this.service.findOne({ where: { id } });
+		if (!targetPainting) {
+			throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST", `not found id(${id})`);
+		}
+
+		await this.service.deleteOne(queryRunner, targetPainting);
 	}
 
-	async replaceImageSrcToS3<T extends ShortPainting>(paintings: T[]) {
+	async replaceImageSrcToS3<T extends Painting>(paintings: T[]) {
 		const bucket = process.env[AWS_BUCKET_ARTWORK];
 		if (!bucket) {
 			throw new ServiceException(

@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
 import { ROLES_KEY } from "../../../user/metadata/role";
-import { UserRole } from "../../../user/entity/user.entity";
+import { UserRole } from "../../../user/const";
 import { AUTH_GUARD_PAYLOAD } from "../const";
 import { Request } from "express";
 
@@ -33,6 +33,11 @@ export class RolesGuard implements CanActivate {
 		}
 
 		const userRole = user.role;
-		return requiredRoles.some((role) => userRole === role);
+		const isAllowed = requiredRoles.some((role) => userRole === role);
+		if (!isAllowed) {
+			throw new ServiceException("BASE", "FORBIDDEN", `Not allowed User's role`);
+		}
+
+		return true;
 	}
 }

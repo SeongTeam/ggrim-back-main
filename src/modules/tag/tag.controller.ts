@@ -1,15 +1,27 @@
 import { Crud, CrudController, CrudRequest, Override, ParsedRequest } from "@dataui/crud";
-import { Body, Controller, Post, Put, UseGuards, UsePipes, ValidationPipe } from "@nestjs/common";
+import {
+	Body,
+	Controller,
+	Get,
+	HttpCode,
+	HttpStatus,
+	Param,
+	ParseUUIDPipe,
+	Post,
+	Put,
+} from "@nestjs/common";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
-import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
-import { RolesGuard } from "../auth/guard/authorization/roles.guard";
-import { Roles } from "../user/metadata/role";
-import { CreateTagDTO } from "./dto/request/createTagDTO";
-import { ReplaceTagDTO } from "./dto/request/replaceTagDTO";
+
+import { CreateTagDTO } from "./dto/request/createTag.dto";
+import { ReplaceTagDTO } from "./dto/request/replaceTag.dto";
 import { Tag } from "./entities/tag.entity";
 import { TagService } from "./tag.service";
-const EXCLUDED_COLUMN = ["created_date", "updated_date", "deleted_date", "version"] as const;
-
+import { ShowTagResponse } from "./dto/response/showTag.response";
+import { isArray } from "class-validator";
+import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
+import { UseRolesGuard } from "../auth/guard/decorator/authorization";
+import { Pagination } from "../_common/types";
+import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
 /*TODO
 - typeORM 에러 발생시, 특정 에러 메세지는 응답에 포함시켜 보내는 로직 구현 고려
   1) unique constraint 열에 중복된 값을 삽입할 때,
@@ -27,7 +39,7 @@ const EXCLUDED_COLUMN = ["created_date", "updated_date", "deleted_date", "versio
 		},
 	},
 	routes: {
-		only: ["getOneBase", "getManyBase", "deleteOneBase"],
+		only: ["getManyBase", "deleteOneBase"],
 	},
 	dto: {
 		create: CreateTagDTO,
@@ -37,25 +49,13 @@ const EXCLUDED_COLUMN = ["created_date", "updated_date", "deleted_date", "versio
 		join: {
 			paintings: {
 				eager: false,
-				allow: ["title", "image_url"],
-				exclude: [
-					...EXCLUDED_COLUMN,
-					"width",
-					"height",
-					"completition_year",
-					"description",
-				],
-				persist: ["id", "title", "image_url"],
+				allow: ["id", "title", "image_url"],
 			},
 		},
-		allow: ["name", "search_name"],
-		exclude: [...EXCLUDED_COLUMN],
-		persist: ["name", "info_url"],
 		softDelete: true,
 		alwaysPaginate: true,
 	},
 })
-@UsePipes(new ValidationPipe({ transform: true }))
 @Controller("painting/tag")
 export class TagController implements CrudController<Tag> {
 	constructor(public service: TagService) {}
@@ -64,46 +64,89 @@ export class TagController implements CrudController<Tag> {
 		return this;
 	}
 
+	@ApiOkResponse({ type: ShowTagResponse })
+	@HttpCode(HttpStatus.OK)
+	@Get(":id")
+	async getOne(@Param("id", ParseUUIDPipe) id: string): Promise<ShowTagResponse> {
+		const tag = await this.service.findOne({
+			where: { id },
+			relations: { paintings: true },
+		});
+		if (!tag) throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST");
+		return new ShowTagResponse(tag);
+	}
+
+	/**
+	 * Retrieve multiple Tags.
+	 *
+	 * @remarks
+	 * use join field, If want Painting[]. you can filter by painting properties like id, title and image_url
+	 *
+	 * Example:
+	 * ```
+	 * GET backend/tag?s={"name":{"$cont":"female"}}&join=paintings
+	 * ```
+	 *
+	 *
+	 */
+	@ApiOverride("getManyBase", ShowTagResponse)
+	async getMany(
+		@ParsedRequest() req: CrudRequest,
+	): Promise<Pagination<ShowTagResponse> | ShowTagResponse[]> {
+		const results = await this.service.getMany(req);
+
+		const ret = isArray(results)
+			? results.map((tag) => new ShowTagResponse(tag))
+			: {
+					...results,
+					data: results.data.map((tag) => new ShowTagResponse(tag)),
+				};
+
+		return ret;
+	}
+
+	@ApiCreatedResponse({ type: ShowTagResponse })
+	@HttpCode(HttpStatus.CREATED)
+	@UseRolesGuard("admin")
 	@Post()
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
-	async create(@Body() dto: CreateTagDTO): Promise<Tag> {
+	async create(@Body() dto: CreateTagDTO): Promise<ShowTagResponse> {
 		/*TODO
-      - typeORM에서 발샌한 오류를 처리하는 ExceptionFilter 구현하기
+      	- typeORM에서 발샌한 오류를 처리하는 ExceptionFilter 구현하기
         - 오류 status 마다 동작 사항 핸들러 정의하기
           예시) error.code === '23505' 인 경우, ServiceException을 발생시켜서 사용자에가 정보 알리기
         -
-    */
+   		*/
 		const search_name = dto.name.trim().split(/\s+/).join("_").toUpperCase();
 		const newTag: Tag = await this.service.insertCreateDtoToQueue({ ...dto, search_name });
 
-		return newTag;
+		return new ShowTagResponse(newTag);
 	}
 
+	@ApiOkResponse({ type: ShowTagResponse })
+	@HttpCode(HttpStatus.OK)
+	@UseRolesGuard("admin")
 	@Put()
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
-	async replace(@Body() dto: ReplaceTagDTO): Promise<Tag> {
+	async replace(@Body() dto: ReplaceTagDTO): Promise<ShowTagResponse> {
 		const existedEntity: Tag | null = await this.service.findOne({ where: { name: dto.name } });
 
+		/*TODO : API 로직 가독성 높이기
+		 -[] DB 제약 조건과 중복되는 로직을 제거하고, TypeORM 로직 예외처리를 ExceptionFilter이 포워딩하여 응답하기 
+		*/
 		if (existedEntity) {
 			throw new ServiceException("DB_CONFLICT", "CONFLICT", `${dto.name} is already exist`);
 		}
 
-		const search_name = dto.name.trim().split(/\s+/).join("_").toUpperCase();
-
-		const updatedTag: Tag = await this.service.replaceOne({} as CrudRequest, {
+		const tag = await this.service.replaceOne({} as CrudRequest, {
 			...dto,
-			search_name,
+			search_name: dto.name.trim().split(/\s+/).join("_").toUpperCase(),
 		});
 
-		return updatedTag;
+		return new ShowTagResponse(tag);
 	}
 
 	@Override("deleteOneBase")
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
+	@UseRolesGuard("admin")
 	async deleteOne(@ParsedRequest() req: CrudRequest) {
-		return this.service.deleteOne(req);
+		await this.service.deleteOne(req);
 	}
 }

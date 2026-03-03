@@ -14,7 +14,7 @@ import { Style } from "../../style/entities/style.entity";
 import { Tag } from "../../tag/entities/tag.entity";
 import { User } from "../../user/entity/user.entity";
 import { QUIZ_TIME_LIMIT } from "../const";
-import { QUIZ_TYPE } from "../type";
+import { QuizType } from "../type";
 
 /*TODO
 - 문제 풀이 로직 통계 정보 열 추가하기
@@ -32,14 +32,12 @@ export class Quiz extends CustomBaseEntity {
 
 	@ManyToMany(() => Painting, {
 		cascade: ["update", "insert"],
-		eager: true,
 	})
 	@JoinTable()
 	distractor_paintings!: Painting[];
 
 	@ManyToMany(() => Painting, {
 		cascade: ["update", "insert"],
-		eager: true,
 	})
 	@JoinTable()
 	answer_paintings!: Painting[];
@@ -49,11 +47,10 @@ export class Quiz extends CustomBaseEntity {
   */
 	@ManyToOne(() => Painting, {
 		cascade: ["update", "insert"],
-		eager: true,
 		nullable: true,
 	})
 	@JoinTable()
-	example_painting!: Painting | undefined;
+	example_painting!: Painting | null;
 
 	@Column({ default: 0 })
 	view_count!: number;
@@ -77,7 +74,7 @@ export class Quiz extends CustomBaseEntity {
 	description!: string;
 
 	@Column()
-	type!: QUIZ_TYPE;
+	type!: QuizType;
 
 	@ManyToMany(() => Artist, {
 		cascade: ["update", "insert"],

@@ -22,6 +22,8 @@
     1. 코드베이스 구조화 컨벤션 제공
         - 익숙한 MVC 패턴을 적용하기 용이  
     2. 높은 이식성 라이브러리 생태계 
+    3. `nest-cli`의 다양한 플러그인
+        - `@nestjs/swagger` 플러그인을 통한 swagger doc 자동화 
 - Disadvantage
     1. 기능 구현 비용 하한선이 높음
         - 새로운 기능 구현시, Module, service 등의 클래스 구현 필수적이며, 높은 추상화 설계가 필요 
@@ -91,8 +93,25 @@
 
 
 ### Code Convention
+**0. Function(Method)**
+- 기본적으로 모든 함수(메소드)는 해당 섹션 규칙을 따른다.
+    - 생성자는 추후 별도의 섹션 추가 예정이다.
+- 모든 함수는 Module File,Class, Namespace, Function 내에 선언 및 정의한다.
+- 모든 함수는 하나의 기능만 제공한다. 2개 이상의 기능을 제공하면 함수를 분리한다.
+    - `optional property`를 사용하여 여러가지의 동작으로 분기하는 경우에는 
+        1. 모든 동작의 중심(공통) 기능이 존재하는지 확인한다.
+        2. 중심 기능을 추상화한 함수가 존재할 수 있는지 확인한다.
+        3. 1번 또는 2번을 만족하지 못하면, 기능별로 함수를 분리한다.
+- **Naming**
+    - 함수 이름은 `동사+목적어` 형식을 지향한다.
+- **Parameter**
+    - 매개변수가 함수 내에서 변경되지 않으면, 반드시 `ReadOnlyDeep<T>` 타입을 적용한다.
+        - 함수 사용자의 예상치 못한 변경을 예방하기 위함이다.
+    - 함수의 추상화와 일관되게 매개 변수를 작성한다.
+        - `User` 객체 를 추상화한 함수이면 `User`와 관련된 객체 타입을 매개변수에 사용한다.
+        - 그게 아니라면, 각각의 데이터를 개별적으로 매개변수를 받도록 함수를 작성한다.  
 
-**1. Module** 
+**1. Module Class** 
 - 각각의 모듈은 별도의 파일로 관리한다.
 - 모듈은 `src/modules/<domain>/` 도메인 이름에 해당하는 폴더에 위치해야한다.
 - 폴더의 이름은 `kebab-case` 형식이다. 
@@ -102,7 +121,7 @@
 - 서브 모듈 생성보다는 서비스 클래스 추가를 지향한다.
     - 서브 모듈이 필요한 상황이라면, 서브 모듈을 추가한다.
 
-**2. Controller**
+**2. Controller Class**
 - 각각의 컨트롤러는 별도의 파일로 관리한다.
 - 컨트롤러는 해당 컨트롤러의 `import` 모듈과 동일한 폴더 또는 그 하위 폴더에 위치해야한다.
 - 파일의 이름은 `<camelCase>.controller.ts` 형식이다.
@@ -112,22 +131,24 @@
     - 단, `HTTP API` 메소드의 마운트 순서를 바꾸기 위해서라면, 그룹화를 무시할 수 있다.
 - 컨트롤러의 `base url`은 컨트롤러의 이름을 `kebab-case`형식으로 설정해야한다. 
 
-**3. Provider**
+**3. Provider Class**
 - 각각의 프로바이더는 별도의 파일로 관리한다.
 - 프로바이더는 해당 프로바이더의 `import` 모듈과 동일한 폴더 또는 그 하위 폴더에 위치해야한다.
 - 파일의 이름은 `<camelCase>.<provider>.ts` 형식이다.
     - 예시 : `painting.service.ts` , `auth.exception.filter.ts` , `auth.interceptor.ts`;
 - 클래스 이름은 `<PascalCase><Provider>` 형식이다.
     - 예시 : `PaintingService` , `AuthExceptionFilter` , `AuthInterceptor`;
-- Service
+- **Service Class**
     - DB entity 접근은 오직 `Service`만을 통해 진행한다.
+    - Entity 생성,수정,삭제 로직에는 반드시 원자성을 보장한다.
+        - 예시 : 단일 트랜잭션, INSERT 쿼리 1회 
     - 외부 모듈의 컨트롤러, 프로바이더에서 재사용할 로직은 서비스에만 정의한다.
-- Guard
+- **Guard Class**
     - Guard 로직은 true 만을 반환한다. 예외 상황시에는 Exception을 던진다.
-- Pipe
+- **Pipe Class**
     - 입력 DTO의 데이터 유효성 검사 및 형변환 로직만 정의한다.
  
-**4. Entity**
+**4. Entity Class**
 - 각각의 엔티티는 별도의 파일로 관리한다.
 - 엔티티 파일은 헤당 엔티티를 관리하는 서비스 파일과 같은 폴더 내에서 `entity` 폴더 내에 정의한다.
 - 엔티티 파일 이름은 `<camelCase>.entity.ts` 형식이다.
@@ -149,12 +170,14 @@
 - DTO 파일은 해당 DTO를 사용하는 컨트롤러 또는 프로바이더와 같은 폴더내에 있는 `dto` 폴더 내에 정의한다.
     - 요청 DTO는 `<folder>/dto/request` 내에 정의한다. 
     - 응답 DTO는 `<folder>/dto/response` 내에 정의한다.
-- DTO 파일 이름은 `<camelCase>.ts` 형식을 사용한다. 
+- DTO 파일 이름은 `<camelCase>.<suffix>.ts` 형식을 사용한다. 
+    - 요청 DTO 클래스는 `<Name>.dto.ts` 형식을 사용한다.
+    - 응답 DTO 클래스는 `<Name>.response.ts` 형식을 사용한다.
+    - Query DTO의 경우 `<camelCase>.query.<suffix>.ts`형식을 사용한다.
 - DTO는 **클래스만을 사용한다.**
 - DTO 클래스 이름은 `<CamelCase>` 형식을 사용한다.
-    - 요청 DTO 클래스는 `<Name>DTO` 형식을 사용한다.
-    - 응답 DTO 클래스는 `<Name>Response` 형식을 사용한다.
 - DTO 클래스는 `class-validator`, `class-transformer` 등의 데코레이터를 사용한다.
+    > validator 라이브러리가 변경되면 컨벤션이 변경될 수 있다. 
 
 **6. metadata**
 - 각각의 메타데이터는 별도의 파일로 관리한다.
@@ -175,6 +198,14 @@
 - 각각의 데코레이터는 별도의 파일로 관리한다.
 - 데코레이터 파일은 관련된 `<domain>/decorator` 폴더에 위치한다.
 - 데코레이터 객체는 `PascalCase`를 사용한다.
+- 클래스 method에 `Route-level Decorator` 사용시 `Nest.js Request LifeCycle `기준으로 작성한다.
+    ```ts
+    @UseGuards()
+    @UseInterceptors()
+    @UsePipes()
+    @Get('id')
+    async getPainting( id : string){}
+    ```
 
 **9. constant**
 - 상수는 객체 리터럴 정의과 `as const` 키워드를 사용하여 정의한다.
@@ -182,8 +213,45 @@
 - 전역 상수의 위치는 문맥과 연광성에 맞는 파일에 위치시킨다.
     - 일반적으로 `/src/modules/<domain>/const.ts`에 위치시킨다.
 
+**10. Api Handler**
+- Api handler Query는 다음 규칙을 지킨다.
+    - Api handler에서 `@Query`는 1개만 사용하여 Query 타입 그룹 관리를 지향한다.
+        - Query 필드가 1개이고 원시값인 경우, 
+            ```ts
+            @Get("artwork-of-week")
+            async getWeeklyArtworkData(
+                @Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
+            )
+            ```
+        - 그 외의 경우
+        ```ts
+        //QuizReactionQueryDTO.ts
+        export class QuizReactionQueryDTO extends PickType(QuizReactionDTO, ["type"]) {
+            @IsOptionalProperty()
+            @IsUUID()
+            user_id?: string;
 
-**10. 그외는 다음 규칙을 따른다.**
+            @Transform(({ value }) => Number(value))
+            @IsOptionalProperty()
+            @IsNumber()
+            page?: number = 0;
+        }
+
+        //quiz.controller.ts
+        @Get(":id/reactions")
+        async getQuizReactions(
+            @Param("id") id: string,
+            @Query() dto: QuizReactionQueryDTO,
+        )
+        ```
+- `GET` 메소드 리소스(Entity) 읽기에 사용하며 응답으로 Entity를 반환한다.
+- `POST` 메소드는 리소스(Entity) 쓰기에 사용하며 응답으로 Entity를 반환하거나 적절한 데이터를 반환한다.
+- `PUT` 메소드는 리소스(Entity) 갱신에 사용하며 응답으로 변경된 Entity를 반환한다.
+- `DELETE` 메소드는 리소스(Entity) 삭제에 사용하며 응답으로 적절한 데이터를 반환한다.
+    - 절대 삭제된 Entity를 응답으로 반환하지 않는다.
+
+
+**11. 그외는 다음 규칙을 따른다.**
 
 - `namespace` 사용을 자제한다.
 

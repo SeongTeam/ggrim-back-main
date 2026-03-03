@@ -1,17 +1,10 @@
-import {
-	HttpException,
-	HttpStatus,
-	Inject,
-	Injectable,
-	UnauthorizedException,
-} from "@nestjs/common";
+import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import * as crypto from "crypto";
 
 import { InjectRepository } from "@nestjs/typeorm";
-import { isEmpty } from "class-validator";
 import { ENV_HASH_ROUNDS_KEY, ENV_JWT_SECRET_KEY, NODE_ENV } from "../_common/const/envKeys";
 import {
 	DeepPartial,
@@ -24,7 +17,8 @@ import {
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { createTransactionQueryBuilder } from "../db/query-runner/queryRunner.lib";
 import { User } from "../user/entity/user.entity";
-import { OneTimeToken, OneTimeTokenPurpose } from "./entity/oneTimeToken.entity";
+import { OneTimeToken } from "./entity/oneTimeToken.entity";
+import { OneTimeTokenPurpose } from "./types/oneTimeToken";
 import { Verification } from "./entity/verification.entity";
 import { AUTHORIZATION_TYPE, BaseJWTPayload, JWTDecode, JWTPayload } from "./types/jwt";
 
@@ -86,8 +80,22 @@ export class AuthService {
 			});
 			return decoded;
 		} catch (e: unknown) {
+			/**
+			 * @description JwtService provide error.
+			 * @example	e.name : TokenExpiredError, JsonWebTokenError , NotBeforeError
+			 */
 			if (e instanceof Error && e.name) {
-				throw new HttpException(e.name, HttpStatus["BAD_REQUEST"], { cause: e });
+				if (e.name === "TokenExpiredError" || "JsonWebTokenError") {
+					throw new ServiceException("UNAUTHENTICATED", "UNAUTHORIZED", {
+						name: e.name,
+						cause: e,
+					});
+				} else {
+					throw new ServiceException("UNEXPECTED_JWT_ERROR", "UNAUTHORIZED", {
+						name: e.name,
+						cause: e,
+					});
+				}
 			}
 			throw new ServiceException(
 				"EXTERNAL_SERVICE_FAILED",
@@ -190,11 +198,6 @@ export class AuthService {
 	): Promise<Verification> {
 		const hashedPinCode = await this.hash(pinCode);
 		const expiredDate = this.getVerificationExpiredTime();
-		const returnedColumns: (keyof Verification)[] = [
-			"email",
-			"pin_code_expired_date",
-			"pin_code",
-		];
 		try {
 			const result = await createTransactionQueryBuilder(queryRunner, Verification)
 				.insert()
@@ -204,7 +207,7 @@ export class AuthService {
 					pin_code: hashedPinCode,
 					pin_code_expired_date: expiredDate,
 				})
-				.returning(returnedColumns)
+				.returning("*")
 				.execute();
 
 			const verification = result.generatedMaps[0] as Verification;
@@ -245,12 +248,18 @@ export class AuthService {
 		}
 	}
 
+	async recordLastVerifiedDate(verification: Verification, last_verified_date: Date) {
+		await this.verificationRepo.update(verification.id, {
+			last_verified_date,
+		});
+	}
+
 	// return delay second
 	getVerifyDelay(lastVerification: Verification): number {
 		const now = new Date();
 		const lastDate: null | Date = lastVerification.last_verified_date;
 
-		if (isEmpty(lastDate)) {
+		if (lastDate === null) {
 			return 0;
 		}
 
@@ -347,14 +356,6 @@ export class AuthService {
 		const decoded = this.verifyToken(token);
 		const { purpose, exp: expired_date_ms } = decoded;
 		const MS_PER_SECOND = 1000;
-		const returnedColumn: (keyof OneTimeToken)[] = [
-			"email",
-			"expired_date",
-			"token",
-			"user",
-			"user_id",
-			"id",
-		];
 		if (purpose === "access" || purpose === "refresh") {
 			throw new ServiceException(
 				"SERVICE_RUN_ERROR",
@@ -377,7 +378,7 @@ export class AuthService {
 					user,
 					purpose,
 				})
-				.returning(returnedColumn)
+				.returning("*")
 				.execute();
 
 			return result.generatedMaps[0] as OneTimeToken;

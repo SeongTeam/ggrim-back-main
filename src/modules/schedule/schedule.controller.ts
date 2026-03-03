@@ -1,14 +1,14 @@
 import { Controller, Inject } from "@nestjs/common";
 import { Interval } from "@nestjs/schedule";
 import { LoggerService } from "../logger/logger.service";
-import { QuizService } from "../quiz/quiz.service";
+import { QuizBatchService } from "../quiz/batch/quiz.batch.service";
 
 const QUIZ_VIEW_MAP_FLUSH_INTERVAL_MS: number = 10 * 60 * 1000;
 const QUIZ_SUBMISSION_MAP_FLUSH_INTERVAL_MS: number = 10 * 60 * 1000;
 @Controller("schedule")
 export class ScheduleController {
 	constructor(
-		@Inject(QuizService) private readonly quizService: QuizService,
+		@Inject(QuizBatchService) private readonly quizBatchService: QuizBatchService,
 		@Inject(LoggerService) private readonly logger: LoggerService,
 	) {}
 
@@ -17,7 +17,7 @@ export class ScheduleController {
 		this.logger.log("call flushViewMap(). schedule start", {
 			className: ScheduleController.name,
 		});
-		await this.quizService.flushViewMap();
+		await this.quizBatchService.flushViewMap();
 	}
 
 	@Interval(QUIZ_SUBMISSION_MAP_FLUSH_INTERVAL_MS)
@@ -27,7 +27,7 @@ export class ScheduleController {
 		});
 
 		try {
-			await this.quizService.flushSubmissionMap();
+			await this.quizBatchService.flushSubmissionMap();
 		} catch (error) {
 			this.logger.logUnknownError("fail schedule QuizSubmissionMap", error, {
 				className: ScheduleController.name,

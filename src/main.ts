@@ -1,8 +1,8 @@
-import { ClassSerializerInterceptor, INestApplication } from "@nestjs/common";
-import { NestFactory, Reflector } from "@nestjs/core";
+import { NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
 import { winstonLogger } from "./utils/winston.config";
+import { configNestApp, configSwagger } from "./app.config";
 
 async function bootstrap() {
 	const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -10,8 +10,8 @@ async function bootstrap() {
 		logger: winstonLogger,
 	});
 
-	// config app
-	setNestApp(app);
+	configNestApp(app);
+	configSwagger(app);
 
 	//Shutdown Hook is not supported to Window platform
 	//ref : https://docs.nestjs.com/fundamentals/lifecycle-events#application-shutdown
@@ -22,7 +22,3 @@ async function bootstrap() {
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
 bootstrap();
-
-export function setNestApp<T extends INestApplication>(app: T): void {
-	app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
-}

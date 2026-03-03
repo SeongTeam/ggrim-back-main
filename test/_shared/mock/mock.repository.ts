@@ -1,11 +1,10 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { isParameter } from "typescript";
-
+import { Injectable } from "@nestjs/common";
 @Injectable()
 export class MockRepository<T> {
+	public data!: T;
 	public createQueryBuilder = jest.fn(() => this.queryBuilder);
 
-	public manager = { transaction: (a) => Promise.resolve(a()) };
+	public manager = { transaction: (a: () => any) => Promise.resolve(a()) };
 	public metadata = {
 		connection: { options: { type: null } },
 		columns: [{ propertyName: "id", isParameter: true }],

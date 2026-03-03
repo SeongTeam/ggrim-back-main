@@ -1,33 +1,27 @@
-import { Crud, CrudController, Override } from "@dataui/crud";
+import { Crud, CrudController, CrudRequest } from "@dataui/crud";
 import {
 	Body,
 	Controller,
 	Delete,
 	forwardRef,
+	Get,
+	HttpCode,
 	HttpException,
 	HttpStatus,
 	Inject,
 	Param,
+	ParseUUIDPipe,
 	Patch,
 	Put,
 	Req,
-	UseGuards,
 	UseInterceptors,
-	UsePipes,
-	ValidationPipe,
 } from "@nestjs/common";
-import { isEmail, isEmpty, isNotEmpty } from "class-validator";
+import { isArray, isEmail, isEmpty, isNotEmpty } from "class-validator";
 import { QueryRunner } from "typeorm";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { AuthService } from "../auth/auth.service";
-import { CheckOwner } from "../auth/metadata/owner";
-import { PurposeOneTimeToken } from "../auth/metadata/purposeOneTimeToken";
-import { SecurityTokenGuardOptions } from "../auth/metadata/securityTokenGuardOption";
 import { SecurityTokenGuard } from "../auth/guard/authentication/securityToken.guard";
-import { TempUserGuard } from "../auth/guard/authentication/tempUser.guard";
 import { TokenAuthGuard } from "../auth/guard/authentication/tokenAuth.guard";
-import { OwnerGuard } from "../auth/guard/authorization/owner.guard";
-import { RolesGuard } from "../auth/guard/authorization/roles.guard";
 import {
 	AuthUserPayload,
 	SecurityTokenPayload,
@@ -36,21 +30,26 @@ import {
 import { AUTH_GUARD_PAYLOAD } from "../auth/guard/const";
 import { DBQueryRunner } from "../db/query-runner/decorator/queryRunner";
 import { QueryRunnerInterceptor } from "../db/query-runner/queryRunner.interceptor";
-import { Roles } from "./metadata/role";
-import { CreateUserDTO } from "./dto/request/createUserDTO";
-import { ReplacePassWordDTO } from "./dto/request/replacePwDTO";
-import { ReplaceRoleDTO } from "./dto/request/replaceRoleDTO";
-import { ReplaceUsernameDTO } from "./dto/request/replaceUsernameDTO";
+import { CreateUserDTO } from "./dto/request/createUser.dto";
+import { ReplacePassWordDTO } from "./dto/request/replacePw.dto";
+import { ReplaceRoleDTO } from "./dto/request/replaceRole.dto";
+import { ReplaceUsernameDTO } from "./dto/request/replaceUsername.dto";
 import { User } from "./entity/user.entity";
 import { UserService } from "./user.service";
 import { Request } from "express";
+import { ShowUserResponse } from "./dto/request/response/showUser.response";
+import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
+import { UseOwnerGuard, UseRolesGuard } from "../auth/guard/decorator/authorization";
+import { UseTempUserGuard } from "../auth/guard/decorator/authentication";
+import { Pagination } from "../_common/types";
+import { ApiOkResponse } from "@nestjs/swagger";
 
 @Crud({
 	model: {
 		type: User,
 	},
 	routes: {
-		only: ["getOneBase", "getManyBase", "createOneBase"],
+		only: ["getManyBase", "createOneBase"],
 	},
 	params: {
 		id: {
@@ -60,8 +59,6 @@ import { Request } from "express";
 		},
 	},
 	query: {
-		allow: ["email", "username", "oauth_provider_id"],
-		exclude: ["password"],
 		softDelete: true,
 	},
 	dto: {
@@ -69,7 +66,6 @@ import { Request } from "express";
 	},
 })
 @Controller("user")
-@UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class UserController implements CrudController<User> {
 	constructor(
 		public service: UserService,
@@ -86,10 +82,33 @@ export class UserController implements CrudController<User> {
 	// ? 질문: <의문점 또는 개선 방향>
 	// * 참고: <관련 정보나 링크>
 
-	@Override(`createOneBase`)
+	@ApiOkResponse({ type: ShowUserResponse })
+	@HttpCode(HttpStatus.OK)
+	@Get(":id")
+	async getOne(@Param("id", ParseUUIDPipe) id: string): Promise<ShowUserResponse> {
+		const user = await this.service.findOne({
+			where: { id },
+		});
+		if (!user) throw new ServiceException("ENTITY_NOT_FOUND", "BAD_REQUEST");
+		return new ShowUserResponse(user);
+	}
+
+	@ApiOverride("getManyBase", ShowUserResponse)
+	async getMany(req: CrudRequest): Promise<Pagination<ShowUserResponse> | ShowUserResponse[]> {
+		const results = await this.service.getMany(req);
+		const ret = isArray(results)
+			? results.map((usr) => new ShowUserResponse(usr))
+			: {
+					...results,
+					data: results.data.map((usr) => new ShowUserResponse(usr)),
+				};
+
+		return ret;
+	}
+
+	@ApiOverride(`createOneBase`, ShowUserResponse)
+	@UseTempUserGuard("sign-up")
 	@UseInterceptors(QueryRunnerInterceptor)
-	@PurposeOneTimeToken("sign-up")
-	@UseGuards(TempUserGuard)
 	async signUp(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
@@ -113,7 +132,9 @@ export class UserController implements CrudController<User> {
 		await this.authService.markOneTimeJWT(qr, oneTimeTokenID);
 
 		const encryptedPW = await this.authService.hash(dto.password);
-		return await this.service.createUser(qr, { ...dto, password: encryptedPW, email });
+		const newUser = await this.service.createUser(qr, { ...dto, password: encryptedPW, email });
+
+		return new ShowUserResponse(newUser);
 	}
 
 	// TODO: 사용자 정보 변경 로직 개선하기
@@ -127,16 +148,17 @@ export class UserController implements CrudController<User> {
 	// ? 질문: <의문점 또는 개선 방향>
 	// * 참고: <관련 정보나 링크>
 
-	@Put(":email/password")
-	@CheckOwner({
-		serviceClass: UserService,
-		idParam: "email",
-		serviceMethod: "findUserByEmail",
-		ownerField: "id",
-	})
-	@PurposeOneTimeToken("update-password")
-	@UseGuards(SecurityTokenGuard, OwnerGuard)
+	@UseOwnerGuard(
+		{ guard: SecurityTokenGuard, purpose: "update-password" },
+		{
+			serviceClass: UserService,
+			idParam: "email",
+			serviceMethod: "findUserByEmail",
+			ownerField: "id",
+		},
+	)
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Put(":email/password")
 	async replacePassword(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
@@ -155,19 +177,19 @@ export class UserController implements CrudController<User> {
 		const SecurityTokenGuardResult: SecurityTokenPayload =
 			request[AUTH_GUARD_PAYLOAD.SECURITY_TOKEN]!;
 		await this.authService.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
-
-		return;
 	}
 
-	@Put(":email/username")
+	@UseOwnerGuard(
+		{ guard: TokenAuthGuard },
+		{
+			serviceClass: UserService,
+			idParam: "email",
+			serviceMethod: "findUserByEmail",
+			ownerField: "id",
+		},
+	)
 	@UseInterceptors(QueryRunnerInterceptor)
-	@CheckOwner({
-		serviceClass: UserService,
-		idParam: "email",
-		serviceMethod: "findUserByEmail",
-		ownerField: "id",
-	})
-	@UseGuards(TokenAuthGuard, OwnerGuard)
+	@Put(":email/username")
 	async replaceUsername(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
@@ -187,38 +209,38 @@ export class UserController implements CrudController<User> {
 		}
 
 		await this.service.updateUser(qr, user.id, dto);
-		return;
 	}
 
-	@Put(":email/role")
+	@UseRolesGuard("admin")
 	@UseInterceptors(QueryRunnerInterceptor)
-	@Roles("admin")
-	@UseGuards(TokenAuthGuard, RolesGuard)
+	@Put(":email/role")
 	async replaceRole(
 		@DBQueryRunner() qr: QueryRunner,
-		@Req() request: Request,
 		@Param("email") email: string,
 		@Body() dto: ReplaceRoleDTO,
 	) {
 		if (!isEmail(email)) {
 			throw new HttpException(`${email} is not valid`, HttpStatus.BAD_REQUEST);
 		}
-		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
-		const { user } = authUserPayload;
+		const user = await this.service.findOne({ where: { email } });
+		if (!user) {
+			throw new ServiceException("ENTITY_NOT_FOUND", `BAD_REQUEST`, `${email} is not exist`);
+		}
 
 		await this.service.updateUser(qr, user.id, dto);
 	}
 
-	@Delete(":email")
-	@CheckOwner({
-		serviceClass: UserService,
-		idParam: "email",
-		serviceMethod: "findUserByEmail",
-		ownerField: "id",
-	})
-	@PurposeOneTimeToken("delete-account")
-	@UseGuards(SecurityTokenGuard, OwnerGuard)
+	@UseOwnerGuard(
+		{ guard: SecurityTokenGuard, purpose: "delete-account" },
+		{
+			serviceClass: UserService,
+			idParam: "email",
+			serviceMethod: "findUserByEmail",
+			ownerField: "id",
+		},
+	)
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Delete(":email")
 	async deleteUser(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
@@ -237,17 +259,21 @@ export class UserController implements CrudController<User> {
 		await this.authService.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
 	}
 
-	@Patch("recover/:email")
-	@CheckOwner({
-		serviceClass: UserService,
-		idParam: "email",
-		serviceMethod: "findDeletedUserByEmail",
-		ownerField: "id",
-	})
-	@PurposeOneTimeToken("recover-account")
-	@SecurityTokenGuardOptions({ withDeleted: true })
-	@UseGuards(SecurityTokenGuard, OwnerGuard)
+	@UseOwnerGuard(
+		{
+			guard: SecurityTokenGuard,
+			purpose: "recover-account",
+			authOptions: { withDeleted: true },
+		},
+		{
+			serviceClass: UserService,
+			idParam: "email",
+			serviceMethod: "findDeletedUserByEmail",
+			ownerField: "id",
+		},
+	)
 	@UseInterceptors(QueryRunnerInterceptor)
+	@Patch("recover/:email")
 	async recoverUser(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,

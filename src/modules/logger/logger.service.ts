@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import * as assert from "assert";
+import assert from "assert";
 import { ClsService } from "nestjs-cls";
 import { TYPE_DEFAULT_VALUE } from "../_common/const/defaultValue";
 import { NODE_ENV } from "../_common/const/envKeys";
@@ -58,9 +58,9 @@ export class LoggerService {
 					undefined,
 					this.getFullContext(context),
 				);
-			} catch (josnErr) {
+			} catch (jsonErr) {
 				this.logger.error(
-					`${message}, unserializable error.`,
+					`${message}, unserializable error.` + JSON.stringify(jsonErr),
 					undefined,
 					this.getFullContext(context),
 				);

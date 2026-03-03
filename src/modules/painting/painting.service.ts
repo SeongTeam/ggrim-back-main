@@ -1,10 +1,10 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { existsSync } from "fs";
-import { Brackets, QueryRunner, Repository } from "typeorm";
+import { Brackets, FindOneOptions, QueryRunner, Repository } from "typeorm";
 import { CONFIG_FILE_PATH } from "../_common/const/defaultValue";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
-import { IPaginationResult } from "../_common/types";
+import { Pagination } from "../_common/types";
 import { ArtistService } from "../artist/artist.service";
 import { Artist } from "../artist/entities/artist.entity";
 import { createTransactionQueryBuilder } from "../db/query-runner/queryRunner.lib";
@@ -15,12 +15,11 @@ import { TagService } from "../tag/tag.service";
 import { getLatestMonday } from "../../utils/date";
 import { loadObjectFromJSON } from "../../utils/json";
 import { isArrayEmpty, isFalsy, isNotFalsy } from "../../utils/validator";
-import { CreatePaintingDTO } from "./dto/request/createPaintingDTO";
+import { CreatePaintingDTO } from "./dto/request/createPainting.dto";
 import { WeeklyArtWorkSet } from "./types/weeklyArtWorkSet";
-import { ReplacePaintingDTO } from "./dto/request/replacePaintingDTO";
-import { SearchPaintingDTO } from "./dto/request/searchPaintingDTO";
+import { ReplacePaintingDTO } from "./dto/request/replacePainting.dto";
+import { SearchPaintingQueryDTO } from "./dto/request/searchPainting.query.dto";
 import { Painting } from "./entities/painting.entity";
-import { ShortPainting } from "./types/shortPainting";
 
 @Injectable()
 export class PaintingService {
@@ -34,7 +33,7 @@ export class PaintingService {
 	//TODO typeorm 로직 개선
 	// [ ] : returning() 메소드를 사용하여 생성 후 반환되는 열들의 값 명시하기
 	//  -> insertResult.generateMaps[0]은 직접삽입한 값은 포함되지 않기 때문에 returning() 적용필요.
-	async create(queryRunner: QueryRunner, dto: CreatePaintingDTO): Promise<Painting> {
+	async createOne(queryRunner: QueryRunner, dto: CreatePaintingDTO): Promise<Painting> {
 		const query = createTransactionQueryBuilder(queryRunner, Painting)
 			.insert()
 			.into(Painting)
@@ -48,22 +47,20 @@ export class PaintingService {
 					height: dto.height,
 					completition_year: dto.completition_year,
 					image_s3_key: dto.image_s3_key,
-					artist: undefined,
 				},
-			]);
-
-		Logger.debug(`[create] ${query.getSql()}`);
+			])
+			.returning("*");
 		const result = await query.execute();
 		const newPainting: Painting = result.generatedMaps[0] as Painting;
 		if (isNotFalsy(dto.artistName)) {
 			await this.setArtist(queryRunner, newPainting, dto.artistName);
 		}
 
-		if (isNotFalsy(dto.styles) && !isArrayEmpty(dto.styles)) {
+		if (!isArrayEmpty(dto.styles)) {
 			await this.relateToStyle(queryRunner, newPainting, dto.styles);
 		}
 
-		if (isNotFalsy(dto.tags) && !isArrayEmpty(dto.tags)) {
+		if (!isArrayEmpty(dto.tags)) {
 			await this.relateToTag(queryRunner, newPainting, dto.tags);
 		}
 
@@ -74,11 +71,11 @@ export class PaintingService {
 	// - [ ] update() 메소드 실행 후, result.generatedMaps[0]은 Painting이 아님
 	//  -> generatedMaps 필드는 쿼리 실행으로 생성된 파일의 집합이므로, 업데이트 쿼리 실행시 Painting은 생성되지 않음.
 
-	async replace(
+	async replaceOne(
 		queryRunner: QueryRunner,
 		painting: Painting,
 		dto: ReplacePaintingDTO,
-	): Promise<void> {
+	): Promise<Painting> {
 		const query = createTransactionQueryBuilder(queryRunner, Painting)
 			.update(Painting)
 			.set({
@@ -93,7 +90,6 @@ export class PaintingService {
 			})
 			.where("painting.id = :paintingId", { paintingId: painting.id });
 
-		Logger.debug(`[PaintingService][replace] ${query.getSql()}`);
 		await query.execute();
 
 		if (painting.artist && painting.artist.name !== dto.artistName) {
@@ -117,18 +113,26 @@ export class PaintingService {
 			await this.notRelateToStyle(queryRunner, painting, styleNamesToOmit);
 		}
 
-		return;
+		const replacedPainting = await this.repo
+			.createQueryBuilder("p", queryRunner)
+			.leftJoinAndSelect("p.tags", "tags")
+			.leftJoinAndSelect("p.styles", "styles")
+			.leftJoinAndSelect("p.artist", "artist")
+			.where("p.id = :paintingId", { paintingId: painting.id })
+			.getOne();
+
+		return replacedPainting!;
 	}
 
 	/*TODO
     - 함수 동작 사양 주석 양식 만들기
   */
 
-	async searchPainting(
-		dto: SearchPaintingDTO,
+	async searchMany(
+		dto: Pick<SearchPaintingQueryDTO, "title" | "artistName" | "styles" | "tags">,
 		page: number,
 		paginationCount: number,
-	): Promise<IPaginationResult<ShortPainting>> {
+	): Promise<Pagination<Painting>> {
 		/*TODO
     - 입력된 tag와 style이 유효한지 점검하기
     - [ ] 배열의 각 원소가 공백인지 확인 필요.
@@ -206,99 +210,63 @@ export class PaintingService {
 			.orderBy("p.created_date", "DESC")
 			.getManyAndCount();
 
-		const data = paintings.map((p) => new ShortPainting(p));
-
 		return {
-			data,
-			count: data.length,
+			data: paintings,
+			count: paintings.length,
 			total,
 			page,
 			pageCount:
 				Math.floor(total / paginationCount) + (total % paginationCount === 0 ? 0 : 1),
 		};
 	}
-	async getPaintingsByArtist(artistName: string) {
-		const result = await this.repo
-			.createQueryBuilder("p")
-			.innerJoinAndSelect("p.artist", "artist")
-			.innerJoinAndSelect("p.tags", "tag")
-			.innerJoinAndSelect("p.styles", "style")
-			.where("artist.name  = :artist", {
-				artist: artistName,
-			})
-			.getMany();
-		return result;
-	}
-
-	async getPaintingsByTags(tagNames: string[]) {
-		if (tagNames.length === 0) {
-			return []; // 빈 배열이 들어오면 빈 결과 반환
-		}
-
-		const paintings = await this.repo
-			.createQueryBuilder("painting")
-			.innerJoinAndSelect("painting.artist", "artist")
-			.innerJoinAndSelect("painting.tags", "tag")
-			.innerJoinAndSelect("painting.styles", "style")
-			.where((qb) => {
-				// 서브쿼리 사용
-				const subQuery = qb
-					.subQuery()
-					.select("painting_tags.paintingId")
-					.from("painting_tags_tag", "painting_tags") // Many-to-Many 연결 테이블
-					.innerJoin("tag", "tag", "tag.id = painting_tags.tagId") // 연결 테이블과 Tag JOIN
-					.where("tag.name IN (:...tagNames)", { tagNames }) // tagNames 필터링
-					.groupBy("painting_tags.paintingId")
-					.having("COUNT(DISTINCT tag.id) = :tagCount") // 정확한 태그 갯수 매칭
-					.getQuery();
-				return `painting.id IN ${subQuery}`;
-			})
-			.setParameter("tagCount", tagNames.length) // 태그 갯수 설정
-			.getMany();
-
-		return paintings;
-	}
 
 	/**
-	 * - [] 중에서 0번째 index중 큰 순서로 이동 중에 DB에 없는 ID가 있으면 에러 발생
-	 * - 에러가 발생 ID를 console에 출력해 줌 (typeorm 자체 기능)
+	 * @returns 모든 relation 필드를 갖는 painting 배열
+	 * @description ids[i]에 매칭되는 Painting을 찾지 못한 경우, 제외됨
 	 */
-	async getByIds(ids: string[]): Promise<Painting[]> {
+	async getManyByIds(ids: string[]): Promise<Painting[]> {
+		//TODO : 전달된 id 배열에 대응되는 Painting 반환하는 함수 구현
+		//-[x] : id가 중복되는 상황 예방
+		//-[ ] : id에 해당하는 Painting을 찾지 못한 상황 예외처리
+		// -> 현재 상황에서는 필요없다고 판단되어 삭제함.
+		//-[x] : ids.length === 0 일때, 예외 상황 처리
+
+		if (isArrayEmpty(ids)) {
+			return [];
+		}
+
+		const targetIdSet = new Set<string>(ids);
 		const query = this.repo
 			.createQueryBuilder("p")
 			.leftJoinAndSelect("p.tags", "tags")
 			.leftJoinAndSelect("p.styles", "styles")
 			.leftJoinAndSelect("p.artist", "artist")
-			.where("p.id IN (:...ids)", { ids });
-
-		Logger.debug(query.getSql());
+			.where("p.id IN (:...ids)", { ids: Array.from(targetIdSet) });
 
 		const paintings: Painting[] = await query.getMany();
 
-		if (paintings.length !== ids.length) {
-			const foundIds = paintings.map((p) => p.id);
-			const notFoundIds = ids.filter((id) => !foundIds.includes(id));
+		return paintings;
+	}
+
+	async validatePaintingIds(ids: string[]) {
+		const targetIdSet = new Set<string>(ids);
+
+		const paintings = await this.getManyByIds(Array.from(targetIdSet));
+		const foundIdSet = new Set<string>(paintings.map((p) => p.id));
+		if (targetIdSet.size !== foundIdSet.size) {
+			const notFoundIdSet = new Set<string>();
+
+			for (const id of targetIdSet) {
+				if (!foundIdSet.has(id)) {
+					notFoundIdSet.add(id);
+				}
+			}
 
 			throw new ServiceException(
 				"ENTITY_NOT_FOUND",
 				"BAD_REQUEST",
-				`Can Not found ids : ${JSON.stringify(notFoundIds)}`,
+				`Can Not found ids : ${[...notFoundIdSet].join(", ")}`,
 			);
-		}
-		return paintings;
-	}
-
-	validatePaintingEntity(painting: Painting): boolean {
-		if (!painting) return false;
-
-		if (!painting.id) return false;
-
-		return true;
-	}
-
-	async validateColumnValue(column: keyof Painting, value: string) {
-		if (column === "artist") {
-			await this.artistService.validateName(value);
 		}
 	}
 
@@ -319,7 +287,7 @@ export class PaintingService {
 			return;
 		}
 
-		const tags: Tag[] = await this.getTagsByName(tagNames);
+		const tags: Tag[] = await this.getTagsByName(tagNamesToAdd);
 
 		const query = createTransactionQueryBuilder(queryRunner, Painting)
 			.relation(Painting, "tags")
@@ -356,7 +324,7 @@ export class PaintingService {
 			return;
 		}
 
-		const stylesToAdd: Style[] = await this.getStylesByName(styleNames);
+		const stylesToAdd: Style[] = await this.getStylesByName(styleNamesToAdd);
 
 		const query = createTransactionQueryBuilder(queryRunner, Painting)
 			.relation(Painting, "styles")
@@ -469,15 +437,16 @@ export class PaintingService {
 		return result.affected;
 	}
 
-	public async findPaintingOrThrow(id: string): Promise<Painting> {
-		const painting = (await this.getByIds([id]))[0];
-		if (isFalsy(painting)) {
-			throw new ServiceException(
-				"ENTITY_NOT_FOUND",
-				"BAD_REQUEST",
-				`not found painting. id : ${id}\n`,
-			);
-		}
+	/**
+	 *
+	 * @param options
+	 * @returns painting with relation fields(artist,tags,styles)
+	 */
+	public async findOne(options: FindOneOptions<Painting>): Promise<Painting | null> {
+		const painting = await this.repo.findOne({
+			...options,
+			relations: ["artist", "tags", "styles"],
+		});
 		return painting;
 	}
 
@@ -509,7 +478,7 @@ export class PaintingService {
 		}
 
 		//validate set
-		const validPaintings = await this.getByIds([...paintingIdSet.values()]);
+		const validPaintings = await this.getManyByIds([...paintingIdSet.values()]);
 
 		return validPaintings;
 	}

@@ -3,10 +3,7 @@ import { Column, Entity, OneToMany, PrimaryGeneratedColumn, Unique } from "typeo
 import { OneTimeToken } from "../../auth/entity/oneTimeToken.entity";
 import { CustomBaseEntity } from "../../db/entity/customBase.entity";
 import { Quiz } from "../../quiz/entities/quiz.entity";
-
-export type UserRole = "admin" | "user";
-
-export type UserState = "active" | "inactive" | "banned";
+import { UserRole, UserState } from "../const";
 
 @Entity()
 @Unique(["email", "username"])
@@ -17,8 +14,8 @@ export class User extends CustomBaseEntity {
 	@Column()
 	email!: string;
 
-	@Column()
 	@Exclude()
+	@Column()
 	password!: string;
 
 	@Column({ default: "user" })
@@ -39,12 +36,12 @@ export class User extends CustomBaseEntity {
 
 	/*TODO
     - Oauth 로직추가시 해당 컬럼 관련 로직 개선하기
-  */
-	@Column({ nullable: true })
-	oauth_provider!: string;
+  	*/
+	@Column({ type: "character varying", nullable: true })
+	oauth_provider!: string | null;
 
-	@Column({ nullable: true })
-	oauth_provider_id!: string;
+	@Column({ type: "character varying", nullable: true })
+	oauth_provider_id!: string | null;
 
 	@OneToMany(() => OneTimeToken, (oneTimeToken) => oneTimeToken.user)
 	oneTimeTokens!: OneTimeToken[];
