@@ -87,8 +87,8 @@ export class TagService extends TypeOrmCrudService<Tag> {
 				const keyDto = uniqueDTOs.find((dto) => tag.name === dto.name)!;
 				if (existingNameMap.has(tag.name)) {
 					const serviceException = new ServiceException(
-						"DB_CONFLICT",
-						"CONFLICT",
+						"ENTITY_DUPLICATED",
+						"BAD_REQUEST",
 						`Tag ${tag.name} is already exist`,
 					);
 					dtoToResultMap.set(keyDto, serviceException);

@@ -121,11 +121,19 @@ export class UserController implements CrudController<User> {
 
 		sameUsers.forEach((user) => {
 			if (user.email == email) {
-				throw new HttpException(`${email} are already exist`, HttpStatus.BAD_REQUEST);
+				throw new ServiceException(
+					"ENTITY_DUPLICATED",
+					"BAD_REQUEST",
+					`${email} are already exist`,
+				);
 			}
 
 			if (user.username == username) {
-				throw new HttpException(`${username} are already exist`, HttpStatus.BAD_REQUEST);
+				throw new ServiceException(
+					"ENTITY_DUPLICATED",
+					"BAD_REQUEST",
+					`${username} are already exist`,
+				);
 			}
 		});
 
