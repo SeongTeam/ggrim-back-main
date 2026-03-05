@@ -16,6 +16,10 @@ import { ShowStyleResponse } from "./modules/style/dto/response/showStyle.respon
 import { ShowTagResponse } from "./modules/tag/dto/response/showTag.response";
 import { ShowUserResponse } from "./modules/user/dto/request/response/showUser.response";
 import { ServiceException } from "./modules/_common/filter/exception/service/serviceException";
+import {
+	HttpExceptionSchema,
+	ServiceExceptionSchema,
+} from "./modules/_common/filter/exception/openapi/schema";
 import { ExpressAdapter, NestExpressApplication } from "@nestjs/platform-express";
 
 export function configNestApp<T extends INestApplication>(app: T): void {
@@ -56,10 +60,17 @@ export function configSwagger<T extends INestApplication>(app: T): void {
 		.addGlobalResponse({
 			status: HttpStatus.BAD_REQUEST,
 			description: "when invalid path(route) or url query or dto body",
+			type: HttpExceptionSchema,
 		})
 		.addGlobalResponse({
 			status: HttpStatus.INTERNAL_SERVER_ERROR,
 			description: "when server logic throw unexpected exception",
+			type: ServiceExceptionSchema,
+		})
+		.addGlobalResponse({
+			status: HttpStatus.UNAUTHORIZED,
+			description: "when request have no authentication or authorization",
+			type: ServiceExceptionSchema,
 		})
 		.build();
 
