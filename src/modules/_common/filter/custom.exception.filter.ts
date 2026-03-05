@@ -2,6 +2,7 @@ import { ArgumentsHost, ExceptionFilter, HttpStatus, Inject } from "@nestjs/comm
 import { Response } from "express";
 import { LoggerService } from "../../logger/logger.service";
 import { BaseException } from "./exception/baseException";
+import { BaseExceptionSchema } from "./exception/openapi/schema";
 
 interface CauseInfo {
 	msg: string;
@@ -71,7 +72,7 @@ export class CustomExceptionFilter implements ExceptionFilter {
 	// 	//심각한 에러 발생시 알려주는 용도?
 	// }
 
-	getCauseInfo(e: BaseException) {
+	private getCauseInfo(e: BaseException) {
 		const innerError = e.cause;
 		if (!innerError) {
 			return;
@@ -89,14 +90,15 @@ export class CustomExceptionFilter implements ExceptionFilter {
 		return ret;
 	}
 
-	handleHttpException(response: Response, exception: BaseException) {
+	private handleHttpException(response: Response, exception: BaseException) {
 		this.logBaseException(exception);
-		response.status(exception.getStatus()).json({
+		const baseHttpException: BaseExceptionSchema = {
 			errorCode: exception.errorCode,
 			statusCode: exception.getStatus(),
-			timeStamp: exception.timestamp,
+			timestamp: exception.timestamp,
 			path: exception.path,
 			message: exception.message,
-		});
+		};
+		response.status(exception.getStatus()).json(baseHttpException);
 	}
 }
