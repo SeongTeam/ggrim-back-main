@@ -28,18 +28,24 @@ import { User } from "../../../src/modules/user/entity/user.entity";
 import { ShowUserResponse } from "../../../src/modules/user/dto/request/response/showUser.response";
 import { UserService } from "../../../src/modules/user/user.service";
 import { assert } from "console";
-import { Verification } from "../../../src/modules/auth/entity/verification.entity";
-import { OneTimeTokenPurpose } from "../../../src/modules/auth/types/oneTimeToken";
 import { OneTimeToken } from "../../../src/modules/auth/entity/oneTimeToken.entity";
-import { omit } from "../../../src/utils/object";
-import { ShowOneTimeTokenResponse } from "../../../src/modules/auth/dto/response/showOneTimeToken.response";
-import { ShowVerificationResponse } from "../../../src/modules/auth/dto/response/showVerfication.response";
 import { HashedOneTimeTokenResponse } from "../../../src/modules/auth/dto/response/hashedOneTimeToken.response";
+import {
+	deleteAllOneTimeTokens,
+	deleteAllUsers,
+	deleteAllVerifications,
+	expectOneTimeToken,
+	expectVerification,
+	initOneTimeTokenFromEmailVerification,
+	registerVerifyInfo,
+	useVerifyInfo,
+} from "./util";
 
 describe("AuthController (e2e)", () => {
 	function sleep(ms: number) {
 		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
+	let moduleFixture: TestingModule;
 	let app: INestApplication;
 	let dbService: DatabaseService;
 	let testService: TestService;
@@ -48,104 +54,8 @@ describe("AuthController (e2e)", () => {
 	const port = 3001;
 	const client = createClient<paths>({ baseUrl: `http://localhost:${port}` });
 
-	async function useVerifyInfo(email: string, pinCode: string) {
-		const qr = dbService.getQueryRunner();
-		const verification = await registerVerifyInfo(email, pinCode);
-		const now = new Date();
-		const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
-		await authService.updateVerification(qr, verification.id, {
-			last_verified_date: tenMinutesAgo,
-			verification_success_date: tenMinutesAgo,
-		});
-
-		await qr.release();
-	}
-
-	async function registerVerifyInfo(email: string, pinCode: string) {
-		const qr = dbService.getQueryRunner();
-		const verification = await authService.createVerification(qr, email, pinCode);
-
-		await qr.release();
-
-		return verification;
-	}
-
-	async function deleteAllVerifications(
-		condition: Partial<{
-			[K in keyof Verification]: Verification[K];
-		}>,
-	) {
-		const manager = dbService.getManager();
-
-		await manager.delete(Verification, condition);
-	}
-
-	async function deleteAllUsers(condition: { email: string }) {
-		const manager = dbService.getManager();
-		const users = await manager.find(User, { where: condition });
-
-		//delete relation table
-		await Promise.all(users.map((user) => manager.delete(OneTimeToken, { user_id: user.id })));
-
-		await manager.delete(User, condition);
-	}
-
-	async function deleteAllOneTimeTokens(
-		condition: Partial<{
-			[K in keyof OneTimeToken]: OneTimeToken[K];
-		}>,
-	) {
-		const manager = dbService.getManager();
-
-		await manager.delete(OneTimeToken, condition);
-	}
-
-	async function createOneTimeToken(userId: string, purpose: OneTimeTokenPurpose) {
-		const user = await userService.findOne({ where: { id: userId } });
-		assert(user !== null);
-		const oneTimeToken = await testService.createOneTimeToken(user!, purpose);
-
-		return oneTimeToken;
-	}
-
-	function expectVerification(
-		receivedData: ShowVerificationResponse,
-		receivedEntity: Verification,
-	) {
-		//TODO API 결과 DB 변경 검증하기
-		//- [x] Verification Entity 생성 검증
-		//- [x] 응답 객체와 DB Entity 매칭 검증
-
-		//validate token
-
-		const expectedData = new ShowVerificationResponse(receivedEntity);
-		//validate else
-		expect(receivedData).toEqual(expectedData);
-	}
-
-	async function expectOneTimeToken(
-		receivedData: ShowOneTimeTokenResponse,
-		receivedEntity: OneTimeToken,
-	) {
-		//TODO API 결과 DB 변경 검증하기
-		//- [x] OneTimeToken Entity 생성 검증
-		//- [x] DB에 저장된 OneTimeToken 중요 정보 암호화 검증
-		//- [x] 응답 객체와 DB Entity 매칭 검증
-
-		//validate token
-		const receivedToken = receivedData.token;
-		const encodedToken = receivedEntity.token;
-		expect(receivedToken === encodedToken).toBe(false);
-		const isMatched = await authService.isHashMatched(receivedToken, encodedToken);
-		expect(isMatched).toBe(true);
-
-		const expectedData = new ShowOneTimeTokenResponse(receivedEntity);
-		//validate else
-		expect(omit(receivedData, ["token"])).toEqual(omit(expectedData, ["token"]));
-	}
-
 	beforeAll(async () => {
-		const moduleFixture: TestingModule = await Test.createTestingModule({
+		moduleFixture = await Test.createTestingModule({
 			imports: [AppModule, TestModule],
 		}).compile();
 
@@ -306,7 +216,7 @@ describe("AuthController (e2e)", () => {
 			])("test : $testName", ({ email }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestVerification>>;
 				beforeAll(async () => {
-					await deleteAllVerifications({ email });
+					await deleteAllVerifications(moduleFixture, { email });
 
 					receivedRes = await requestVerification(email);
 				});
@@ -415,7 +325,7 @@ describe("AuthController (e2e)", () => {
 				let receivedRes: Awaited<ReturnType<typeof requestVerification>>;
 
 				beforeAll(async () => {
-					await deleteAllVerifications({ email: targetEmail });
+					await deleteAllVerifications(moduleFixture, { email: targetEmail });
 				});
 				it(
 					"response should match openapi",
@@ -466,7 +376,7 @@ describe("AuthController (e2e)", () => {
 			])("test : $testName", ({ body }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestVerify>>;
 				beforeAll(async () => {
-					await registerVerifyInfo(body.email, body.pinCode);
+					await registerVerifyInfo(moduleFixture, body.email, body.pinCode);
 					receivedRes = await requestVerify(body);
 				});
 
@@ -485,7 +395,7 @@ describe("AuthController (e2e)", () => {
 						where: { id: receivedData.id },
 					});
 					expect(receivedEntity).toBeDefined();
-					await expectOneTimeToken(receivedData, receivedEntity!);
+					await expectOneTimeToken(moduleFixture, receivedData, receivedEntity!);
 				});
 			});
 		});
@@ -502,8 +412,8 @@ describe("AuthController (e2e)", () => {
 			const usedEmail = faker.internet.email();
 			const usedPinCode = faker.string.alphanumeric(pinCodeSize);
 			beforeAll(async () => {
-				await registerVerifyInfo(targetEmail, targetPinCode);
-				await useVerifyInfo(usedEmail, usedPinCode);
+				await registerVerifyInfo(moduleFixture, targetEmail, targetPinCode);
+				await useVerifyInfo(moduleFixture, usedEmail, usedPinCode);
 			});
 
 			describe.each([
@@ -568,12 +478,12 @@ describe("AuthController (e2e)", () => {
 			const targetPinCode = faker.string.alphanumeric(pinCodeSize);
 			const timeOutMs = 60 * 1000;
 			beforeEach(async () => {
-				await registerVerifyInfo(targetEmail, targetPinCode);
+				await registerVerifyInfo(moduleFixture, targetEmail, targetPinCode);
 				console.log("beforeEach");
 			});
 
 			afterEach(async () => {
-				await deleteAllVerifications({ email: targetEmail });
+				await deleteAllVerifications(moduleFixture, { email: targetEmail });
 			});
 
 			describe.each([
@@ -710,7 +620,7 @@ describe("AuthController (e2e)", () => {
 							where: { id: receivedData.id },
 						});
 						expect(receivedEntity).toBeDefined();
-						await expectOneTimeToken(receivedData, receivedEntity!);
+						await expectOneTimeToken(moduleFixture, receivedData, receivedEntity!);
 					});
 				});
 			},
@@ -839,11 +749,6 @@ describe("AuthController (e2e)", () => {
 				const userStub = factoryUserStub(userType);
 				userStub.email = targetEmail;
 
-				async function arrange() {
-					await deleteAllUsers({ email: targetEmail });
-					await testService.insertStubUser(userStub);
-				}
-
 				describe.each([
 					{
 						testName: "deliver body with purpose update_password ",
@@ -864,7 +769,8 @@ describe("AuthController (e2e)", () => {
 						ReturnType<typeof requestSecurityTokenEmailVerification>
 					>;
 					beforeAll(async () => {
-						await arrange();
+						await deleteAllUsers(moduleFixture, { email: targetEmail });
+						await testService.insertStubUser(userStub);
 						receivedRes = await requestSecurityTokenEmailVerification(body);
 					});
 
@@ -906,12 +812,6 @@ describe("AuthController (e2e)", () => {
 				const notExistUserStub = factoryUserStub(userType);
 				userStub.email = targetEmail;
 
-				async function arrange() {
-					await deleteAllOneTimeTokens({ email: targetEmail });
-					await deleteAllUsers({ email: targetEmail });
-					await testService.insertStubUser(userStub);
-				}
-
 				describe.each([
 					{
 						testName: "deliver empty body",
@@ -936,7 +836,9 @@ describe("AuthController (e2e)", () => {
 						ReturnType<typeof requestSecurityTokenEmailVerification>
 					>;
 					beforeAll(async () => {
-						await arrange();
+						await deleteAllOneTimeTokens(moduleFixture, { email: targetEmail });
+						await deleteAllUsers(moduleFixture, { email: targetEmail });
+						await testService.insertStubUser(userStub);
 						receivedRes = await requestSecurityTokenEmailVerification(
 							invalidBody as {
 								email: string;
@@ -975,8 +877,8 @@ describe("AuthController (e2e)", () => {
 
 				beforeAll(async () => {
 					//set-up test environment
-					await deleteAllOneTimeTokens({ email: targetEmail });
-					await deleteAllUsers({ email: targetEmail });
+					await deleteAllOneTimeTokens(moduleFixture, { email: targetEmail });
+					await deleteAllUsers(moduleFixture, { email: targetEmail });
 
 					const deletedUser = await testService.insertStubUser(deletedUserStub);
 
@@ -1063,11 +965,6 @@ describe("AuthController (e2e)", () => {
 			return res;
 		}
 
-		async function initOneTimeTokenFromEmailVerification(user: User) {
-			const oneTimeToken = await createOneTimeToken(user.id, "email-verification");
-			return oneTimeToken;
-		}
-
 		describe.each([{ userType: USER_ROLE.USER }, { userType: USER_ROLE.ADMIN }])(
 			"success when deliver valid header and body",
 			({ userType }) => {
@@ -1093,7 +990,10 @@ describe("AuthController (e2e)", () => {
 						const user = await userService.findOne({ where: { id: userId } });
 
 						assert(user !== null);
-						const oneTimeToken = await initOneTimeTokenFromEmailVerification(user!);
+						const oneTimeToken = await initOneTimeTokenFromEmailVerification(
+							moduleFixture,
+							user!,
+						);
 						const header = {
 							"x-one-time-token-value": oneTimeToken.token,
 							"x-one-time-token-identifier": oneTimeToken.id,
@@ -1120,6 +1020,7 @@ describe("AuthController (e2e)", () => {
 						expect(receivedEntity).toBeDefined();
 
 						await expectOneTimeToken(
+							moduleFixture,
 							receivedData.showOneTimeTokenResponse,
 							receivedEntity!,
 						);
@@ -1160,7 +1061,10 @@ describe("AuthController (e2e)", () => {
 						const user = await userService.findOne({ where: { id: userId } });
 
 						assert(user !== null);
-						const oneTimeToken = await initOneTimeTokenFromEmailVerification(user!);
+						const oneTimeToken = await initOneTimeTokenFromEmailVerification(
+							moduleFixture,
+							user!,
+						);
 						const header = {
 							"x-one-time-token-value": oneTimeToken.token,
 							"x-one-time-token-identifier": oneTimeToken.id,
