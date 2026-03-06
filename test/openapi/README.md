@@ -5,7 +5,7 @@
 
 - below cmd generate DTO type, path, params, query from Open API Doc created by swagger
 ```
-npx openapi-typescript http://localhost:3000/api-json -o src/generated/dto-types.ts --enum --dedupe-enums --export-type --root-types --root-types-no-schema-prefix
+npx openapi-typescript http://localhost:3000/api-json -o test/openapi/dto-types.ts --enum --export-type --root-types --root-types-no-schema-prefix --make-paths-enum --generate-path-params
 ```
 
 - [option info](https://openapi-ts.dev/cli#flags)
