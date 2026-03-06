@@ -12,7 +12,10 @@ export class UserService extends TypeOrmCrudService<User> {
 		super(repo);
 	}
 
-	async findUserByEmail(email: string): Promise<User | null> {
+	async findUserById(id: string): Promise<User | null> {
+		return await this.findOne({ where: { id } });
+	}
+	async findUserByEmail(email: string) {
 		return await this.findOne({ where: { email } });
 	}
 
@@ -98,9 +101,16 @@ export class UserService extends TypeOrmCrudService<User> {
 		}
 	}
 
-	async findDeletedUserByEmail(email: string): Promise<User | null> {
+	async findDeletedUserById(id: string): Promise<User | null> {
 		try {
-			const deletedUser = await this.repo.findOne({ where: { email }, withDeleted: true });
+			const queryBuilder = this.repo.createQueryBuilder("user");
+			const deletedUser = await queryBuilder
+				.select()
+				.withDeleted()
+				.where("user.id= :id", { id })
+				.andWhere("user.deleted_date IS NOT NULL")
+				.getOne();
+
 			return deletedUser;
 		} catch (error) {
 			throw new ServiceException(

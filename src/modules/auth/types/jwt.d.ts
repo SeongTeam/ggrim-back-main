@@ -20,6 +20,7 @@ export interface BaseJWTPayload {
 	purpose: JwtPurpose;
 }
 export interface JWTPayload extends BaseJWTPayload {
+	id: string;
 	username: string;
 	role: UserRole;
 }
