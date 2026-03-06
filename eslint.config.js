@@ -46,5 +46,5 @@ module.exports = defineConfig([
 			"@typescript-eslint/no-explicit-any": "warn",
 		},
 	},
-	globalIgnores(["**/eslint.config.js"]),
+	globalIgnores(["**/eslint.config.js", "test/generated"]),
 ]);
