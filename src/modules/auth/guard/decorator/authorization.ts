@@ -11,6 +11,7 @@ import { BasicGuard } from "../authentication/basic.guard";
 import { UseBasicAuthGuard, UseSecurityTokenGuard, UseTokenAuthGuard } from "./authentication";
 import { OneTimeTokenPurpose } from "../../types/oneTimeToken";
 import { SecurityTokenGuard } from "../authentication/securityToken.guard";
+import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
 
 type TokenAuthGuardConstructor = typeof TokenAuthGuard;
 type BasicGuardConstructor = typeof BasicGuard;
@@ -40,7 +41,11 @@ export function UseOwnerGuard(selector: AuthenticatedGuardSelector, options: Che
 		} else if (selector.guard === TokenAuthGuard) {
 			return [UseTokenAuthGuard()];
 		} else {
-			throw new Error("Invalid guard selector");
+			throw new ServiceException(
+				"NOT_IMPLEMENTED",
+				"SERVICE_UNAVAILABLE",
+				"Invalid guard selector",
+			);
 		}
 	})();
 
