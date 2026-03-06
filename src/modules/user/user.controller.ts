@@ -169,6 +169,8 @@ export class UserController implements CrudController<User> {
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
 		@Body() dto: ReplacePassWordDTO,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		@Param("id", ParseUUIDPipe) id: string,
 	) {
 		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = authUserPayload;
@@ -196,7 +198,8 @@ export class UserController implements CrudController<User> {
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
 		@Body() dto: ReplaceUsernameDTO,
-		// @Param("id") id: string,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		@Param("id", ParseUUIDPipe) id: string,
 	) {
 		const { username: newUsername } = dto;
 		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
@@ -219,7 +222,7 @@ export class UserController implements CrudController<User> {
 	@Put(":id/role")
 	async replaceRole(
 		@DBQueryRunner() qr: QueryRunner,
-		@Param("id") id: string,
+		@Param("id", ParseUUIDPipe) id: string,
 		@Body() dto: ReplaceRoleDTO,
 	) {
 		const user = await this.service.findOne({ where: { id } });
@@ -248,7 +251,8 @@ export class UserController implements CrudController<User> {
 	async deleteUser(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		// @Param("id") id: string,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		@Param("id", ParseUUIDPipe) id: string,
 	) {
 		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = authUserPayload;
@@ -278,7 +282,8 @@ export class UserController implements CrudController<User> {
 	async recoverUser(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		//@Param("id") id: string,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		@Param("id", ParseUUIDPipe) id: string,
 	) {
 		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user: deletedUser } = authUserPayload;
