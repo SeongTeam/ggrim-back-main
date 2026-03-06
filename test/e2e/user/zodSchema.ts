@@ -1,5 +1,5 @@
 import * as z from "zod";
-import { USER_ROLE, USER_STATE } from "../../openapi/dto-types";
+import { USER_ROLE, USER_STATE } from "../../generated/dto-types";
 
 export const zShowUserResponse = z.object({
 	id: z.uuid(),

@@ -11,7 +11,7 @@ import {
 	ONE_TIME_TOKEN_PURPOSE,
 	paths,
 	SEND_ONE_TIME_TOKEN_PURPOSE,
-} from "../../openapi/dto-types";
+} from "../../generated/dto-types";
 import createClient from "openapi-fetch";
 import { AuthService } from "../../../src/modules/auth/auth.service";
 import { ENV_EMAIL_TEST_ADDRESS } from "../../../src/modules/_common/const/envKeys";

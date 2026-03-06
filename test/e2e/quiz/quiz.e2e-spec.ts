@@ -19,7 +19,7 @@ import {
 	SubmitQuizDto,
 	ReplaceQuizDto,
 	ScheduleQuizResponse,
-} from "../../openapi/dto-types";
+} from "../../generated/dto-types";
 import { QuizService } from "../../../src/modules/quiz/quiz.service";
 import { faker } from "@faker-js/faker";
 import { factoryQuizStub } from "../../_shared/stub/quiz.stub";

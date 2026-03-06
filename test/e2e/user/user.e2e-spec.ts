@@ -9,7 +9,7 @@ import { TestService } from "../../_shared/test.service";
 import { factoryUserStub, UserDummy } from "../../_shared/stub/user.stub";
 import { faker } from "@faker-js/faker";
 import createClient from "openapi-fetch";
-import { ApiPaths, paths, USER_ROLE, USER_STATE } from "../../openapi/dto-types";
+import { ApiPaths, paths, USER_ROLE, USER_STATE } from "../../generated/dto-types";
 import { expectResponseBody } from "../_common/jest-zod";
 import { zShowUserResponse } from "./zodSchema";
 import { UserService } from "../../../src/modules/user/user.service";
