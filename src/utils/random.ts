@@ -6,9 +6,9 @@ export function getRandomNumber(min: number, max: number): number {
 	return index;
 }
 
-export function getRandomElement<T>(list: T[]): T | undefined {
+export function getRandomElement<T>(list: T[]): T {
 	if (isArrayEmpty<T>(list)) {
-		return undefined;
+		throw Error("list is Empty. Can't choose one");
 	}
 
 	const min = 0;
@@ -19,7 +19,7 @@ export function getRandomElement<T>(list: T[]): T | undefined {
 }
 export function selectRandomElements<T>(arr: T[], n: number): T[] {
 	if (n < 0 || n > arr.length || arr.length === 0) {
-		return [];
+		throw Error(`delivering wrong argument.  ${JSON.stringify({ length: arr.length, n })} `);
 	}
 
 	// 원본 배열의 복사본을 만들어 원본을 훼손하지 않습니다.
