@@ -182,7 +182,7 @@ describe("AuthController (e2e)", () => {
 		async function requestSignIn(email: string, password: string) {
 			const authorization = testService.getBasicAuthCredential(email, password);
 
-			const res = await client.POST(ApiPaths.AuthController_signin, {
+			const res = await client.POST(ApiPaths.AuthController_signIn, {
 				params: {
 					header: {
 						authorization,
@@ -282,15 +282,15 @@ describe("AuthController (e2e)", () => {
 		});
 	});
 
-	describe("/auth/request-verification (POST)", () => {
-		// TODO: "/auth/request-verification (POST)" e2e 테스트 구현
+	describe("/auth/send-pin-code (POST)", () => {
+		// TODO: "/auth/send-pin-code (POST)" e2e 테스트 구현
 		// - [x] 공통 로직 구현
 		// - [x] 좋은 데이터 테스트
 		// - [x] 나쁜 데이터 테스트 (비유효 query, dto body)
 		// - [x] 이미 존재하는 계정 이메일 전송 테스트
 		// - [x] 연속 요청 테스트
 		async function requestVerification(email: string) {
-			const ret = await client.POST(ApiPaths.AuthController_register, {
+			const ret = await client.POST(ApiPaths.AuthController_sendPinCode, {
 				body: {
 					email,
 				},
@@ -328,7 +328,7 @@ describe("AuthController (e2e)", () => {
 				});
 
 				it.skip("Verification email should be sent ", () => {
-					//TODO request-verification 이메일 전송 검증
+					//TODO send-pin-code 이메일 전송 검증
 					//- [ ] 이메일 송신 확인하기
 					//- [ ] 이메일 수신 확인하기
 					//- [ ] 이메일로 전송된 핀코드 일치 확인하기
@@ -358,7 +358,7 @@ describe("AuthController (e2e)", () => {
 				});
 
 				it.skip("Verification email should be sent ", () => {
-					//TODO request-verification 이메일 전송 검증
+					//TODO send-pin-code 이메일 전송 검증
 					//- [ ] 서비스 측 이메일 송신안되었는지 검증
 					//- [ ] 사용자 측 이메일 수신안되었는지 검증
 					// ? 질문: 어떻게 이메일 전송 수신 여부를 확인하는가?
@@ -396,7 +396,7 @@ describe("AuthController (e2e)", () => {
 			});
 
 			it.skip("Verification email should not be sent ", () => {
-				//TODO request-verification 이메일 전송 검증
+				//TODO send-pin-code 이메일 전송 검증
 				//- [ ] 서비스 측 이메일 송신안되었는지 검증
 				//- [ ] 사용자 측 이메일 수신안되었는지 검증
 			});
@@ -430,22 +430,22 @@ describe("AuthController (e2e)", () => {
 				);
 
 				it.skip("Verification emails should be partially sent ", () => {
-					//TODO request-verification 이메일 전송 검증
+					//TODO send-pin-code 이메일 전송 검증
 					//- [ ] 서비스 측 이메일이 예상 횟수만큼 전송되었는지 검증
 					//- [ ] 사용자 측 이메일이 예상 횟수만큼 수신되었는지 검증
 				});
 			});
 		});
 	});
-	describe("/auth/verify (POST) ", () => {
-		// TODO: "/auth/request-verification (POST)" e2e 테스트 구현
+	describe("/auth/verify-pin-code (POST) ", () => {
+		// TODO: "/auth/send-pin-code (POST)" e2e 테스트 구현
 		// - [x] 공통 로직 구현
 		// - [x] 좋은 데이터 테스트
 		// - [x] 나쁜 데이터 테스트 (비유효 dto body)
 		// - [x] 특수 상황 : 비유효 pin code 전달 연속 요청
 		// - [ ] 특수 상황 : 이미 존재하는 사용자 이메일 전달
 		async function requestVerify(body: { email: string; pinCode: string }) {
-			const res = await client.POST(ApiPaths.AuthController_verify, {
+			const res = await client.POST(ApiPaths.AuthController_verifyPinCode, {
 				body,
 			});
 
@@ -631,7 +631,7 @@ describe("AuthController (e2e)", () => {
 			},
 		) {
 			const authorization = testService.getBasicAuthCredential(email, password);
-			const res = await client.POST(ApiPaths.AuthController_generateSecurityActionToken, {
+			const res = await client.POST(ApiPaths.AuthController_createSecurityToken, {
 				params: {
 					header: {
 						authorization,
@@ -816,8 +816,8 @@ describe("AuthController (e2e)", () => {
 		);
 	});
 
-	describe("/auth/security-token/email-verification (POST)  ", () => {
-		//TODO /auth/security-token/email-verification 테스트 구현
+	describe("/auth/security-token/email (POST)  ", () => {
+		//TODO /auth/security-token/email 테스트 구현
 		//- [x] 좋은 데이터 테스트
 		//- [x] 나쁜 데이터 테스트 ( 비유효 body)
 		//- [ ] 특수 상항 데이터 테스트( 삭제된 계정 테스트)
@@ -826,7 +826,7 @@ describe("AuthController (e2e)", () => {
 			email: string;
 			purpose: SEND_ONE_TIME_TOKEN_PURPOSE;
 		}) {
-			const res = await client.POST(ApiPaths.AuthController_sendSecurityActionToken, {
+			const res = await client.POST(ApiPaths.AuthController_emailSecurityToken, {
 				body,
 			});
 			return res;
@@ -1032,8 +1032,8 @@ describe("AuthController (e2e)", () => {
 		);
 	});
 
-	describe("/auth/security-token/from-email-verification (POST) : 성공  ", () => {
-		//TODO /auth/security-token/from-email-verification 테스트 구현
+	describe("/auth/security-token/email-verification (POST) : 성공  ", () => {
+		//TODO /auth/security-token/email-verification 테스트 구현
 		//- [ ] 좋은 데이터 테스트
 		//- [ ] 나쁜 데이터 테스트
 		//- [ ] 특수 상황 : 유효치 않은 oneTimeToken 사용
@@ -1051,7 +1051,7 @@ describe("AuthController (e2e)", () => {
 			},
 		) {
 			const res = await client.POST(
-				ApiPaths.AuthController_generateSecurityTokenByEmailVerification,
+				ApiPaths.AuthController_createSecurityTokenByEmailVerification,
 				{
 					params: {
 						header,
@@ -1107,7 +1107,7 @@ describe("AuthController (e2e)", () => {
 						const receivedData = receivedRes.data;
 
 						expect(receivedData).toBeTruthy();
-						expect(receivedData!.purpose).toBe(body.purpose);
+						expect(receivedData!.showOneTimeTokenResponse.purpose).toBe(body.purpose);
 						expectResponseBody(zShowOneTimeToken, receivedData);
 					});
 
@@ -1115,11 +1115,14 @@ describe("AuthController (e2e)", () => {
 						const receivedData = receivedRes.data!;
 
 						const receivedEntity = await authService.findOneTimeToken({
-							where: { id: receivedData.id },
+							where: { id: receivedData.showOneTimeTokenResponse.id },
 						});
 						expect(receivedEntity).toBeDefined();
 
-						await expectOneTimeToken(receivedData, receivedEntity!);
+						await expectOneTimeToken(
+							receivedData.showOneTimeTokenResponse,
+							receivedEntity!,
+						);
 					});
 				});
 			},
