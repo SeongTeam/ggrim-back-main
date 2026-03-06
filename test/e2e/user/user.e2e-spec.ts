@@ -351,16 +351,17 @@ describe("UserController (e2e)", () => {
 					{
 						testName: "deliver password containing Lower and Upper english letters",
 						userId: userStub.id,
+						userEmail: userStub.email,
 						body: {
 							password: "updatedPassword",
 						},
 					},
-				])("test : $testName", ({ userId, body }) => {
+				])("test : $testName", ({ userId, userEmail, body }) => {
 					let receivedRes: Awaited<ReturnType<typeof requestUpdatePassword>>;
 					beforeAll(async () => {
 						const header = await getOneTimeTokenHeader(
 							moduleFixture,
-							userId,
+							userEmail,
 							"update-password",
 						);
 
@@ -1181,7 +1182,7 @@ describe("UserController (e2e)", () => {
 				const incorrectPurpose = "update-password";
 				const header = await getOneTimeTokenHeader(
 					moduleFixture,
-					targetUser.id,
+					targetUser.email,
 					incorrectPurpose,
 				);
 
@@ -1194,8 +1195,8 @@ describe("UserController (e2e)", () => {
 		);
 	});
 
-	describe("/user/recover/:email (PATCH)", () => {
-		// TODO: "/user/recover/:email (PATCH)" e2e 테스트 구현
+	describe("/user/recover/:email (PUT)", () => {
+		// TODO: "/user/recover/:email (PUT)" e2e 테스트 구현
 		// - [x] 공통 로직 구현
 		// - [x] 좋은 데이터 테스트
 		// - [x] 나쁜 데이터 테스트 (비유효 email path)
@@ -1229,7 +1230,7 @@ describe("UserController (e2e)", () => {
 				describe.each([
 					{
 						testName: "deliver valid id",
-						userId: targetUserStub.email,
+						userId: targetUserStub.id,
 						requestUserEmail: targetUserStub.email,
 					},
 				])("test : $testName ", ({ userId, requestUserEmail }) => {
@@ -1374,7 +1375,7 @@ describe("UserController (e2e)", () => {
 						testName: "request by not deleted user",
 						userId: activeUserStub.id,
 						requestUserEmail: activeUserStub.email,
-						expectedHttpStatus: HttpStatus.FORBIDDEN, // result from OwnerGuard
+						expectedHttpStatus: HttpStatus.BAD_REQUEST, // result from OwnerGuard
 					},
 					{
 						testName: "deliver admin oneTimeToken already used ",
@@ -1411,7 +1412,7 @@ describe("UserController (e2e)", () => {
 				//1. arrange
 				const targetUserStub = factoryUserStub("user");
 				const deletedUserStub = factoryUserStub("user");
-				const userId = targetUserStub.email;
+				const userId = targetUserStub.id;
 				await testService.insertUserStubs([targetUserStub, deletedUserStub]);
 				const header = await getOneTimeTokenHeader(
 					moduleFixture,
