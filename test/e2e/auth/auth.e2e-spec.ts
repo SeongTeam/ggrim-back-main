@@ -17,8 +17,9 @@ import { AuthService } from "../../../src/modules/auth/auth.service";
 import { ENV_EMAIL_TEST_ADDRESS } from "../../../src/modules/_common/const/envKeys";
 import { faker } from "@faker-js/faker";
 import {
+	zEmailVerificationTokenResponse,
 	zHashedOneTimeToken,
-	zShowOneTimeToken,
+	zShowOneTimeTokenResponse,
 	zShowVerification,
 	zSignInResponse,
 } from "./zodSchema";
@@ -385,7 +386,7 @@ describe("AuthController (e2e)", () => {
 					const receivedData = receivedRes.data!;
 					expect(receivedData.purpose).toBe(ONE_TIME_TOKEN_PURPOSE.sign_up);
 
-					expectResponseBody(zShowOneTimeToken, receivedData);
+					expectResponseBody(zShowOneTimeTokenResponse, receivedData);
 				});
 
 				it("entity should be created in DB", async () => {
@@ -610,7 +611,7 @@ describe("AuthController (e2e)", () => {
 						expect(receivedRes.response.status).toBe(HttpStatus.CREATED);
 						const receivedData = receivedRes.data;
 						expect(receivedData).toBeTruthy();
-						expectResponseBody(zShowOneTimeToken, receivedData);
+						expectResponseBody(zShowOneTimeTokenResponse, receivedData);
 					});
 
 					it("entity should be created in DB", async () => {
@@ -1004,26 +1005,23 @@ describe("AuthController (e2e)", () => {
 
 					it("response should match openapi doc", () => {
 						expect(receivedRes.response.status).toBe(HttpStatus.CREATED);
-						const receivedData = receivedRes.data;
+						const receivedData = receivedRes.data!;
 
 						expect(receivedData).toBeTruthy();
-						expect(receivedData!.showOneTimeTokenResponse.purpose).toBe(body.purpose);
-						expectResponseBody(zShowOneTimeToken, receivedData);
+						const { oneTimeToken } = receivedData;
+						expect(oneTimeToken.purpose).toBe(body.purpose);
+						expectResponseBody(zEmailVerificationTokenResponse, receivedData);
 					});
 
 					it("entity should be created in DB", async () => {
 						const receivedData = receivedRes.data!;
-
+						const { oneTimeToken } = receivedData;
 						const receivedEntity = await authService.findOneTimeToken({
-							where: { id: receivedData.showOneTimeTokenResponse.id },
+							where: { id: oneTimeToken.id },
 						});
 						expect(receivedEntity).toBeDefined();
 
-						await expectOneTimeToken(
-							moduleFixture,
-							receivedData.showOneTimeTokenResponse,
-							receivedEntity!,
-						);
+						await expectOneTimeToken(moduleFixture, oneTimeToken, receivedEntity!);
 					});
 				});
 			},

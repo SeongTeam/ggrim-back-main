@@ -10,7 +10,7 @@ export const zSignInResponse = z.object({
 	user: zShowUserResponse,
 });
 
-export const zShowOneTimeToken = z.object({
+export const zShowOneTimeTokenResponse = z.object({
 	id: z.uuid(),
 	token: z.jwt(),
 	used_date: z.iso.datetime().nullable(),
@@ -32,4 +32,8 @@ export const zHashedOneTimeToken = z.object({
 	used_date: z.iso.datetime().nullable(),
 	expired_date: z.iso.datetime(),
 	purpose: z.enum(Object.values(ONE_TIME_TOKEN_PURPOSE)),
+});
+export const zEmailVerificationTokenResponse = z.object({
+	oneTimeToken: zShowOneTimeTokenResponse,
+	user: zShowUserResponse,
 });

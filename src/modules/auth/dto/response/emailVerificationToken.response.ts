@@ -4,10 +4,10 @@ import { User } from "../../../user/entity/user.entity";
 import { ShowUserResponse } from "../../../user/dto/request/response/showUser.response";
 
 export class EmailVerificationTokenResponse {
-	showOneTimeTokenResponse: ShowOneTimeTokenResponse;
-	showUser: ShowUserResponse;
+	oneTimeToken: ShowOneTimeTokenResponse;
+	user: ShowUserResponse;
 	constructor(oneTimeToken: OneTimeToken, user: User) {
-		this.showOneTimeTokenResponse = new ShowOneTimeTokenResponse(oneTimeToken);
-		this.showUser = new ShowUserResponse(user);
+		this.oneTimeToken = new ShowOneTimeTokenResponse(oneTimeToken);
+		this.user = new ShowUserResponse(user);
 	}
 }

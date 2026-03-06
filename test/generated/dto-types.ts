@@ -747,8 +747,8 @@ export type components = {
 			email: string;
 		};
 		EmailVerificationTokenResponse: {
-			showOneTimeTokenResponse: components["schemas"]["ShowOneTimeTokenResponse"];
-			showUser: components["schemas"]["ShowUserResponse"];
+			oneTimeToken: components["schemas"]["ShowOneTimeTokenResponse"];
+			user: components["schemas"]["ShowUserResponse"];
 		};
 		HashedOneTimeTokenResponse: {
 			purpose: components["schemas"]["ONE_TIME_TOKEN_PURPOSE"];
