@@ -5,7 +5,6 @@ import { ApiProperty } from "@nestjs/swagger";
 export class ShowUserResponse {
 	id: string;
 
-	email: string;
 	@ApiProperty({ enum: Object.values(USER_ROLE), enumName: "USER_ROLE" })
 	role: UserRole;
 
@@ -29,7 +28,6 @@ export class ShowUserResponse {
 
 	constructor(user: User) {
 		this.id = user.id;
-		this.email = user.email;
 		this.role = user.role;
 		this.username = user.username;
 		this.active = user.active;

@@ -317,8 +317,8 @@ export class AuthService {
 		purpose: OneTimeTokenPurpose,
 		user: User,
 	): Promise<OneTimeToken> {
-		const { role, username } = user;
-		const payload: JWTPayload = { role, username, email, purpose, type: "ONE_TIME" };
+		const { id, role, username } = user;
+		const payload: JWTPayload = { id, role, username, email, purpose, type: "ONE_TIME" };
 
 		const token = this.signToken(payload);
 

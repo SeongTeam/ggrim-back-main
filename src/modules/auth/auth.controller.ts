@@ -42,6 +42,7 @@ import { UseOwnerGuard } from "./guard/decorator/authorization";
 import { UseBasicAuthGuard, UseSecurityTokenGuard } from "./guard/decorator/authentication";
 import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
 import { HashedOneTimeTokenResponse } from "./dto/response/hashedOneTimeToken.response";
+import { EmailVerificationTokenResponse } from "./dto/response/emailVerificationToken.response";
 
 @Controller("auth")
 export class AuthController {
@@ -60,7 +61,7 @@ export class AuthController {
 	@HttpCode(HttpStatus.CREATED)
 	@UseBasicAuthGuard()
 	@Post("sign-in")
-	signin(@Req() request: Request) {
+	signIn(@Req() request: Request) {
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = userPayload;
 		const { email, role, username } = user;
@@ -100,8 +101,8 @@ export class AuthController {
 	@ApiCreatedResponse({ type: ShowVerificationResponse })
 	@HttpCode(HttpStatus.CREATED)
 	@UseInterceptors(QueryRunnerInterceptor)
-	@Post("request-verification")
-	async register(
+	@Post("send-pin-code")
+	async sendPinCode(
 		@DBQueryRunner() qr: QueryRunner,
 		@Body() registerDTO: requestVerificationDTO,
 	): Promise<ShowVerificationResponse> {
@@ -145,8 +146,8 @@ export class AuthController {
 	@ApiCreatedResponse({ type: ShowOneTimeTokenResponse })
 	@HttpCode(HttpStatus.CREATED)
 	@UseInterceptors(QueryRunnerInterceptor)
-	@Post("verify")
-	async verify(
+	@Post("verify-pin-code")
+	async verifyPinCode(
 		@DBQueryRunner() qr: QueryRunner,
 		@Body() dto: VerifyDTO,
 	): Promise<ShowOneTimeTokenResponse> {
@@ -219,7 +220,7 @@ export class AuthController {
 	@UseBasicAuthGuard()
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Post("security-token")
-	async generateSecurityActionToken(
+	async createSecurityToken(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
 		@Body() dto: CreateOneTimeTokenDTO,
@@ -234,7 +235,7 @@ export class AuthController {
 	}
 	/**
 	 *
-	 * @description 사용자 인증을 위한 1회용 jwt와 사용될 domain url을 이메일로 전송한다.
+	 * @description 사용자 인증을 위한 1회용 jwt 발급 한 뒤, 인증 url을 사용자 이메일로 전송한다.
 	 * @throws {HttpStatus.TOO_MANY_REQUESTS} 짧은 시간내에 요청을 발생시킨 경우
 	 *
 	 */
@@ -242,11 +243,8 @@ export class AuthController {
 	@ApiCreatedResponse({})
 	@HttpCode(HttpStatus.CREATED)
 	@UseInterceptors(QueryRunnerInterceptor)
-	@Post("security-token/email-verification")
-	async sendSecurityActionToken(
-		@DBQueryRunner() qr: QueryRunner,
-		@Body() dto: SendOneTimeTokenDTO,
-	) {
+	@Post("security-token/email")
+	async emailSecurityToken(@DBQueryRunner() qr: QueryRunner, @Body() dto: SendOneTimeTokenDTO) {
 		const { email, purpose } = dto;
 		const withDeleted = true;
 		const user: User | null = await this.userService.findOne({ where: { email }, withDeleted });
@@ -291,16 +289,16 @@ export class AuthController {
 	 * @throws {HttpStatus.TOO_MANY_REQUESTS} 짧은 시간내에 요청을 발생시킨 경우
 	 *
 	 */
-	@ApiCreatedResponse({ type: ShowOneTimeTokenResponse })
+	@ApiCreatedResponse({ type: EmailVerificationTokenResponse })
 	@HttpCode(HttpStatus.CREATED)
 	@UseSecurityTokenGuard("email-verification", { withDeleted: true })
 	@UseInterceptors(QueryRunnerInterceptor)
-	@Post("security-token/from-email-verification")
-	async generateSecurityTokenByEmailVerification(
+	@Post("security-token/email-verification")
+	async createSecurityTokenByEmailVerification(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
 		@Body() dto: CreateOneTimeTokenDTO,
-	): Promise<ShowOneTimeTokenResponse> {
+	): Promise<EmailVerificationTokenResponse> {
 		const { purpose } = dto;
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const securityTokenPayload: SecurityTokenPayload =
@@ -312,7 +310,7 @@ export class AuthController {
 		const { email } = user;
 		const securityToken = await this.createOneTimeToken(qr, email, purpose, user);
 
-		return new ShowOneTimeTokenResponse(securityToken);
+		return new EmailVerificationTokenResponse(securityToken, user);
 	}
 
 	@ApiOkResponse({ type: HashedOneTimeTokenResponse })

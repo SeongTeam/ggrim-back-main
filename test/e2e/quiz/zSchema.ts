@@ -1,5 +1,5 @@
 import z from "zod";
-import { QUIZ_REACTION, QUIZ_TYPE } from "../../openapi/dto-types";
+import { QUIZ_REACTION, QUIZ_TYPE } from "../../generated/dto-types";
 import { zShowUserResponse } from "../user/zodSchema";
 import { zShowPainting } from "../painting/zodSchema";
 import { zShowArtist } from "../artist/zodSchema";

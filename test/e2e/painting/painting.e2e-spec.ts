@@ -9,26 +9,30 @@ import { TestService } from "../../_shared/test.service";
 import { faker } from "@faker-js/faker";
 import { TestModule } from "../../_shared/test.module";
 import createClient from "openapi-fetch";
-import { ApiPaths, CreatePaintingDto, paths, ReplacePaintingDto } from "../../openapi/dto-types";
+import { ApiPaths, CreatePaintingDto, paths, ReplacePaintingDto } from "../../generated/dto-types";
 import { expectResponseBody } from "../_common/jest-zod";
 import { zShowPainting, zShowPaintingResponse } from "./zodSchema";
-import { Painting } from "../../../src/modules/painting/entities/painting.entity";
 import { PaintingService } from "../../../src/modules/painting/painting.service";
 import z from "zod";
-import { pick } from "../../../src/utils/object";
-import { ShowPainting } from "../../../src/modules/painting/dto/response/showPainting.response";
 import { getRandomElement, selectRandomElements } from "../../../src/utils/random";
 import { assert } from "console";
-import { factoryPaintingStub, PaintingDummy } from "../../_shared/stub/painting.stub";
-import { factoryTagStub, TagDummy } from "../../_shared/stub/tag.stub";
-import { ArtistDummy, factoryArtistStub } from "../../_shared/stub/artist.stub";
-import { factoryStyleStub, StyleDummy } from "../../_shared/stub/style.stub";
+import { factoryPaintingStub } from "../../_shared/stub/painting.stub";
+import { factoryTagStub } from "../../_shared/stub/tag.stub";
+import { factoryArtistStub } from "../../_shared/stub/artist.stub";
+import { factoryStyleStub } from "../../_shared/stub/style.stub";
 import { UserService } from "../../../src/modules/user/user.service";
 import { Artist } from "../../../src/modules/artist/entities/artist.entity";
 import { Style } from "../../../src/modules/style/entities/style.entity";
 import { Tag } from "../../../src/modules/tag/entities/tag.entity";
-import { sortByLocale } from "../../../src/utils/array";
 import { zPagination } from "../_common/zodSchema";
+import {
+	expectCreatePainting,
+	expectReplacePainting,
+	expectSearchedPainting,
+	factoryBaseCreateDto,
+	SearchQuery,
+	transformToReplaceDto,
+} from "./util";
 
 if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 	console.log("Set setTimeout for debugging");
@@ -41,6 +45,7 @@ describe("PaintingController (e2e)", () => {
 	let testService: TestService;
 	let paintingService: PaintingService;
 	let userService: UserService;
+	let moduleFixture: TestingModule;
 	const port = 3001;
 	const client = createClient<paths>({ baseUrl: `http://localhost:${port}` });
 
@@ -58,7 +63,7 @@ describe("PaintingController (e2e)", () => {
 	let _styles: Style[];
 	let _artists: Artist[];
 	beforeAll(async () => {
-		const moduleFixture: TestingModule = await Test.createTestingModule({
+		moduleFixture = await Test.createTestingModule({
 			imports: [AppModule, TestModule],
 		}).compile();
 
@@ -99,75 +104,13 @@ describe("PaintingController (e2e)", () => {
 		// - [ ] 나쁜 데이터 테스트 (비유효 query)
 		// - [ ] 특수 상황 테스트 ( Huge query.page)
 
-		type SearchQuery = {
-			title?: string;
-			artistName?: string;
-			tags?: string[];
-			styles?: string[];
-			isS3Access?: boolean;
-			page?: number;
-		};
-
-		async function searchManyPaintings(query: SearchQuery) {
+		async function requestSearchPaintings(query: SearchQuery) {
 			const response = await client.GET(ApiPaths.PaintingController_searchMany, {
 				params: {
 					query,
 				},
 			});
 			return response;
-		}
-
-		async function expectSearchedPainting(
-			receivedData: Awaited<ReturnType<typeof searchManyPaintings>>["data"],
-			query: SearchQuery,
-		) {
-			expect(receivedData).toBeDefined();
-
-			const {
-				title: expectedTitleSubSet,
-				artistName: expectedArtist,
-				tags: expectedTags,
-				styles: expectedStyles,
-			} = query;
-			const receivedShowPaintings: ShowPainting[] = receivedData!.data;
-			const receivedPaintings: Painting[] = await paintingService.getManyByIds(
-				receivedShowPaintings.map((showPainting) => showPainting.id),
-			);
-
-			assert(receivedShowPaintings.length === receivedPaintings.length);
-
-			if (expectedTitleSubSet) {
-				const upperExpectedTitleSubset = expectedTitleSubSet.toUpperCase();
-				for (const receivedPainting of receivedPaintings) {
-					const upperReceivedTitle = receivedPainting.title.toUpperCase();
-					expect(upperReceivedTitle.includes(upperExpectedTitleSubset)).toBe(true);
-				}
-			}
-
-			if (expectedArtist) {
-				for (const receivedPainting of receivedPaintings) {
-					const receivedArtist = receivedPainting.artist.name;
-					expect(receivedArtist).toBe(expectedArtist);
-				}
-			}
-
-			if (expectedTags) {
-				for (const receivedPainting of receivedPaintings) {
-					const receivedTagSet = new Set(receivedPainting.tags.map((t) => t.name));
-					for (const expectedTag of expectedTags) {
-						expect(receivedTagSet.has(expectedTag)).toBe(true);
-					}
-				}
-			}
-
-			if (expectedStyles) {
-				for (const receivedPainting of receivedPaintings) {
-					const receivedStyleSet = new Set(receivedPainting.styles.map((s) => s.name));
-					for (const expectedStyle of expectedStyles) {
-						expect(receivedStyleSet.has(expectedStyle)).toBe(true);
-					}
-				}
-			}
 		}
 
 		describe("success when deliver valid query", () => {
@@ -186,7 +129,7 @@ describe("PaintingController (e2e)", () => {
 					const styleCount = 3;
 					return {
 						paintingDummy: stub,
-						artist: getRandomElement(_artists)!,
+						artist: getRandomElement(_artists),
 						tags: selectRandomElements(_tags, tagCount),
 						styles: selectRandomElements(_styles, styleCount),
 					};
@@ -264,9 +207,9 @@ describe("PaintingController (e2e)", () => {
 					},
 				},
 			])("test : $testName", ({ query }) => {
-				let response: Awaited<ReturnType<typeof searchManyPaintings>>;
+				let response: Awaited<ReturnType<typeof requestSearchPaintings>>;
 				beforeAll(async () => {
-					response = await searchManyPaintings(query);
+					response = await requestSearchPaintings(query);
 				});
 
 				it("response should match openapi spec", () => {
@@ -276,8 +219,8 @@ describe("PaintingController (e2e)", () => {
 					expectResponseBody(zPagination(zShowPainting), receivedResBody);
 				});
 				it("paintings should meet query", async () => {
-					const receivedResponseData = response["data"];
-					await expectSearchedPainting(receivedResponseData, query);
+					const receivedResponseData = response["data"]!.data;
+					await expectSearchedPainting(moduleFixture, receivedResponseData, query);
 				});
 			});
 		});
@@ -298,7 +241,7 @@ describe("PaintingController (e2e)", () => {
 					const styleCount = 3;
 					return {
 						paintingDummy: stub,
-						artist: getRandomElement(_artists)!,
+						artist: getRandomElement(_artists),
 						tags: selectRandomElements(_tags, tagCount),
 						styles: selectRandomElements(_styles, styleCount),
 					};
@@ -330,9 +273,9 @@ describe("PaintingController (e2e)", () => {
 					},
 				},
 			])("test : $testName", ({ query }) => {
-				let response: Awaited<ReturnType<typeof searchManyPaintings>>;
+				let response: Awaited<ReturnType<typeof requestSearchPaintings>>;
 				beforeAll(async () => {
-					response = await searchManyPaintings(query as unknown as SearchQuery);
+					response = await requestSearchPaintings(query as unknown as SearchQuery);
 				});
 
 				it("response should match openapi spec", () => {
@@ -358,9 +301,9 @@ describe("PaintingController (e2e)", () => {
 					},
 				},
 			])("test : $testName", ({ invalidQuery }) => {
-				let response: Awaited<ReturnType<typeof searchManyPaintings>>;
+				let response: Awaited<ReturnType<typeof requestSearchPaintings>>;
 				beforeAll(async () => {
-					response = await searchManyPaintings(invalidQuery as SearchQuery);
+					response = await requestSearchPaintings(invalidQuery as SearchQuery);
 				});
 
 				it("response should match openapi spec", () => {
@@ -401,7 +344,7 @@ describe("PaintingController (e2e)", () => {
 				const styleCount = 3;
 				const InsertPaintingArgs = paintingStubs.map((stub) => ({
 					paintingDummy: stub,
-					artist: getRandomElement(artists)!,
+					artist: getRandomElement(artists),
 					tags: selectRandomElements(tags, tagCount),
 					styles: selectRandomElements(styles, styleCount),
 				}));
@@ -464,18 +407,6 @@ describe("PaintingController (e2e)", () => {
 		// - [x] 비권한 사용자 요청 테스트 ( 일반 사용자)
 		// - [ ] 비권한 사용자 요청 테스트 ( 삭제된 사용자 )
 		// - [ ] 특수 상황 테스트 ( Huge query.page)
-		function factoryBaseCreateDto(): CreatePaintingDto {
-			return {
-				title: faker.person.middleName(),
-				image_url: faker.internet.url(),
-				description: "this is new painting",
-				width: faker.number.int({ min: 100, max: 1000 }),
-				height: faker.number.int({ min: 100, max: 1000 }),
-				image_s3_key: faker.commerce.product(),
-				tags: [],
-				styles: [],
-			};
-		}
 
 		async function requestCreatePainting(body: CreatePaintingDto, admin: User) {
 			const adminAuthorization = testService.getBearerAuthCredential(admin);
@@ -490,44 +421,6 @@ describe("PaintingController (e2e)", () => {
 			return response;
 		}
 
-		async function expectCreatePainting(
-			receivedResBody: Awaited<ReturnType<typeof requestCreatePainting>>["data"],
-			requestBody: CreatePaintingDto,
-		) {
-			assert(receivedResBody);
-			const expectedBody = requestBody;
-			const receivedPainting = (await paintingService.findOne({
-				where: { id: receivedResBody?.id },
-			}))!;
-
-			expect(receivedPainting).toBeDefined();
-
-			const receivedTagNames = sortByLocale(receivedPainting.tags.map((t) => t.name));
-			const expectedTagNames = sortByLocale(expectedBody.tags);
-			expect(receivedTagNames).toEqual(expectedTagNames);
-
-			const receivedStyleNames = sortByLocale(receivedPainting.styles.map((s) => s.name));
-			const expectedStyleNames = sortByLocale(expectedBody.styles);
-			expect(receivedStyleNames).toEqual(expectedStyleNames);
-
-			const receivedArtistName = receivedPainting.artist.name ?? undefined;
-			expect(receivedArtistName).toBe(expectedBody.artistName);
-
-			const receivedCompletitionYear = receivedPainting.completition_year ?? undefined;
-			expect(receivedCompletitionYear).toBe(expectedBody.completition_year);
-
-			const columns = [
-				"title",
-				"image_url",
-				"description",
-				"width",
-				"height",
-				"image_s3_key",
-			] as const;
-
-			expect(pick(receivedPainting, columns)).toEqual(pick(expectedBody, columns));
-		}
-
 		describe("success when deliver valid body dto", () => {
 			let admin: User;
 			beforeAll(async () => {
@@ -538,7 +431,7 @@ describe("PaintingController (e2e)", () => {
 				{
 					testName: "deliver without relations tags,styles",
 					body: {
-						...factoryBaseCreateDto(),
+						...factoryBaseCreateDto(getRandomElement(_artistStubs)),
 						tags: [],
 						styles: [],
 						artistName: _artistStubs[0].name,
@@ -547,7 +440,7 @@ describe("PaintingController (e2e)", () => {
 				{
 					testName: "deliver valid body",
 					body: {
-						...factoryBaseCreateDto(),
+						...factoryBaseCreateDto(getRandomElement(_artistStubs)),
 						artistName: _artistStubs[0].name,
 						tags: _tagStubs.map((stub) => stub.name),
 						styles: _styleStubs.map((stub) => stub.name),
@@ -573,7 +466,7 @@ describe("PaintingController (e2e)", () => {
 						where: { id: receivedResBody.id },
 					});
 					expect(expectedPainting).toBeDefined();
-					await expectCreatePainting(receivedResBody, body);
+					await expectCreatePainting(moduleFixture, receivedResBody, body);
 				});
 			});
 		});
@@ -588,7 +481,7 @@ describe("PaintingController (e2e)", () => {
 				{
 					testName: "deliver invalid Tags",
 					invalidBody: {
-						...factoryBaseCreateDto(),
+						...factoryBaseCreateDto(getRandomElement(_artistStubs)),
 						styles: [_styleStubs[0].name],
 						artistName: _artistStubs[0].name,
 						tags: [faker.book.title() + faker.internet.email()],
@@ -597,7 +490,7 @@ describe("PaintingController (e2e)", () => {
 				{
 					testName: "deliver invalid styles",
 					invalidBody: {
-						...factoryBaseCreateDto(),
+						...factoryBaseCreateDto(getRandomElement(_artistStubs)),
 						tags: [_tagStubs[0].name],
 						artistName: _artistStubs[0].name,
 						styles: [faker.book.title() + faker.internet.email()],
@@ -606,7 +499,7 @@ describe("PaintingController (e2e)", () => {
 				{
 					testName: "deliver invalid artistName",
 					invalidBody: {
-						...factoryBaseCreateDto(),
+						...factoryBaseCreateDto(getRandomElement(_artistStubs)),
 						styles: [_styleStubs[0].name],
 						tags: [_tagStubs[0].name],
 						artistName: faker.book.title() + faker.internet.email(),
@@ -646,7 +539,7 @@ describe("PaintingController (e2e)", () => {
 					testName: "deliver normal user",
 					userId: userStub.id,
 					body: {
-						...factoryBaseCreateDto(),
+						...factoryBaseCreateDto(getRandomElement(_artistStubs)),
 						styles: [_styleStubs[0].name],
 						artistName: _artistStubs[0].name,
 						tags: [_tagStubs[0].name],
@@ -675,27 +568,6 @@ describe("PaintingController (e2e)", () => {
 		// - [x] 나쁜 데이터 테스트 (비유효 body, 비유효 id path)
 		// - [x] 비권한 사용자 요청 테스트
 		// - [ ] 특수 상황 테스트 ( Huge query.page)
-		function transformToReplaceDto(
-			paintingStub: PaintingDummy,
-			tagStubs: TagDummy[],
-			styleStubs: StyleDummy[],
-			artistStub: ArtistDummy,
-		): ReplacePaintingDto {
-			const dto = {
-				tags: tagStubs.map((stub) => stub.name),
-				styles: styleStubs.map((stub) => stub.name),
-				completition_year: paintingStub.completition_year!,
-				title: paintingStub.title,
-				image_url: paintingStub.image_url,
-				description: paintingStub.description,
-				width: paintingStub.width,
-				height: paintingStub.height,
-				image_s3_key: paintingStub.image_s3_key,
-				artistName: artistStub.name,
-			};
-
-			return dto;
-		}
 
 		async function requestReplacePainting(id: string, body: ReplacePaintingDto, admin: User) {
 			const authorization = testService.getBearerAuthCredential(admin);
@@ -714,43 +586,6 @@ describe("PaintingController (e2e)", () => {
 			return response;
 		}
 
-		async function expectReplacePainting(
-			receivedResBody: Awaited<ReturnType<typeof requestReplacePainting>>["data"],
-			requestBody: ReplacePaintingDto,
-		) {
-			assert(receivedResBody);
-			const expectedBody = requestBody;
-			const receivedPainting = (await paintingService.findOne({
-				where: { id: receivedResBody!.id },
-			}))!;
-
-			expect(receivedPainting).toBeDefined();
-
-			const receivedTagNames = sortByLocale(receivedPainting.tags.map((t) => t.name));
-			const expectedTagNames = sortByLocale(expectedBody.tags);
-			expect(receivedTagNames).toEqual(expectedTagNames);
-
-			const receivedStyleNames = sortByLocale(receivedPainting.styles.map((s) => s.name));
-			const expectedStyleNames = sortByLocale(expectedBody.styles);
-			expect(receivedStyleNames).toEqual(expectedStyleNames);
-
-			const receivedArtistName = receivedPainting.artist.name ?? undefined;
-			expect(receivedArtistName).toBe(expectedBody.artistName);
-
-			const receivedCompletitionYear = receivedPainting.completition_year ?? undefined;
-			expect(receivedCompletitionYear).toBe(expectedBody.completition_year);
-
-			const columns = [
-				"title",
-				"image_url",
-				"description",
-				"width",
-				"height",
-				"image_s3_key",
-			] as const;
-
-			expect(pick(receivedPainting, columns)).toEqual(pick(expectedBody, columns));
-		}
 		describe("success when deliver valid dto by admin", () => {
 			const paintingStubs = Array(5)
 				.fill(0)
@@ -812,7 +647,7 @@ describe("PaintingController (e2e)", () => {
 
 				it("entity should be updated", async () => {
 					const receivedData = receivedRes.data!;
-					await expectReplacePainting(receivedData, body);
+					await expectReplacePainting(moduleFixture, receivedData, body);
 				});
 			});
 		});
@@ -827,7 +662,7 @@ describe("PaintingController (e2e)", () => {
 					paintingDummy: stub,
 					tags: selectRandomElements(_tags, 2),
 					styles: selectRandomElements(_styles, 2),
-					artist: getRandomElement(_artists)!,
+					artist: getRandomElement(_artists),
 				}));
 				await testService.insertPaintingStubs(insertPaintingArgs);
 				[admin] = await testService.seedUsersSingleInsert(1, "admin");
@@ -891,7 +726,7 @@ describe("PaintingController (e2e)", () => {
 					paintingDummy: stub,
 					tags: selectRandomElements(_tags, 2),
 					styles: selectRandomElements(_styles, 2),
-					artist: getRandomElement(_artists)!,
+					artist: getRandomElement(_artists),
 				}));
 				await testService.insertPaintingStubs(insertPaintingArgs);
 				await testService.insertStubUser(userStub);
@@ -962,7 +797,7 @@ describe("PaintingController (e2e)", () => {
 						paintingDummy: stub,
 						tags: selectRandomElements(_tags, 2),
 						styles: selectRandomElements(_styles, 2),
-						artist: getRandomElement(_artists)!,
+						artist: getRandomElement(_artists),
 					}));
 					await testService.insertPaintingStubs(insertPaintingArgs);
 					[admin] = await testService.seedUsersSingleInsert(1, "admin");
@@ -999,7 +834,7 @@ describe("PaintingController (e2e)", () => {
 						paintingDummy: stub,
 						tags: selectRandomElements(_tags, 2),
 						styles: selectRandomElements(_styles, 2),
-						artist: getRandomElement(_artists)!,
+						artist: getRandomElement(_artists),
 					}));
 					await testService.insertPaintingStubs(insertPaintingArgs);
 					[admin] = await testService.seedUsersSingleInsert(1, "admin");
@@ -1009,7 +844,7 @@ describe("PaintingController (e2e)", () => {
 							paintingDummy: deletedPaintingStub,
 							tags: selectRandomElements(_tags, 2),
 							styles: selectRandomElements(_styles, 2),
-							artist: getRandomElement(_artists)!,
+							artist: getRandomElement(_artists),
 						},
 					]);
 					const qr = dbService.getQueryRunner();
@@ -1049,7 +884,7 @@ describe("PaintingController (e2e)", () => {
 						paintingDummy: stub,
 						tags: selectRandomElements(_tags, 2),
 						styles: selectRandomElements(_styles, 2),
-						artist: getRandomElement(_artists)!,
+						artist: getRandomElement(_artists),
 					}));
 					await testService.insertPaintingStubs(insertPaintingArgs);
 

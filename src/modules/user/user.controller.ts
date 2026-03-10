@@ -6,17 +6,15 @@ import {
 	forwardRef,
 	Get,
 	HttpCode,
-	HttpException,
 	HttpStatus,
 	Inject,
 	Param,
 	ParseUUIDPipe,
-	Patch,
 	Put,
 	Req,
 	UseInterceptors,
 } from "@nestjs/common";
-import { isArray, isEmail, isEmpty, isNotEmpty } from "class-validator";
+import { isArray, isEmpty, isNotEmpty } from "class-validator";
 import { QueryRunner } from "typeorm";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { AuthService } from "../auth/auth.service";
@@ -121,11 +119,19 @@ export class UserController implements CrudController<User> {
 
 		sameUsers.forEach((user) => {
 			if (user.email == email) {
-				throw new HttpException(`${email} are already exist`, HttpStatus.BAD_REQUEST);
+				throw new ServiceException(
+					"ENTITY_DUPLICATED",
+					"BAD_REQUEST",
+					`${email} are already exist`,
+				);
 			}
 
 			if (user.username == username) {
-				throw new HttpException(`${username} are already exist`, HttpStatus.BAD_REQUEST);
+				throw new ServiceException(
+					"ENTITY_DUPLICATED",
+					"BAD_REQUEST",
+					`${username} are already exist`,
+				);
 			}
 		});
 
@@ -152,22 +158,20 @@ export class UserController implements CrudController<User> {
 		{ guard: SecurityTokenGuard, purpose: "update-password" },
 		{
 			serviceClass: UserService,
-			idParam: "email",
-			serviceMethod: "findUserByEmail",
+			idParam: "id",
+			serviceMethod: "findUserById",
 			ownerField: "id",
 		},
 	)
 	@UseInterceptors(QueryRunnerInterceptor)
-	@Put(":email/password")
+	@Put(":id/password")
 	async replacePassword(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		@Param("email") email: string,
 		@Body() dto: ReplacePassWordDTO,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		@Param("id", ParseUUIDPipe) id: string,
 	) {
-		if (!isEmail(email)) {
-			throw new HttpException(`${email} is not valid`, HttpStatus.BAD_REQUEST);
-		}
 		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = authUserPayload;
 
@@ -183,29 +187,31 @@ export class UserController implements CrudController<User> {
 		{ guard: TokenAuthGuard },
 		{
 			serviceClass: UserService,
-			idParam: "email",
-			serviceMethod: "findUserByEmail",
+			idParam: "id",
+			serviceMethod: "findUserById",
 			ownerField: "id",
 		},
 	)
 	@UseInterceptors(QueryRunnerInterceptor)
-	@Put(":email/username")
+	@Put(":id/username")
 	async replaceUsername(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		@Param("email") email: string,
 		@Body() dto: ReplaceUsernameDTO,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		@Param("id", ParseUUIDPipe) id: string,
 	) {
-		if (!isEmail(email)) {
-			throw new HttpException(`${email} is not valid`, HttpStatus.BAD_REQUEST);
-		}
-		const { username } = dto;
+		const { username: newUsername } = dto;
 		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = authUserPayload;
-		const sameUserName = await this.service.findOne({ where: { username } });
+		const sameUserName = await this.service.findOne({ where: { username: newUsername } });
 
 		if (isNotEmpty(sameUserName)) {
-			throw new ServiceException("BASE", "FORBIDDEN", `${username} already exist`);
+			throw new ServiceException(
+				"ENTITY_DUPLICATED",
+				"BAD_REQUEST",
+				`${newUsername} already exist`,
+			);
 		}
 
 		await this.service.updateUser(qr, user.id, dto);
@@ -213,18 +219,19 @@ export class UserController implements CrudController<User> {
 
 	@UseRolesGuard("admin")
 	@UseInterceptors(QueryRunnerInterceptor)
-	@Put(":email/role")
+	@Put(":id/role")
 	async replaceRole(
 		@DBQueryRunner() qr: QueryRunner,
-		@Param("email") email: string,
+		@Param("id", ParseUUIDPipe) id: string,
 		@Body() dto: ReplaceRoleDTO,
 	) {
-		if (!isEmail(email)) {
-			throw new HttpException(`${email} is not valid`, HttpStatus.BAD_REQUEST);
-		}
-		const user = await this.service.findOne({ where: { email } });
+		const user = await this.service.findOne({ where: { id } });
 		if (!user) {
-			throw new ServiceException("ENTITY_NOT_FOUND", `BAD_REQUEST`, `${email} is not exist`);
+			throw new ServiceException(
+				"ENTITY_NOT_FOUND",
+				`BAD_REQUEST`,
+				`user(${id}) is not exist`,
+			);
 		}
 
 		await this.service.updateUser(qr, user.id, dto);
@@ -234,21 +241,19 @@ export class UserController implements CrudController<User> {
 		{ guard: SecurityTokenGuard, purpose: "delete-account" },
 		{
 			serviceClass: UserService,
-			idParam: "email",
-			serviceMethod: "findUserByEmail",
+			idParam: "id",
+			serviceMethod: "findUserById",
 			ownerField: "id",
 		},
 	)
 	@UseInterceptors(QueryRunnerInterceptor)
-	@Delete(":email")
+	@Delete(":id")
 	async deleteUser(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		@Param("email") email: string,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		@Param("id", ParseUUIDPipe) id: string,
 	) {
-		if (!isEmail(email)) {
-			throw new HttpException(`${email} is not valid`, HttpStatus.BAD_REQUEST);
-		}
 		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = authUserPayload;
 
@@ -267,17 +272,18 @@ export class UserController implements CrudController<User> {
 		},
 		{
 			serviceClass: UserService,
-			idParam: "email",
-			serviceMethod: "findDeletedUserByEmail",
+			idParam: "id",
+			serviceMethod: "findDeletedUserById",
 			ownerField: "id",
 		},
 	)
 	@UseInterceptors(QueryRunnerInterceptor)
-	@Patch("recover/:email")
+	@Put("recover/:id")
 	async recoverUser(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		//@Param("email") email: string,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		@Param("id", ParseUUIDPipe) id: string,
 	) {
 		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user: deletedUser } = authUserPayload;

@@ -1,6 +1,6 @@
 import * as z from "zod";
 import { zShowUserResponse } from "../user/zodSchema";
-import { ONE_TIME_TOKEN_PURPOSE } from "../../openapi/dto-types";
+import { ONE_TIME_TOKEN_PURPOSE } from "../../generated/dto-types";
 
 const bcryptPattern = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/;
 
@@ -10,7 +10,7 @@ export const zSignInResponse = z.object({
 	user: zShowUserResponse,
 });
 
-export const zShowOneTimeToken = z.object({
+export const zShowOneTimeTokenResponse = z.object({
 	id: z.uuid(),
 	token: z.jwt(),
 	used_date: z.iso.datetime().nullable(),
@@ -32,4 +32,8 @@ export const zHashedOneTimeToken = z.object({
 	used_date: z.iso.datetime().nullable(),
 	expired_date: z.iso.datetime(),
 	purpose: z.enum(Object.values(ONE_TIME_TOKEN_PURPOSE)),
+});
+export const zEmailVerificationTokenResponse = z.object({
+	oneTimeToken: zShowOneTimeTokenResponse,
+	user: zShowUserResponse,
 });

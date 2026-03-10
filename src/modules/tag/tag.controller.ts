@@ -133,7 +133,11 @@ export class TagController implements CrudController<Tag> {
 		 -[] DB 제약 조건과 중복되는 로직을 제거하고, TypeORM 로직 예외처리를 ExceptionFilter이 포워딩하여 응답하기 
 		*/
 		if (existedEntity) {
-			throw new ServiceException("DB_CONFLICT", "CONFLICT", `${dto.name} is already exist`);
+			throw new ServiceException(
+				"ENTITY_DUPLICATED",
+				"BAD_REQUEST",
+				`${dto.name} is already exist`,
+			);
 		}
 
 		const tag = await this.service.replaceOne({} as CrudRequest, {

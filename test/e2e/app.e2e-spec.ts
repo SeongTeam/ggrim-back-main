@@ -2,7 +2,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { HttpStatus, INestApplication } from "@nestjs/common";
 import { AppModule } from "../../src/app.module";
 import createClient from "openapi-fetch";
-import { ApiPaths, paths } from "../openapi/dto-types";
+import { ApiPaths, paths } from "../generated/dto-types";
 
 describe("AppController (e2e)", () => {
 	let app: INestApplication;

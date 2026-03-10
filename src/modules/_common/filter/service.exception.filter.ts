@@ -1,7 +1,7 @@
 import { ArgumentsHost, Catch } from "@nestjs/common";
 import { CustomExceptionFilter } from "./custom.exception.filter";
 import { ServiceException } from "./exception/service/serviceException";
-import { ServiceExceptionEnum } from "./exception/service/serviceExceptionEnum";
+import { SERVICE_EXCEPTION_STATUS } from "./exception/service/const";
 
 @Catch(ServiceException)
 export class ServiceExceptionFilter extends CustomExceptionFilter {
@@ -12,10 +12,10 @@ export class ServiceExceptionFilter extends CustomExceptionFilter {
 	catch(exception: ServiceException, host: ArgumentsHost): void {
 		super.catch(exception, host);
 
-		const code = exception.errorCode;
+		const { errorCode } = exception;
 
-		if (code == ServiceExceptionEnum.DB_INCONSISTENCY) {
-			// notfiy to Developer.
+		if (errorCode == SERVICE_EXCEPTION_STATUS.DB_INCONSISTENCY) {
+			// notify to Developer.
 			this.logger.error("DB has inconsistency", exception.stack || "", {
 				className: this.className,
 				traceId: exception.traceId,
