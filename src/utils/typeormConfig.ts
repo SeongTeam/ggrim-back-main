@@ -31,6 +31,7 @@ export class TypeORMConfig implements TypeOrmOptionsFactory {
 			autoLoadEntities: true,
 			synchronize: false, //!process.env[NODE_ENV] ? false : true,
 			keepConnectionAlive: true,
+			schema: "core",
 			logging: ["error", "warn", "log", "query"],
 			logger: new TypeORMCustomLogger(["error", "warn", "log", "query"]),
 			maxQueryExecutionTime: 1000,
