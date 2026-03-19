@@ -1,58 +1,58 @@
-name: Create and publish a Docker image to Docker Hub, Deploy to Cloudtype
+# name: Create and publish a Docker image to Docker Hub, Deploy to Cloudtype
 
-on:
-  push:
-    branches:
-      - "**"
+# on:
+#   push:
+#     branches:
+#       - "**"
 
-env:
-  IMAGE_NAME: backend
-  # NAMESPACE_NAME : andyjm7739
-  # PROJECT_NAME : ggrim
-  # SERVICE_NAME : ggrim-back-main
+# env:
+#   IMAGE_NAME: backend
+#   # NAMESPACE_NAME : andyjm7739
+#   # PROJECT_NAME : ggrim
+#   # SERVICE_NAME : ggrim-back-main
 
-jobs:
-  build-and-push-image:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+# jobs:
+#   build-and-push-image:
+#     runs-on: ubuntu-latest
+#     permissions:
+#       contents: read
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v3
 
-      - name: Log in to the Container registry
-        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+#       - name: Log in to the Container registry
+#         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+#         with:
+#           username: ${{ secrets.DOCKERHUB_USERNAME }}
+#           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-        with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=sha
+#       - name: Extract metadata (tags, labels) for Docker
+#         id: meta
+#         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+#         with:
+#           images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+#           tags: |
+#             type=sha
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
-        with:
-          context: .
-          push: true
-          build-args : |
-            GPG_TOKEN=${{ secrets.GPG_TOKEN }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+#       - name: Build and push Docker image
+#         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+#         with:
+#           context: .
+#           push: true
+#           build-args : |
+#             GPG_TOKEN=${{ secrets.GPG_TOKEN }}
+#           tags: ${{ steps.meta.outputs.tags }}
+#           labels: ${{ steps.meta.outputs.labels }}
 
-      # - name: Deploy to Cloudtype
-      #   uses: cloudtype-github-actions/deploy@v1
-      #   with:
-      #     token: ${{ secrets.CLOUDTYPE_TOKEN }}
-      #     project: ${{ env.NAMESPACE_NAME }}/${{ env.PROJECT_NAME }}
-      #     stage: main
-      #     yaml: |
-      #       name: ${{env.SERVICE_NAME}}
-      #       app: container
-      #       options:
-      #         ports: 3000
-      #         image: ${{ steps.meta.outputs.tags }}
+#       # - name: Deploy to Cloudtype
+#       #   uses: cloudtype-github-actions/deploy@v1
+#       #   with:
+#       #     token: ${{ secrets.CLOUDTYPE_TOKEN }}
+#       #     project: ${{ env.NAMESPACE_NAME }}/${{ env.PROJECT_NAME }}
+#       #     stage: main
+#       #     yaml: |
+#       #       name: ${{env.SERVICE_NAME}}
+#       #       app: container
+#       #       options:
+#       #         ports: 3000
+#       #         image: ${{ steps.meta.outputs.tags }}
