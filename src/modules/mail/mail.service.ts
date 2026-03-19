@@ -47,6 +47,8 @@ export class MailService implements OnModuleInit {
 				pass: this.configService.get(ENV_SMTP_PW),
 			},
 			logger: this.configService.get(ENABLE_MAIL_SERVICE_LOG) === "true",
+			connectionTimeout: 30 * 1000,
+			greetingTimeout: 30 * 1000,
 			secure: true,
 			// debug: !isProduction,
 		});
