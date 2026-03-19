@@ -2,8 +2,6 @@
 
 # 1. 환경 변수 설정 (사용자 환경에 맞게 수정)
 APP_NAME="ggrim-back"
-APP_ENTRY_POINT="app.js" # 또는 index.js
-PROJECT_DIR="/home/ec2-user/my-project"
 TARGET_BRANCH="main"
 
 echo "### Starting PM2 Deployment and Persistence Setup ###"
