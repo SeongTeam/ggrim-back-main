@@ -4,7 +4,7 @@
 
 ## Demo
 
-- https://port-0-ggrim-front-m4i5o7t86f50fb45.sel4.cloudtype.app/
+- https://ggrim.shop/
 - [front-repo](https://github.com/seongTeam/ggrim_front)
 
 ## Tech Stack
