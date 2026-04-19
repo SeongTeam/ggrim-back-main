@@ -81,7 +81,7 @@ export class ArtistController implements CrudController<Artist> {
 
 	@ApiOverride("getManyBase", ShowArtistResponse)
 	async getMany(
-		req: CrudRequest,
+		@ParsedRequest() req: CrudRequest,
 	): Promise<Pagination<ShowArtistResponse> | ShowArtistResponse[]> {
 		const results = await this.service.getMany(req);
 
