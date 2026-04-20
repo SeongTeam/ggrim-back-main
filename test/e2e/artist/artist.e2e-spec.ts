@@ -15,7 +15,9 @@ import { Artist } from "../../../src/modules/artist/entities/artist.entity";
 import { pick } from "../../../src/utils/object";
 import { ShowArtistResponse } from "../../../src/modules/artist/dto/response/showArtist.response";
 import { expectResponseBody } from "../_common/jest-zod";
-import { zShowArtistResponse } from "./zodSchema";
+import { zShowArtist, zShowArtistResponse } from "./zodSchema";
+import { CondOperator, RequestQueryBuilder } from "@dataui/crud-request";
+import { zPagination } from "../_common/zodSchema";
 
 if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 	console.log("Set setTimeout for debugging");
@@ -165,6 +167,65 @@ describe("ArtistController (e2e)", () => {
 
 			it("artist should not be created", () => {
 				expect(receivedArtist).toBeNull();
+			});
+		});
+	});
+
+	describe("/artist (GET)", () => {
+		async function getManyArtist(queryBuilder: RequestQueryBuilder) {
+			const result = await client.GET(ApiPaths.getManyBaseArtistControllerArtist, {
+				params: {
+					query: queryBuilder.queryObject,
+				},
+			});
+
+			return result;
+		}
+
+		describe("success when search artists by name without Lower/Upper case", () => {
+			let response: Awaited<ReturnType<typeof getManyArtist>>;
+			const artistStubs = Array(40)
+				.fill(0)
+				.map(() => factoryArtistStub());
+			const query = {
+				field: "search_name",
+				operator: CondOperator.STARTS,
+				value: artistStubs[0].name.slice(0, 2).toLocaleUpperCase(),
+			};
+			beforeAll(async () => {
+				await testService.insertArtistStubs(artistStubs);
+
+				const qb = RequestQueryBuilder.create();
+				const pageCount = 10;
+				const page = 0;
+				qb.select(["name"])
+					.setFilter(query)
+					.sortBy({ field: "search_name", order: "ASC" })
+					.setLimit(pageCount)
+					.setPage(page);
+				response = await getManyArtist(qb);
+			});
+
+			it("response status should be ok", () => {
+				expect(response.response.status).toBe(HttpStatus.OK);
+			});
+
+			it("response should match to spec", () => {
+				const receivedRes = response.data;
+				expect(receivedRes).toBeDefined();
+				expectResponseBody(zPagination(zShowArtist), receivedRes);
+			});
+
+			it("artist should match to filter condition", () => {
+				const receivedRes = response.data;
+
+				const artists = receivedRes!.data;
+
+				expect(artists.length).toBeGreaterThanOrEqual(1);
+
+				for (const artist of artists) {
+					expect(artist.name).toMatch(new RegExp(`^${query.value}`, "i"));
+				}
 			});
 		});
 	});

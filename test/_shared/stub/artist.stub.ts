@@ -29,7 +29,7 @@ export const factoryArtistStub = (): ArtistDummy => {
 
 	return {
 		id: faker.string.uuid(),
-		name: faker.person.fullName(),
+		name,
 		image_url: faker.internet.url(),
 		info_url: faker.internet.url(),
 		birth_date: birthDate,
