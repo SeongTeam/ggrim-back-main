@@ -19,8 +19,8 @@
 ## Create Migration file
 
 1) run script command 
-```
-$npm run typeorm:create-migration --name={file_name}
+```sh
+$node migration/migration_action.js file_name
 ```
 
 2) open created file 
@@ -49,7 +49,7 @@ $node migration/migration_action.js generate {file name}
 1) Create or Generate Migration file
 
 2) run script command
-```
+```sh
 $node migration/migration_action.js run 
 ```
 
@@ -64,7 +64,7 @@ $node migration/migration_action.js run
 
 2) run script command
 This command will undo only the last executed migration. You can execute this command multiple times to revert multiple migrations
-```
+```sh
 $node migration/migration_action.js revert
 ```
 
