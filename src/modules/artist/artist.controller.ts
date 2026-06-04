@@ -6,7 +6,7 @@ import {
 	ParsedBody,
 	ParsedRequest,
 } from "@dataui/crud";
-import { Controller, Get, Param, ParseUUIDPipe } from "@nestjs/common";
+import { Controller, Get, Param, ParseIntPipe } from "@nestjs/common";
 import { ArtistService } from "./artist.service";
 import { CreateArtistDTO } from "./dto/request/createArtist.dto";
 import { Artist } from "./entities/artist.entity";
@@ -26,7 +26,7 @@ import { Pagination } from "../_common/types";
 	params: {
 		id: {
 			field: "id",
-			type: "uuid",
+			type: "number",
 			primary: true,
 		},
 	},
@@ -55,7 +55,7 @@ export class ArtistController implements CrudController<Artist> {
 	 */
 
 	@Get(":id")
-	async getOne(@Param("id", ParseUUIDPipe) id: string): Promise<ShowArtistResponse> {
+	async getOne(@Param("id", ParseIntPipe) id: number): Promise<ShowArtistResponse> {
 		const artist = await this.service.findOne({
 			where: { id },
 			relations: { paintings: true },

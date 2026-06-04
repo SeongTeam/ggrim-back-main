@@ -1,4 +1,4 @@
-import { IsBoolean, IsUUID } from "class-validator";
+import { IsBoolean, IsNumber } from "class-validator";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 import { Transform } from "class-transformer";
 import { ApiProperty } from "@nestjs/swagger";
@@ -14,6 +14,7 @@ export class GetQuizQueryDTO {
 	isS3Access: boolean = false;
 
 	@IsOptionalProperty()
-	@IsUUID()
-	userId?: string;
+	@Transform(({ value }) => Number(value))
+	@IsNumber({ allowInfinity: false, allowNaN: false })
+	userId?: number;
 }

@@ -9,7 +9,7 @@ import {
 	HttpStatus,
 	Inject,
 	Param,
-	ParseUUIDPipe,
+	ParseIntPipe,
 	Put,
 	Req,
 	UseInterceptors,
@@ -52,7 +52,7 @@ import { ApiOkResponse } from "@nestjs/swagger";
 	params: {
 		id: {
 			field: "id",
-			type: "uuid",
+			type: "number",
 			primary: true,
 		},
 	},
@@ -83,7 +83,7 @@ export class UserController implements CrudController<User> {
 	@ApiOkResponse({ type: ShowUserResponse })
 	@HttpCode(HttpStatus.OK)
 	@Get(":id")
-	async getOne(@Param("id", ParseUUIDPipe) id: string): Promise<ShowUserResponse> {
+	async getOne(@Param("id", ParseIntPipe) id: number): Promise<ShowUserResponse> {
 		const user = await this.service.findOne({
 			where: { id },
 		});
@@ -170,7 +170,7 @@ export class UserController implements CrudController<User> {
 		@Req() request: Request,
 		@Body() dto: ReplacePassWordDTO,
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", ParseIntPipe) id: number,
 	) {
 		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = authUserPayload;
@@ -199,7 +199,7 @@ export class UserController implements CrudController<User> {
 		@Req() request: Request,
 		@Body() dto: ReplaceUsernameDTO,
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", ParseIntPipe) id: number,
 	) {
 		const { username: newUsername } = dto;
 		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
@@ -222,7 +222,7 @@ export class UserController implements CrudController<User> {
 	@Put(":id/role")
 	async replaceRole(
 		@DBQueryRunner() qr: QueryRunner,
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", ParseIntPipe) id: number,
 		@Body() dto: ReplaceRoleDTO,
 	) {
 		const user = await this.service.findOne({ where: { id } });
@@ -252,7 +252,7 @@ export class UserController implements CrudController<User> {
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", ParseIntPipe) id: number,
 	) {
 		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = authUserPayload;
@@ -283,7 +283,7 @@ export class UserController implements CrudController<User> {
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", ParseIntPipe) id: number,
 	) {
 		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user: deletedUser } = authUserPayload;

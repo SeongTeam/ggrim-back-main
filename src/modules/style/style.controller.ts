@@ -6,7 +6,7 @@ import {
 	ParsedBody,
 	ParsedRequest,
 } from "@dataui/crud";
-import { Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe } from "@nestjs/common";
+import { Controller, Get, HttpCode, HttpStatus, Param, ParseIntPipe } from "@nestjs/common";
 
 import { CreateStyleDTO } from "./dto/request/createStyle.dto";
 import { ReplaceStyleDTO } from "./dto/request/replaceStyle.dto";
@@ -30,7 +30,7 @@ import { Pagination } from "../_common/types";
 	params: {
 		id: {
 			field: "id",
-			type: "uuid",
+			type: "number",
 			primary: true,
 		},
 	},
@@ -68,7 +68,7 @@ export class StyleController implements CrudController<Style> {
 	@ApiOkResponse({ type: ShowStyleResponse })
 	@HttpCode(HttpStatus.OK)
 	@Get(":id")
-	async getOne(@Param("id", ParseUUIDPipe) id: string): Promise<ShowStyleResponse> {
+	async getOne(@Param("id", ParseIntPipe) id: number): Promise<ShowStyleResponse> {
 		const style = await this.service.findOne({
 			where: { id },
 			relations: { paintings: true },

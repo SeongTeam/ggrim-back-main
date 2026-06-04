@@ -43,7 +43,11 @@ export class DatabaseService {
 		await this.dataSource.synchronize();
 	}
 
-	public getQueryRunner() {
-		return this.dataSource.createQueryRunner();
+	public async getQueryRunner() {
+		const qr = this.dataSource.createQueryRunner();
+
+		await qr.connect();
+
+		return qr;
 	}
 }

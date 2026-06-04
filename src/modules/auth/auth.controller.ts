@@ -7,7 +7,7 @@ import {
 	HttpStatus,
 	Inject,
 	Param,
-	ParseUUIDPipe,
+	ParseIntPipe,
 	Post,
 	Req,
 	UseInterceptors,
@@ -326,7 +326,7 @@ export class AuthController {
 	)
 	@Get("one-time-token/:id")
 	async getOneTimeToken(
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", ParseIntPipe) id: number,
 	): Promise<HashedOneTimeTokenResponse> {
 		const findOne = await this.service.findOneTimeToken({ where: { id } });
 

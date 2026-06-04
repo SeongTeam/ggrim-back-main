@@ -2,7 +2,7 @@ import { ShowPainting } from "../../../painting/dto/response/showPainting.respon
 import { Tag } from "../../entities/tag.entity";
 
 export class ShowTag {
-	readonly id: string;
+	readonly id: number;
 	readonly name: string;
 	readonly info_url: string | null;
 

@@ -9,7 +9,7 @@ import {
 	Inject,
 	Param,
 	ParseBoolPipe,
-	ParseUUIDPipe,
+	ParseIntPipe,
 	Post,
 	Put,
 	Query,
@@ -46,7 +46,7 @@ export class PaintingController {
 	 * @remarks {domain}/painting/by-ids?ids=id1&id2&id3
 	 * Example:
 	 * ```
-	 * GET backend/painting/by-ids?ids=409ba4c6-0553-4b72-a53a-d9b9857c253d&ids=4f4d9398-b10a-45b8-912c-6ccd0c6700ab
+	 * GET backend/painting/by-ids?ids=100&ids=200
 	 * ```
 	 */
 	@ApiOkResponse({ type: ShowPaintingResponse, isArray: true })
@@ -82,7 +82,7 @@ export class PaintingController {
 	@HttpCode(HttpStatus.OK)
 	@Get(":id")
 	async getById(
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", ParseIntPipe) id: number,
 		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
 	): Promise<ShowPaintingResponse> {
 		let paintings = await this.service.getManyByIds([id]);
@@ -138,7 +138,7 @@ export class PaintingController {
 	@Put("/:id")
 	async replacePainting(
 		@DBQueryRunner() queryRunner: QueryRunner,
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", ParseIntPipe) id: number,
 		@Body() dto: ReplacePaintingDTO,
 	) {
 		const targetPainting = await this.service.findOne({ where: { id } });
@@ -157,7 +157,7 @@ export class PaintingController {
 	@Delete("/:id")
 	async deletePainting(
 		@DBQueryRunner() queryRunner: QueryRunner,
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", ParseIntPipe) id: number,
 	) {
 		const targetPainting = await this.service.findOne({ where: { id } });
 		if (!targetPainting) {

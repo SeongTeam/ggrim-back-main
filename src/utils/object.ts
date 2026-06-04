@@ -68,14 +68,14 @@ export function omit<T extends object, K extends keyof T>(
 	return ret as Omit<T, K>;
 }
 
-export function sortById<O extends object & { id: string }>(objs: O[]) {
+export function sortById<O extends object & { id: number }>(objs: O[]) {
 	const clones = structuredClone(objs);
 
-	return clones.sort((o1, o2) => o1.id.localeCompare(o2.id));
+	return clones.sort((o1, o2) => o1.id - o2.id);
 }
 
-export function deduplicate<O extends object & { id: string }>(objs: O[]) {
-	const map = new Map<string, O>();
+export function deduplicate<O extends object & { id: number }>(objs: O[]) {
+	const map = new Map<number, O>();
 
 	for (const obj of objs) {
 		if (!map.has(obj.id)) {

@@ -3,7 +3,7 @@ import { USER_ROLE, USER_STATE, UserRole, UserState } from "../../../const";
 import { ApiProperty } from "@nestjs/swagger";
 
 export class ShowUserResponse {
-	id: string;
+	id: number;
 
 	@ApiProperty({ enum: Object.values(USER_ROLE), enumName: "USER_ROLE" })
 	role: UserRole;

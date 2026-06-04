@@ -4,7 +4,7 @@ import { OneTimeTokenPurpose } from "../../types/oneTimeToken";
 import { ONE_TIME_TOKEN_PURPOSE } from "../../const";
 
 export class HashedOneTimeTokenResponse {
-	readonly id: string;
+	readonly id: number;
 	readonly hashedToken: string;
 
 	/**

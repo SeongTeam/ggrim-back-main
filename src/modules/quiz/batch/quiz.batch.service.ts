@@ -7,8 +7,8 @@ import { QuizSubmission } from "./type";
 import { QuizService } from "../quiz.service";
 @Injectable()
 export class QuizBatchService {
-	private viewMap = new Map<string, number>();
-	private submissionMap = new Map<string, QuizSubmission>();
+	private viewMap = new Map<number, number>();
+	private submissionMap = new Map<number, QuizSubmission>();
 	private viewMapMutex = new Mutex();
 	private submissionMapMutex = new Mutex();
 	constructor(@Inject(forwardRef(() => QuizService)) private quizService: QuizService) {}
@@ -24,12 +24,12 @@ export class QuizBatchService {
 
 	async flushViewMap() {
 		const CONNECTION_POOL_SIZE = 5;
-		const buffer: [string, number][] = await this.viewMapMutex.runExclusive(() => {
+		const buffer: [number, number][] = await this.viewMapMutex.runExclusive(() => {
 			const arr = Array.from(this.viewMap.entries());
 			this.viewMap.clear();
 			return arr;
 		});
-		const failed: [string, number][] = [];
+		const failed: [number, number][] = [];
 		Logger.log(`[flushViewMap]start flush. size : ${buffer.length}`, QuizService.name);
 
 		const groupCount = Math.ceil(buffer.length / CONNECTION_POOL_SIZE);
@@ -67,14 +67,14 @@ export class QuizBatchService {
 
 	async flushSubmissionMap() {
 		const CONNECTION_POOL_SIZE = 5;
-		const buffer: [string, QuizSubmission][] = await this.submissionMapMutex.runExclusive(
+		const buffer: [number, QuizSubmission][] = await this.submissionMapMutex.runExclusive(
 			() => {
 				const arr = Array.from(this.submissionMap.entries());
 				this.submissionMap.clear();
 				return arr;
 			},
 		);
-		const failed: [string, QuizSubmission][] = [];
+		const failed: [number, QuizSubmission][] = [];
 
 		Logger.log(`[flushSubmissionMap]start flush. size : ${buffer.length}`, QuizService.name);
 		const groupCount = Math.ceil(buffer.length / CONNECTION_POOL_SIZE);
@@ -119,7 +119,7 @@ export class QuizBatchService {
 			});
 		}
 	}
-	async insertSubmission(id: string, isCorrect: boolean): Promise<void> {
+	async insertSubmission(id: number, isCorrect: boolean): Promise<void> {
 		await this.submissionMapMutex.runExclusive(() => {
 			const current: QuizSubmission = this.submissionMap.get(id) ?? new QuizSubmission();
 			const key: keyof QuizSubmission = isCorrect ? "correct_count" : "incorrect_count";
@@ -138,7 +138,7 @@ export class QuizBatchService {
 		return await this.submissionMapMutex.runExclusive(() => this.submissionMap.size === 0);
 	}
 
-	async insertView(id: string): Promise<void> {
+	async insertView(id: number): Promise<void> {
 		await this.viewMapMutex.runExclusive(() => {
 			const current = this.viewMap.get(id) || 0;
 			this.viewMap.set(id, current + 1);

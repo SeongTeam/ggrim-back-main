@@ -39,7 +39,7 @@ export class QuizService {
 		@InjectRepository(QuizLike) private readonly likeRepo: Repository<QuizLike>,
 	) {}
 
-	async createQuiz(queryRunner: QueryRunner, dto: CreateQuizDTO, owner: User) {
+	async createQuiz(queryRunner: QueryRunner, dto: CreateQuizDTO, user: User) {
 		const { answerPaintings, distractorPaintings, examplePainting } =
 			await this.getRelatedPaintings({ ...dto });
 
@@ -51,8 +51,8 @@ export class QuizService {
 		newQuiz.title = dto.title;
 		newQuiz.example_painting = examplePainting === undefined ? null : examplePainting;
 		newQuiz.description = dto.description;
-		newQuiz.owner_id = owner.id;
-		newQuiz.owner = owner;
+		newQuiz.user_id = user.id;
+		newQuiz.user = user;
 
 		return this.insertQuiz(queryRunner, newQuiz);
 	}
@@ -88,11 +88,11 @@ export class QuizService {
 			const subQueryFilterByTags = this.repo
 				.createQueryBuilder()
 				.subQuery()
-				.select("quiz_tags.quizId")
+				.select("quiz_tags.quiz_id")
 				.from("quiz_tags_tag", "quiz_tags") // Many-to-Many 연결 테이블
-				.innerJoin("tag", "tag", "tag.id = quiz_tags.tagId") // 연결 테이블과 Tag JOIN
+				.innerJoin("tag", "tag", "tag.id = quiz_tags.tag_id") // 연결 테이블과 Tag JOIN
 				.where("tag.name IN (:...tagNames)") // tagNames 필터링
-				.groupBy("quiz_tags.quizId")
+				.groupBy("quiz_tags.quiz_id")
 				.having("COUNT(DISTINCT tag.id) = :tagCount") // 정확한 태그 갯수 매칭
 				.getQuery();
 
@@ -111,11 +111,11 @@ export class QuizService {
 			const subQueryFilterByStyles = this.repo
 				.createQueryBuilder()
 				.subQuery()
-				.select("quiz_styles.quizId")
+				.select("quiz_styles.quiz_id")
 				.from("quiz_styles_style", "quiz_styles") // Many-to-Many 연결 테이블
-				.innerJoin("style", "style", "style.id = quiz_styles.styleId") // 연결 테이블과 Tag JOIN
+				.innerJoin("style", "style", "style.id = quiz_styles.style_id") // 연결 테이블과 Tag JOIN
 				.where("style.name IN (:...styleNames)") // tagNames 필터링
-				.groupBy("quiz_styles.quizId")
+				.groupBy("quiz_styles.quiz_id")
 				.having("COUNT(DISTINCT style.id) = :styleCount") // 정확한 태그 갯수 매칭
 				.getQuery();
 			const alias = "s";
@@ -133,11 +133,11 @@ export class QuizService {
 			const subQueryFilterByArtists = this.repo
 				.createQueryBuilder()
 				.subQuery()
-				.select("quiz_artists.quizId")
+				.select("quiz_artists.quiz_id")
 				.from("quiz_artists_artist", "quiz_artists") // Many-to-Many 연결 테이블
-				.innerJoin("artist", "artist", "artist.id = quiz_artists.artistId") // 연결 테이블과 Tag JOIN
+				.innerJoin("artist", "artist", "artist.id = quiz_artists.artist_id") // 연결 테이블과 Tag JOIN
 				.where("artist.name IN (:...artistNames)") // tagNames 필터링
-				.groupBy("quiz_artists.quizId")
+				.groupBy("quiz_artists.quiz_id")
 				.having("COUNT(DISTINCT artist.id) = :artistCount") // 정확한 태그 갯수 매칭
 				.getQuery();
 
@@ -154,7 +154,7 @@ export class QuizService {
 		Logger.debug(queryBuilder.getSql());
 
 		const [quizzes, total] = await queryBuilder
-			.innerJoinAndSelect(`${quizAlias}.owner`, "user")
+			.innerJoinAndSelect(`${quizAlias}.user`, "user")
 			.skip(page * paginationCount)
 			.take(paginationCount)
 			.orderBy(`${quizAlias}.created_date`, "DESC")
@@ -183,7 +183,7 @@ export class QuizService {
 			example_painting: true,
 			tags: true,
 			styles: true,
-			owner: true,
+			user: true,
 		};
 
 		if (!findOptions.relations) {
@@ -195,13 +195,13 @@ export class QuizService {
 		return quiz;
 	}
 
-	async getQuizById(id: string): Promise<Quiz | null> {
+	async getQuizById(id: number): Promise<Quiz | null> {
 		const quiz = await this.repo.findOne({ where: { id } });
 
 		return quiz;
 	}
 
-	async softDeleteQuiz(queryRunner: QueryRunner, id: string): Promise<void> {
+	async softDeleteQuiz(queryRunner: QueryRunner, id: number): Promise<void> {
 		try {
 			await createTransactionQueryBuilder(queryRunner, Quiz)
 				.softDelete()
@@ -218,7 +218,7 @@ export class QuizService {
 		}
 	}
 
-	async increaseSubmission(id: string, submission: QuizSubmission) {
+	async increaseSubmission(id: number, submission: QuizSubmission) {
 		const quiz = await this.repo.findOneOrFail({ where: { id } });
 		const incorrect_count = quiz.incorrect_count + submission.incorrect_count;
 		const correct_count = quiz.correct_count + submission.correct_count;
@@ -228,7 +228,7 @@ export class QuizService {
 		});
 	}
 
-	async increaseViewCount(id: string, count: number) {
+	async increaseViewCount(id: number, count: number) {
 		await this.repo.increment({ id }, "view_count", count);
 
 		const quiz = await this.repo.findOneOrFail({ where: { id } });
@@ -250,7 +250,7 @@ export class QuizService {
 		return likes;
 	}
 
-	async getUserReaction(quiz_id: string, user_id: string): Promise<QuizReactionType | undefined> {
+	async getUserReaction(quiz_id: number, user_id: number): Promise<QuizReactionType | undefined> {
 		const promiseLike = this.findQuizLikes({ where: { quiz_id, user_id } });
 		const promiseDislike = this.findQuizDislikes({ where: { quiz_id, user_id } });
 		const [dislikes, likes] = await Promise.all([promiseDislike, promiseLike]);
@@ -302,7 +302,7 @@ export class QuizService {
 		return;
 	}
 
-	async getQuizReactionCounts(id: string): Promise<QuizReactionCount> {
+	async getQuizReactionCounts(id: number): Promise<QuizReactionCount> {
 		const promiseLike = this.likeRepo.count({ where: { quiz_id: id } });
 		const promiseDislike = this.dislikeRepo.count({ where: { quiz_id: id } });
 
@@ -325,9 +325,9 @@ export class QuizService {
 			relationPaintings.push(quiz.example_painting);
 		}
 
-		const tagMap: Map<string, Tag> = new Map();
-		const styleMap: Map<string, Style> = new Map();
-		const artistMap: Map<string, Artist> = new Map();
+		const tagMap: Map<number, Tag> = new Map();
+		const styleMap: Map<number, Style> = new Map();
+		const artistMap: Map<number, Artist> = new Map();
 
 		relationPaintings.forEach((painting) => {
 			painting.tags.forEach((tag) => {
@@ -361,7 +361,7 @@ export class QuizService {
 				tags: true,
 				styles: true,
 				artists: true,
-				owner: true,
+				user: true,
 			},
 		});
 
@@ -370,9 +370,9 @@ export class QuizService {
 		return insertedQuiz!;
 	}
 
-	private async createPaintingMap(paintingIds: string[]): Promise<Map<string, Painting>> {
-		const resultMap: Map<string, Painting> = new Map();
-		const idSet: Set<string> = new Set(paintingIds);
+	private async createPaintingMap(paintingIds: number[]): Promise<Map<number, Painting>> {
+		const resultMap: Map<number, Painting> = new Map();
+		const idSet: Set<number> = new Set(paintingIds);
 		const paintings: Painting[] = await this.paintingService.getManyByIds([...idSet.values()]);
 
 		paintings.forEach((painting) => {
@@ -391,11 +391,11 @@ export class QuizService {
 		 * @requires relatedPaintingIds 유효성은 호출자에서 확인해야한다.
 		 */
 		const { answerPaintingIds, distractorPaintingIds, examplePaintingId } = relatedPaintingIds;
-		const ids: string[] = [...answerPaintingIds, ...distractorPaintingIds];
+		const ids = [...answerPaintingIds, ...distractorPaintingIds];
 		if (isNotFalsy(examplePaintingId)) {
 			ids.push(examplePaintingId);
 		}
-		const paintingMap: Map<string, Painting> = new Map();
+		const paintingMap: Map<number, Painting> = new Map();
 		const paintings: Painting[] = await this.paintingService.getManyByIds(ids);
 
 		paintings.forEach((painting) => {

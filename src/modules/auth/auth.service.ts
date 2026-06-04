@@ -225,7 +225,7 @@ export class AuthService {
 
 	async updateVerification(
 		queryRunner: QueryRunner,
-		id: string,
+		id: number,
 		dto: DeepPartial<Verification>,
 	): Promise<void> {
 		try {
@@ -343,7 +343,7 @@ export class AuthService {
 		return oneTimeToken;
 	}
 
-	async markOneTimeJWT(queryRunner: QueryRunner, oneTimeTokenID: string) {
+	async markOneTimeJWT(queryRunner: QueryRunner, oneTimeTokenID: number) {
 		await this.updateOneTimeToken(queryRunner, oneTimeTokenID, { used_date: new Date() });
 	}
 
@@ -392,7 +392,7 @@ export class AuthService {
 		}
 	}
 
-	async updateOneTimeToken(queryRunner: QueryRunner, id: string, dto: DeepPartial<OneTimeToken>) {
+	async updateOneTimeToken(queryRunner: QueryRunner, id: number, dto: DeepPartial<OneTimeToken>) {
 		if (dto.token) {
 			throw new ServiceException(
 				"SERVICE_RUN_ERROR",
@@ -430,7 +430,7 @@ export class AuthService {
 		}
 	}
 
-	async findOneTimeTokenByID(id: string): Promise<OneTimeToken | null> {
+	async findOneTimeTokenByID(id: number): Promise<OneTimeToken | null> {
 		return await this.findOneTimeToken({ where: { id } });
 	}
 

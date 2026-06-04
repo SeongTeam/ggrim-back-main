@@ -6,7 +6,7 @@ import {
 	HttpCode,
 	HttpStatus,
 	Param,
-	ParseUUIDPipe,
+	ParseIntPipe,
 	Post,
 	Put,
 } from "@nestjs/common";
@@ -34,7 +34,7 @@ import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
 	params: {
 		id: {
 			field: "id",
-			type: "uuid",
+			type: "number",
 			primary: true,
 		},
 	},
@@ -67,7 +67,7 @@ export class TagController implements CrudController<Tag> {
 	@ApiOkResponse({ type: ShowTagResponse })
 	@HttpCode(HttpStatus.OK)
 	@Get(":id")
-	async getOne(@Param("id", ParseUUIDPipe) id: string): Promise<ShowTagResponse> {
+	async getOne(@Param("id", ParseIntPipe) id: number): Promise<ShowTagResponse> {
 		const tag = await this.service.findOne({
 			where: { id },
 			relations: { paintings: true },

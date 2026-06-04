@@ -4,7 +4,7 @@ import { OneTimeTokenPurpose } from "../../types/oneTimeToken";
 import { ONE_TIME_TOKEN_PURPOSE } from "../../const";
 
 export class ShowOneTimeTokenResponse {
-	readonly id: string;
+	readonly id: number;
 	readonly token: string;
 
 	/**

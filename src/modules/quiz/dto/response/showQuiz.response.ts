@@ -10,7 +10,7 @@ import { QUIZ_TYPE } from "../../const";
 import { isNotFalsy } from "../../../../utils/validator";
 
 export class ShowQuiz {
-	readonly id: string;
+	readonly id: number;
 	readonly title: string;
 	readonly time_limit: number;
 	/**
@@ -32,7 +32,7 @@ export class ShowQuiz {
 		this.time_limit = quiz.time_limit;
 		this.created_date = quiz.created_date.toISOString();
 		this.updated_date = quiz.created_date.toISOString();
-		this.showOwner = new ShowUserResponse(quiz.owner);
+		this.showOwner = new ShowUserResponse(quiz.user);
 	}
 }
 
@@ -49,7 +49,7 @@ export class ShowQuizResponse extends ShowQuiz {
 	artists: ShowArtist[];
 	tags: ShowTag[];
 	styles: ShowStyle[];
-	owner: ShowUserResponse;
+	user: ShowUserResponse;
 
 	constructor(quiz: Quiz) {
 		super(quiz);
@@ -66,6 +66,6 @@ export class ShowQuizResponse extends ShowQuiz {
 		this.artists = quiz.artists.map((a) => new ShowArtist(a));
 		this.tags = quiz.tags.map((t) => new ShowTag(t));
 		this.styles = quiz.styles.map((s) => new ShowStyle(s));
-		this.owner = new ShowUserResponse(quiz.owner);
+		this.user = new ShowUserResponse(quiz.user);
 	}
 }

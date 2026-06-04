@@ -2,7 +2,7 @@ import { ShowPainting } from "../../../painting/dto/response/showPainting.respon
 import { Artist } from "../../entities/artist.entity";
 
 export class ShowArtist {
-	readonly id: string;
+	readonly id: number;
 
 	readonly name: string;
 

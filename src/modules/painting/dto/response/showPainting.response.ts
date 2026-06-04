@@ -5,7 +5,7 @@ import { ShowStyle } from "../../../style/dto/response/showStyle.response";
 import { ApiProperty } from "@nestjs/swagger";
 
 export class ShowPainting {
-	readonly id: string;
+	readonly id: number;
 	readonly title: string;
 	readonly image_url: string;
 	readonly width: number;

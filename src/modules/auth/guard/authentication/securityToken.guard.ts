@@ -7,7 +7,7 @@ import {
 	UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { isEmpty, isUUID } from "class-validator";
+import { isEmpty } from "class-validator";
 import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
 import { UserService } from "../../../user/user.service";
 import { AuthService } from "../../auth.service";
@@ -71,7 +71,8 @@ export class SecurityTokenGuard implements CanActivate {
 	async extractData(context: ExecutionContext) {
 		const req = context.switchToHttp().getRequest<Request>();
 		const securityToken = req.headers[ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN] as string;
-		const securityTokenID = req.headers[ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID] as string;
+		const rawSecurityTokenID = req.headers[ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID] as string;
+		const securityTokenID = Number(rawSecurityTokenID);
 		const handlerPurpose = this.reflector.get<OneTimeTokenPurpose>(
 			PURPOSE_ONE_TIME_TOKEN_KEY,
 			context.getHandler(),
@@ -81,7 +82,7 @@ export class SecurityTokenGuard implements CanActivate {
 			throw new UnauthorizedException(`Missing or invalid security token header`);
 		}
 
-		if (!(securityTokenID && isUUID(securityTokenID))) {
+		if (!securityTokenID && isNaN(securityTokenID)) {
 			throw new UnauthorizedException(
 				`Missing or invalid ${ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID} header field`,
 			);
@@ -98,7 +99,13 @@ export class SecurityTokenGuard implements CanActivate {
 		const decoded = this.decode(securityToken);
 		const user = await this.findOwner(decoded.email, this.getOption(context));
 
-		return { securityToken, securityTokenID, handlerPurpose, decoded, user };
+		return {
+			securityToken,
+			securityTokenID,
+			handlerPurpose,
+			decoded,
+			user,
+		};
 	}
 
 	validate(decoded: JWTDecode, handlerPurpose: OneTimeTokenPurpose) {
@@ -113,7 +120,7 @@ export class SecurityTokenGuard implements CanActivate {
 		}
 	}
 
-	async verify(securityToken: string, securityTokenID: string) {
+	async verify(securityToken: string, securityTokenID: number) {
 		const entity = await this.authService.findOneTimeToken({ where: { id: securityTokenID } });
 		if (!entity) {
 			throw new UnauthorizedException(`invalid token ID. ${securityTokenID}`);

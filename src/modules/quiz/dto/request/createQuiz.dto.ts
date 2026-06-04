@@ -1,4 +1,4 @@
-import { ArrayNotEmpty, IsArray, IsNumber, IsString, IsUUID, Min } from "class-validator";
+import { ArrayNotEmpty, IsArray, IsNumber, IsString, Min } from "class-validator";
 import { IsInArray } from "../../../../utils/classValidator";
 import { QUIZ_TYPE } from "../../const";
 import { QuizType } from "../../type";
@@ -12,21 +12,21 @@ export class CreateQuizDTO {
   */
 	@IsArray()
 	@ArrayNotEmpty()
-	@IsUUID(undefined, {
+	@IsNumber(undefined, {
 		each: true,
 	})
-	answerPaintingIds!: string[];
+	answerPaintingIds!: number[];
 
 	@IsArray()
 	@ArrayNotEmpty()
-	@IsUUID(undefined, {
+	@IsNumber(undefined, {
 		each: true,
 	})
-	distractorPaintingIds!: string[];
+	distractorPaintingIds!: number[];
 
 	@IsOptionalProperty()
-	@IsUUID(undefined)
-	examplePaintingId?: string;
+	@IsNumber(undefined)
+	examplePaintingId?: number;
 
 	@IsString()
 	title!: string;

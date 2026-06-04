@@ -8,8 +8,13 @@ import { Painting } from "../../painting/entities/painting.entity";
 */
 @Unique(["name", "search_name"])
 export class Artist extends CustomBaseEntity {
-	@PrimaryGeneratedColumn("uuid")
-	id!: string;
+	@PrimaryGeneratedColumn("identity", {
+		type: "integer",
+		primaryKeyConstraintName: "pk_artist",
+		name: "id",
+		generatedIdentity: "ALWAYS",
+	})
+	id!: number;
 
 	@Column()
 	name!: string;

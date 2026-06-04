@@ -10,7 +10,7 @@ import {
 	OnApplicationBootstrap,
 	OnModuleDestroy,
 	Param,
-	ParseUUIDPipe,
+	ParseIntPipe,
 	Post,
 	Put,
 	Query,
@@ -99,7 +99,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 
 	@HttpCode(HttpStatus.CREATED)
 	@Post("submit/:id")
-	async submitQuiz(@Param("id", ParseUUIDPipe) id: string, @Body() dto: SubmitQuizDTO) {
+	async submitQuiz(@Param("id", ParseIntPipe) id: number, @Body() dto: SubmitQuizDTO) {
 		const target = await this.service.findOne({ where: { id } });
 
 		if (!target) {
@@ -113,7 +113,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	@HttpCode(HttpStatus.OK)
 	@Get(":id/reactions")
 	async getQuizReactions(
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", ParseIntPipe) id: number,
 		@Query() dto: QuizReactionQueryDTO,
 	): Promise<ShowQuizReactionResponse[]> {
 		const target = await this.service.findOne({ where: { id } });
@@ -153,7 +153,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	async createQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", ParseIntPipe) id: number,
 		@Body() dto: CreateQuizReactionDTO,
 	): Promise<void> {
 		const userPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
@@ -182,7 +182,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	async deleteQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", ParseIntPipe) id: number,
 	): Promise<void> {
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = userPayload;
@@ -283,7 +283,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	@HttpCode(HttpStatus.OK)
 	@Get(":id")
 	async getDetailQuiz(
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", ParseIntPipe) id: number,
 		@Query() query: GetQuizQueryDTO,
 	): Promise<DetailQuizResponse> {
 		let quiz = await this.service.findOne({ where: { id } });
@@ -317,7 +317,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		{
 			serviceClass: QuizService,
 			idParam: "id",
-			ownerField: "owner_id",
+			ownerField: "user_id",
 			serviceMethod: "getQuizById",
 		},
 	)
@@ -326,7 +326,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	async update(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", ParseIntPipe) id: number,
 		@Body() dto: ReplaceQuizDTO,
 	): Promise<ShowQuizResponse> {
 		const quiz = await this.service.findOne({ where: { id } });
@@ -345,13 +345,13 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		{
 			serviceClass: QuizService,
 			idParam: "id",
-			ownerField: "owner_id",
+			ownerField: "user_id",
 			serviceMethod: "getQuizById",
 		},
 	)
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Delete(":id")
-	async delete(@DBQueryRunner() qr: QueryRunner, @Param("id", ParseUUIDPipe) id: string) {
+	async delete(@DBQueryRunner() qr: QueryRunner, @Param("id", ParseIntPipe) id: number) {
 		await this.service.softDeleteQuiz(qr, id);
 	}
 
@@ -493,7 +493,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		const EXPECTED = { answer: 1, distractor: 3 };
 
 		// 개수 검증
-		const checks: [string, string[], number][] = [
+		const checks: [string, number[], number][] = [
 			["answer", answerPaintingIds, EXPECTED.answer],
 			["distractor", distractorPaintingIds, EXPECTED.distractor],
 		];
@@ -509,8 +509,8 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		}
 
 		const ids = [...answerPaintingIds, ...distractorPaintingIds];
-		const seen = new Set<string>();
-		const duplicates = new Set<string>();
+		const seen = new Set<number>();
+		const duplicates = new Set<number>();
 
 		for (const id of ids) {
 			if (seen.has(id)) {

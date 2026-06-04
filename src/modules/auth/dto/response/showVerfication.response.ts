@@ -1,7 +1,7 @@
 import { Verification } from "../../entity/verification.entity";
 
 export class ShowVerificationResponse {
-	readonly id: string;
+	readonly id: number;
 
 	/**
 	 * @format IsoDateTime
