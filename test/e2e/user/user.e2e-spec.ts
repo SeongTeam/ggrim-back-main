@@ -56,6 +56,7 @@ describe("UserController (e2e)", () => {
 		authService = moduleFixture.get(AuthService);
 		dbService = moduleFixture.get(DatabaseService);
 		await dbService.resetDB();
+		await testService.initTables();
 		await app.listen(port);
 	});
 
@@ -69,7 +70,7 @@ describe("UserController (e2e)", () => {
 		// - [x] 좋은 데이터 테스트
 		// - [x] 나쁜 데이터 테스트 (비유효 id path)
 
-		async function requestReadUser(id: string) {
+		async function requestReadUser(id: number) {
 			const route = ApiPaths.UserController_getOne;
 			const response = await client.GET(route, {
 				params: {
@@ -125,7 +126,7 @@ describe("UserController (e2e)", () => {
 				},
 				{
 					testName: "deliver not existed id path",
-					invalidId: faker.string.uuid(),
+					invalidId: 100000,
 				},
 				{
 					testName: "deliver deleted User's id path",
@@ -138,7 +139,7 @@ describe("UserController (e2e)", () => {
 			])("test : $testName", ({ invalidId }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestReadUser>>;
 				beforeAll(async () => {
-					receivedRes = await requestReadUser(invalidId);
+					receivedRes = await requestReadUser(invalidId as number);
 				});
 				it("response should match the OpenAPI documentation.", () => {
 					expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
@@ -321,7 +322,7 @@ describe("UserController (e2e)", () => {
 		// - [ ] 특수 상황 테스트 (만료된 oneTimeToken)
 		// - [ ] 특수 상황 테스트 (oneTimeToken 발급 직후 계정 삭제한 상황에서의 요청)
 		async function requestUpdatePassword(
-			id: string,
+			id: number,
 			body: { password: string },
 			header: HeaderOneTimeToken,
 		) {
@@ -399,7 +400,7 @@ describe("UserController (e2e)", () => {
 				describe.each([
 					{
 						testName: "deliver not existed user id",
-						userId: faker.string.uuid(),
+						userId: 240000,
 						requestUserEmail: userStub.email,
 						body: {
 							password: "updatedPassword",
@@ -543,7 +544,7 @@ describe("UserController (e2e)", () => {
 		// - [ ] 특수 상황 테스트 (만료된 jwt(authorization) 전달)
 
 		async function requestUpdateUsername(
-			id: string,
+			id: number,
 			body: { username: string },
 			authorization: string,
 		) {
@@ -614,7 +615,7 @@ describe("UserController (e2e)", () => {
 				describe.each([
 					{
 						testName: "deliver not existed id path",
-						invalidId: faker.string.uuid(),
+						invalidId: 240000,
 						requestUserEmail: userStub.email,
 						invalidBody: {
 							username: "updatedUsername",
@@ -738,7 +739,7 @@ describe("UserController (e2e)", () => {
 		// - [x] 특수 상황 테스트 ( 일반 사용자가 요청, 삭제된 관리자로 요청)
 		// - [ ] 특수 상황 테스트 ( 만료된 jwt(authorization) 전달달)
 		async function requestUpdateUserRole(
-			id: string,
+			id: number,
 			body: {
 				role: USER_ROLE;
 			},
@@ -822,7 +823,7 @@ describe("UserController (e2e)", () => {
 				describe.each([
 					{
 						testName: "deliver not existed user's email",
-						invalidId: faker.string.uuid(),
+						invalidId: 100000,
 						requestUserEmail: requestUserStub.email,
 						invalidBody: {
 							role: userType === USER_ROLE.user ? USER_ROLE.admin : USER_ROLE.user,
@@ -830,7 +831,7 @@ describe("UserController (e2e)", () => {
 					},
 					{
 						testName: "deliver invalid body",
-						invalidId: faker.string.uuid(),
+						invalidId: 10000,
 						requestUserEmail: requestUserStub.email,
 						invalidBody: {
 							role: "NOT_DEFINED_ROLE",
@@ -871,21 +872,17 @@ describe("UserController (e2e)", () => {
 				describe.each([
 					{
 						testName: "deliver faker authorization",
-						email: targetUserStub.email,
+						id: targetUserStub.id,
 						invalidAuthorization: faker.internet.jwt(),
 						body: {
 							role: userType === USER_ROLE.user ? USER_ROLE.admin : USER_ROLE.user,
 						},
 					},
-				])("test : $testName", ({ email, body, invalidAuthorization }) => {
+				])("test : $testName", ({ id, body, invalidAuthorization }) => {
 					let receivedRes: Awaited<ReturnType<typeof requestUpdateUserRole>>;
 
 					beforeAll(async () => {
-						receivedRes = await requestUpdateUserRole(
-							email,
-							body,
-							invalidAuthorization,
-						);
+						receivedRes = await requestUpdateUserRole(id, body, invalidAuthorization);
 					});
 
 					it("response should match the OpenAPI documentation.", () => {
@@ -913,13 +910,13 @@ describe("UserController (e2e)", () => {
 				describe.each([
 					{
 						testName: "flip role when request by normal user",
-						email: targetUserStub.email,
+						id: targetUserStub.id,
 						requestUserEmail: normalUserStub.email,
 						body: {
 							role: userType === USER_ROLE.user ? USER_ROLE.admin : USER_ROLE.user,
 						},
 					},
-				])("test : $testName", ({ email, body, requestUserEmail }) => {
+				])("test : $testName", ({ id, body, requestUserEmail }) => {
 					let receivedRes: Awaited<ReturnType<typeof requestUpdateUserRole>>;
 
 					beforeAll(async () => {
@@ -928,7 +925,7 @@ describe("UserController (e2e)", () => {
 						});
 						assert(requestUser !== null);
 						const authorization = testService.getBearerAuthCredential(requestUser);
-						receivedRes = await requestUpdateUserRole(email, body, authorization);
+						receivedRes = await requestUpdateUserRole(id, body, authorization);
 					});
 
 					it("response should match the OpenAPI documentation.", () => {
@@ -945,7 +942,6 @@ describe("UserController (e2e)", () => {
 					//1. arrange
 					const targetUserStub = factoryUserStub("user");
 					const deletedAdminStub = factoryUserStub("admin");
-					const targetEmail = targetUserStub.email;
 					const [, deletedAdmin] = await testService.insertUserStubs([
 						targetUserStub,
 						deletedAdminStub,
@@ -959,7 +955,7 @@ describe("UserController (e2e)", () => {
 
 					//2. action
 					const receivedRes = await requestUpdateUserRole(
-						targetEmail,
+						targetUserStub.id,
 						body,
 						authorization,
 					);
@@ -980,7 +976,7 @@ describe("UserController (e2e)", () => {
 		// - [x] 특수 상황 테스트 (타인 사용자가 요청, 타인 관리자가 요청, 삭제된 관리자가 요청,이미 사용된 oneTimeToken 전송)
 		// - [x] 특수 상황 테스트 (적합한 목적이 아닌 oneTimeToken 전송)
 
-		async function requestDeleteUser(id: string, header: HeaderOneTimeToken) {
+		async function requestDeleteUser(id: number, header: HeaderOneTimeToken) {
 			const route = ApiPaths.UserController_deleteUser;
 			const response = await client.DELETE(route, {
 				params: {
@@ -1047,11 +1043,11 @@ describe("UserController (e2e)", () => {
 				describe.each([
 					{
 						testName: "deliver not existed user id",
-						invalidId: faker.string.uuid(),
+						invalidId: 20000,
 						requestUserEmail: targetUserStub.email,
 					},
 					{
-						testName: "deliver not uuid format",
+						testName: "deliver not int format",
 						invalidId: faker.internet.ipv4(),
 						requestUserEmail: targetUserStub.email,
 					},
@@ -1064,7 +1060,7 @@ describe("UserController (e2e)", () => {
 							requestUserEmail,
 							"delete-account",
 						);
-						receivedRes = await requestDeleteUser(invalidId, header);
+						receivedRes = await requestDeleteUser(invalidId as number, header);
 					});
 
 					it("response should match the OpenAPI documentation.", () => {
@@ -1203,7 +1199,7 @@ describe("UserController (e2e)", () => {
 		// - [x] 나쁜 데이터 테스트 (비유효 header authorization field)
 		// - [x] 특수 상황 테스트 (타인 일반 사용자가 요청, 타인 관리자가 요청, 삭제된 사용자가 요청,이미 사용된 oneTimeToken 전달,사용자가 삭제되지 않은 상황)
 
-		async function requestRecoverUser(id: string, header: HeaderOneTimeToken) {
+		async function requestRecoverUser(id: number, header: HeaderOneTimeToken) {
 			const route = ApiPaths.UserController_recoverUser;
 			const response = await client.PUT(route, {
 				params: {
@@ -1272,12 +1268,12 @@ describe("UserController (e2e)", () => {
 				describe.each([
 					{
 						testName: "deliver not existed user's id",
-						userId: faker.string.uuid(),
+						userId: 24000,
 						requestUserEmail: targetUserStub.email,
 					},
 					{
 						testName: "deliver incorrect format",
-						userId: faker.internet.jwt(),
+						userId: faker.string.uuid(),
 						requestUserEmail: targetUserStub.email,
 					},
 				])("test : $testName ", ({ userId, requestUserEmail }) => {
@@ -1289,7 +1285,7 @@ describe("UserController (e2e)", () => {
 							requestUserEmail,
 							"recover-account",
 						);
-						receivedRes = await requestRecoverUser(userId, header);
+						receivedRes = await requestRecoverUser(userId as number, header);
 					});
 
 					it("response should match the OpenAPI documentation.", () => {
@@ -1328,7 +1324,7 @@ describe("UserController (e2e)", () => {
 
 					beforeAll(async () => {
 						receivedRes = await requestRecoverUser(
-							userId,
+							userId as number,
 							header as HeaderOneTimeToken,
 						);
 					});

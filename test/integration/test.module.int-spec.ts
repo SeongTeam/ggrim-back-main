@@ -12,12 +12,13 @@ import { factoryQuizStub } from "../_shared/stub/quiz.stub";
 import { USER_ROLE } from "../generated/dto-types";
 import { Painting } from "../../src/modules/painting/entities/painting.entity";
 import { expectQuizEqual } from "../_shared/expect";
-import { factoryQuizReaction } from "../e2e/quiz/quiz-reaction.stub";
+import { factoryQuizReaction } from "../_shared/stub/quiz-reaction.stub";
 
 describe("TestModule Integration Test", () => {
 	let module: TestingModule;
 	let testService: TestService;
 	let dbService: DatabaseService;
+
 	let startTime: bigint;
 
 	beforeAll(async () => {
@@ -28,6 +29,7 @@ describe("TestModule Integration Test", () => {
 		testService = module.get<TestService>(TestService);
 		dbService = module.get<DatabaseService>(DatabaseService);
 		await dbService.resetDB();
+		await testService.initTables();
 	});
 
 	beforeEach(() => {
@@ -108,13 +110,13 @@ describe("TestModule Integration Test", () => {
 				const paintings = await testService.seedPaintings(4);
 				const answer = paintings.slice(0, 1)[0];
 				const distractors = paintings.slice(1) as [Painting, Painting, Painting];
-				const owner = await testService.insertStubUser(factoryUserStub(userRole));
+				const user = await testService.insertStubUser(factoryUserStub(userRole));
 				const quizStub = factoryQuizStub();
 				const stub: InsertOneChoiceQuizzesArgs = {
 					quizStub,
 					answer,
 					distractors,
-					owner,
+					user,
 				};
 				const quizzes = await testService.insertOneChoiceQuizStubs([stub]);
 				const received = quizzes[0];
@@ -130,7 +132,7 @@ describe("TestModule Integration Test", () => {
 					description: quizStub.description,
 					time_limit: quizStub.time_limit,
 					title: quizStub.title,
-					owner,
+					user,
 				});
 			},
 		);
@@ -154,7 +156,7 @@ describe("TestModule Integration Test", () => {
 					"artists",
 					"tags",
 					"styles",
-					"owner",
+					"user",
 				] as const;
 
 				expect(receivedQuizLike).toBeDefined();
@@ -184,7 +186,7 @@ describe("TestModule Integration Test", () => {
 					"artists",
 					"tags",
 					"styles",
-					"owner",
+					"user",
 				] as const;
 
 				expect(quizDislike).toBeDefined();

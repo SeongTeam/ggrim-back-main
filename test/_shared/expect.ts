@@ -13,7 +13,7 @@ const ESSENTIAL_QUIZ__FIELD = [
 	"description",
 	"time_limit",
 	"title",
-	"owner",
+	"user",
 ] as const;
 export type EssentialQuizField = (typeof ESSENTIAL_QUIZ__FIELD)[number];
 export type ExpectedQuizPart = Pick<Quiz, EssentialQuizField>;
@@ -99,9 +99,7 @@ export function expectShowQuizResponse(received: ShowQuizResponse, expected: Sho
 		const r = received[field];
 		const e = expected[field];
 		if (isArray(r) && isArray(e)) {
-			expect(r.sort((a, b) => a.id.localeCompare(b.id))).toEqual(
-				e.sort((a, b) => a.id.localeCompare(b.id)),
-			);
+			expect(r.sort((a, b) => a.id - b.id)).toEqual(e.sort((a, b) => a.id - b.id));
 		}
 	});
 

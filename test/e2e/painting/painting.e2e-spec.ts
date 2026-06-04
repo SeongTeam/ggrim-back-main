@@ -76,7 +76,7 @@ describe("PaintingController (e2e)", () => {
 		paintingService = moduleFixture.get(PaintingService);
 		userService = moduleFixture.get(UserService);
 		await dbService.resetDB();
-
+		await testService.initTables();
 		await app.listen(port);
 
 		//arrange relational resources to share cross over all Painting test
@@ -319,7 +319,7 @@ describe("PaintingController (e2e)", () => {
 		// - [x] 좋은 데이터 테스트
 		// - [x] 나쁜 데이터 테스트 (비유효 query)
 		// - [ ] 특수 상황 테스트 ( Huge query.page)
-		async function requestGetPaintings(query: { ids: string[] }) {
+		async function requestGetPaintings(query: { ids: number[] }) {
 			const response = await client.GET(ApiPaths.PaintingController_getManyByIds, {
 				params: {
 					query,
@@ -391,7 +391,9 @@ describe("PaintingController (e2e)", () => {
 			])("test : $testName", ({ invalidQuery }) => {
 				let receivedResponse: Awaited<ReturnType<typeof requestGetPaintings>>;
 				beforeAll(async () => {
-					receivedResponse = await requestGetPaintings(invalidQuery);
+					receivedResponse = await requestGetPaintings(
+						invalidQuery as unknown as { ids: number[] },
+					);
 				});
 				it("response should match openapi spec", () => {
 					expect(receivedResponse.response.status).toBe(HttpStatus.BAD_REQUEST);
@@ -569,7 +571,7 @@ describe("PaintingController (e2e)", () => {
 		// - [x] 비권한 사용자 요청 테스트
 		// - [ ] 특수 상황 테스트 ( Huge query.page)
 
-		async function requestReplacePainting(id: string, body: ReplacePaintingDto, admin: User) {
+		async function requestReplacePainting(id: number, body: ReplacePaintingDto, admin: User) {
 			const authorization = testService.getBearerAuthCredential(admin);
 			const response = await client.PUT(ApiPaths.PaintingController_replacePainting, {
 				params: {
@@ -704,7 +706,7 @@ describe("PaintingController (e2e)", () => {
 
 				beforeAll(async () => {
 					receivedRes = await requestReplacePainting(
-						invalidId,
+						invalidId as number,
 						invalidBody as ReplacePaintingDto,
 						admin,
 					);
@@ -771,7 +773,7 @@ describe("PaintingController (e2e)", () => {
 			// - [x] 나쁜 데이터 테스트 (비유효 body, 비유효 id path)
 			// - [ ] 비권한 사용자 요청 테스트
 			// - [ ] 특수 상황 테스트 ( Huge query.page)
-			async function requestDeletePainting(id: string, admin: User) {
+			async function requestDeletePainting(id: number, admin: User) {
 				const route = ApiPaths.PaintingController_deletePainting;
 				const adminAuthorization = testService.getBearerAuthCredential(admin);
 				const response = await client.DELETE(route, {
@@ -847,7 +849,7 @@ describe("PaintingController (e2e)", () => {
 							artist: getRandomElement(_artists),
 						},
 					]);
-					const qr = dbService.getQueryRunner();
+					const qr = await dbService.getQueryRunner();
 					await paintingService.deleteOne(qr, deletedPainting);
 					await qr.release();
 				});
@@ -857,7 +859,7 @@ describe("PaintingController (e2e)", () => {
 						testName: "deliver invalid format id",
 						invalidId: "invalid-format",
 					},
-					{ testName: "deliver not exist id", invalidId: faker.string.uuid() },
+					{ testName: "deliver not exist id", invalidId: 10000 },
 					{
 						testName: "deliver deleted id",
 						invalidId: deletedPaintingStub.id,
@@ -865,7 +867,10 @@ describe("PaintingController (e2e)", () => {
 				])(`test : $testName`, ({ invalidId }) => {
 					let receivedRes: Awaited<ReturnType<typeof requestDeletePainting>>;
 					beforeAll(async () => {
-						receivedRes = await requestDeletePainting(invalidId, admin);
+						receivedRes = await requestDeletePainting(
+							invalidId as unknown as number,
+							admin,
+						);
 					});
 
 					it("response should match openapi spec", () => {

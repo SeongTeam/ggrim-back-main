@@ -1,9 +1,9 @@
 import { OmitType } from "@nestjs/swagger";
 import { QuizDislike } from "../../../src/modules/quiz/entities/quizDislike.entity";
-import { CustomBaseEntityStub } from "../../_shared/stub/customBaseEntity.stub";
+import { CustomBaseEntityStub } from "./customBaseEntity.stub";
 import { QuizLike } from "../../../src/modules/quiz/entities/quizLike.entity";
-import { faker } from "@faker-js/faker";
 import { QuizReactionType } from "../../../src/modules/quiz/const";
+import { generateId } from "./utils";
 
 export class QuizDislikeDummy extends OmitType(QuizDislike, [
 	"quiz",
@@ -25,7 +25,7 @@ export function factoryQuizReaction(type: "like"): QuizLikeDummy;
 export function factoryQuizReaction(type: QuizReactionType): QuizReactionDummy<typeof type> {
 	return {
 		_type: type,
-		id: faker.string.uuid(),
+		id: generateId(),
 		...CustomBaseEntityStub(),
 	};
 }

@@ -69,7 +69,7 @@ describe("AuthController (e2e)", () => {
 		authService = moduleFixture.get(AuthService);
 		userService = moduleFixture.get(UserService);
 		await dbService.resetDB();
-
+		await testService.initTables();
 		await app.listen(port);
 	});
 
@@ -139,7 +139,7 @@ describe("AuthController (e2e)", () => {
 			beforeAll(async () => {
 				const deletedUser = await testService.insertStubUser(deletedUserStub);
 
-				const qr = dbService.getQueryRunner();
+				const qr = await dbService.getQueryRunner();
 				await userService.softDeleteUser(qr, deletedUser.id);
 				await qr.release();
 			});
@@ -678,7 +678,7 @@ describe("AuthController (e2e)", () => {
 					await testService.insertStubUser(userStub);
 
 					const deletedUser = await testService.insertStubUser(deletedUserStub);
-					const qr = dbService.getQueryRunner();
+					const qr = await dbService.getQueryRunner();
 					await userService.softDeleteUser(qr, deletedUser.id);
 					await qr.release();
 				});
@@ -883,7 +883,7 @@ describe("AuthController (e2e)", () => {
 
 					const deletedUser = await testService.insertStubUser(deletedUserStub);
 
-					const qr = dbService.getQueryRunner();
+					const qr = await dbService.getQueryRunner();
 					await userService.softDeleteUser(qr, deletedUser.id);
 					await qr.release();
 				});
@@ -997,7 +997,7 @@ describe("AuthController (e2e)", () => {
 						);
 						const header = {
 							"x-one-time-token-value": oneTimeToken.token,
-							"x-one-time-token-identifier": oneTimeToken.id,
+							"x-one-time-token-identifier": oneTimeToken.id.toString(),
 						};
 
 						receivedRes = await requestSecurityTokenFromEmailVerification(header, body);
@@ -1065,7 +1065,7 @@ describe("AuthController (e2e)", () => {
 						);
 						const header = {
 							"x-one-time-token-value": oneTimeToken.token,
-							"x-one-time-token-identifier": oneTimeToken.id,
+							"x-one-time-token-identifier": oneTimeToken.id.toString(),
 						};
 
 						receivedRes = await requestSecurityTokenFromEmailVerification(
@@ -1100,7 +1100,7 @@ describe("AuthController (e2e)", () => {
 				email: string;
 				password: string;
 			},
-			oneTimeTokenId: string,
+			oneTimeTokenId: number,
 		) {
 			const authorization = testService.getBasicAuthCredential(auth.email, auth.password);
 			const res = await client.GET(ApiPaths.AuthController_getOneTimeToken, {

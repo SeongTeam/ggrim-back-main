@@ -23,7 +23,7 @@ import {
 import { QuizService } from "../../../src/modules/quiz/quiz.service";
 import { faker } from "@faker-js/faker";
 import { factoryQuizStub } from "../../_shared/stub/quiz.stub";
-import { omit, pick } from "../../../src/utils/object";
+import { pick } from "../../../src/utils/object";
 import { Quiz } from "../../../src/modules/quiz/entities/quiz.entity";
 import { QuizBatchService } from "../../../src/modules/quiz/batch/quiz.batch.service";
 import { QuizLike } from "../../../src/modules/quiz/entities/quizLike.entity";
@@ -57,6 +57,7 @@ import { isNotFalsy } from "../../../src/utils/validator";
 import { factoryPaintingStub } from "../../_shared/stub/painting.stub";
 import { assert } from "console";
 import { UserService } from "../../../src/modules/user/user.service";
+import { generateId } from "../../_shared/stub/utils";
 
 // TODO: QuizController API 테스트 구현
 // - [x] API 별로 테스트 시나리오 설계
@@ -88,7 +89,7 @@ describe("QuizController (e2e)", () => {
 	const client = createClient<paths>({ baseUrl: `http://localhost:${port}` });
 
 	async function findAllRelationQuiz(
-		id: string,
+		id: number,
 		withDeleted: boolean = false,
 	): Promise<Quiz | null> {
 		const ret = await quizService.findOne({
@@ -99,7 +100,7 @@ describe("QuizController (e2e)", () => {
 				artists: true,
 				tags: true,
 				styles: true,
-				owner: true,
+				user: true,
 			},
 			withDeleted,
 		});
@@ -124,6 +125,7 @@ describe("QuizController (e2e)", () => {
 		quizScheduleService = moduleFixture.get(QuizScheduleService);
 		userService = moduleFixture.get(UserService);
 		await dbService.resetDB();
+		await testService.initTables();
 		await app.listen(port);
 	});
 
@@ -138,7 +140,7 @@ describe("QuizController (e2e)", () => {
 		// - [x] 좋은 데이터 테스트 (모든 dto 경우에 대해 테스트)
 		// - [x] 나쁜 데이터 테스트 (비유효 path)
 		// - [x] 나쁜 데이터 테스트 (비유효 dto)
-		async function requestSubmitQuiz(id: string, dto: SubmitQuizDto) {
+		async function requestSubmitQuiz(id: number, dto: SubmitQuizDto) {
 			const response = await client.POST(ApiPaths.QuizController_submitQuiz, {
 				params: {
 					path: { id },
@@ -159,7 +161,6 @@ describe("QuizController (e2e)", () => {
 					beforeAll(async () => {
 						const quizzes = await testService.seedOneChoiceQuizzes(1);
 						expectedQuiz = quizzes[0];
-						expectedQuiz[field]++;
 						receivedRes = await requestSubmitQuiz(expectedQuiz.id, dto);
 
 						//run batch
@@ -171,20 +172,19 @@ describe("QuizController (e2e)", () => {
 						expect(receivedRes.response.status).toBe(HttpStatus.CREATED);
 					});
 
-					it("quiz correct count should be updated ", () => {
-						const omitKeys = ["updated_date", "version"] as const;
-
-						expect(omit(receivedQuiz, omitKeys)).toEqual(omit(expectedQuiz, omitKeys));
+					it("quiz correct(incorrect) count should be updated ", () => {
+						expectedQuiz[field]++;
+						expect(receivedQuiz[field]).toEqual(expectedQuiz[field]);
 					});
 				},
 			);
 		});
 		describe("fail when invalid path, dto", () => {
-			const validId = faker.string.uuid();
+			const validId = 100000;
 
 			beforeAll(async () => {
 				const [answer, ...distractors] = await testService.seedPaintings(4);
-				const [owner] = await testService.seedUsersSingleInsert(1);
+				const [user] = await testService.seedUsersSingleInsert(1);
 				const quizStub = factoryQuizStub();
 				quizStub.id = validId;
 
@@ -193,7 +193,7 @@ describe("QuizController (e2e)", () => {
 						quizStub,
 						answer,
 						distractors: distractors as [Painting, Painting, Painting],
-						owner,
+						user,
 					},
 				]);
 			});
@@ -201,12 +201,12 @@ describe("QuizController (e2e)", () => {
 			describe.each([
 				{
 					testName: "deliver id not existed and dto with true",
-					id: faker.string.uuid(),
+					id: generateId(),
 					dto: { isCorrect: true },
 				},
 				{
 					testName: "deliver id not existed and dto with false",
-					id: faker.string.uuid(),
+					id: generateId(),
 					dto: { isCorrect: false },
 				},
 				{
@@ -251,7 +251,7 @@ describe("QuizController (e2e)", () => {
 		// - [x] 공통 로직 구현
 		// - [x] 좋은 데이터 테스트 (:id path)
 		// - [x] 나쁜 데이터 테스트 (비유효 :id path)
-		async function requestReadReactions(id: string) {
+		async function requestReadReactions(id: number) {
 			const response = await client.GET(ApiPaths.QuizController_getQuizReactions, {
 				params: {
 					path: { id },
@@ -280,11 +280,11 @@ describe("QuizController (e2e)", () => {
 			});
 
 			it("response should read db resource ", () => {
-				const receivedData = receivedRes.data!.sort((data1, data2) =>
-					data1.user.id.localeCompare(data2.user.id),
+				const receivedData = receivedRes.data!.sort(
+					(data1, data2) => data1.user.id - data2.user.id,
 				);
 				const expectedData = expectedLikeReactions
-					.sort((data1, data2) => data1.user.id.localeCompare(data2.user.id))
+					.sort((data1, data2) => data1.user.id - data2.user.id)
 					.map((reaction) => new ShowQuizReactionResponse(reaction));
 
 				expect(receivedData).toEqual(expectedData);
@@ -302,7 +302,7 @@ describe("QuizController (e2e)", () => {
 			])("input : %p", ({ invalidId }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestReadReactions>>;
 				beforeAll(async () => {
-					const response = await requestReadReactions(invalidId);
+					const response = await requestReadReactions(invalidId as unknown as number);
 					receivedRes = response;
 				});
 
@@ -321,7 +321,7 @@ describe("QuizController (e2e)", () => {
 		// - [x] 나쁜 데이터 테스트 (비권한 authorization header )
 		// - [x] 임계 영역 테스트 ( like, dislike 연속 생성)
 		async function requestCreateReaction(
-			id: string,
+			id: number,
 			dto: CreateQuizReactionDto,
 			bearerAuth: string,
 		) {
@@ -357,9 +357,9 @@ describe("QuizController (e2e)", () => {
 					receivedRes = response;
 
 					const findReactionFuncMap = {
-						[QUIZ_REACTION.like]: (quiz_id: string, user_id: string) =>
+						[QUIZ_REACTION.like]: (quiz_id: number, user_id: number) =>
 							quizService.findQuizLikes({ where: { quiz_id, user_id } }),
-						[QUIZ_REACTION.dislike]: (quiz_id: string, user_id: string) =>
+						[QUIZ_REACTION.dislike]: (quiz_id: number, user_id: number) =>
 							quizService.findQuizDislikes({ where: { quiz_id, user_id } }),
 					};
 
@@ -412,9 +412,9 @@ describe("QuizController (e2e)", () => {
 					const response = await requestCreateReaction(expectedQuiz.id, dto, auth);
 					receivedRes = response;
 					const findReactionFuncMap = {
-						[QUIZ_REACTION.like]: (quiz_id: string, user_id: string) =>
+						[QUIZ_REACTION.like]: (quiz_id: number, user_id: number) =>
 							quizService.findQuizLikes({ where: { quiz_id, user_id } }),
-						[QUIZ_REACTION.dislike]: (quiz_id: string, user_id: string) =>
+						[QUIZ_REACTION.dislike]: (quiz_id: number, user_id: number) =>
 							quizService.findQuizDislikes({ where: { quiz_id, user_id } }),
 					};
 					laterReaction = (
@@ -444,12 +444,12 @@ describe("QuizController (e2e)", () => {
 		describe.each([{ userType: USER_ROLE.USER }, { userType: USER_ROLE.ADMIN }])(
 			"fail when deliver invalid id or dto by User($userType)",
 			({ userType }) => {
-				const validQuizId = faker.string.uuid();
+				const validQuizId = generateId();
 				let testUser: User;
 
 				beforeAll(async () => {
 					const [answer, ...distractors] = await testService.seedPaintings(4);
-					const [owner] = await testService.seedUsersSingleInsert(1);
+					const [user] = await testService.seedUsersSingleInsert(1);
 					const quizStub = factoryQuizStub();
 					quizStub.id = validQuizId;
 
@@ -458,7 +458,7 @@ describe("QuizController (e2e)", () => {
 							quizStub,
 							answer,
 							distractors: distractors as [Painting, Painting, Painting],
-							owner,
+							user,
 						},
 					]);
 					testUser = await testService.insertStubUser(factoryUserStub(userType));
@@ -477,12 +477,12 @@ describe("QuizController (e2e)", () => {
 					},
 					{
 						testName: "deliver id not existed with dislike",
-						id: faker.string.uuid(),
+						id: generateId(),
 						dto: { type: QUIZ_REACTION.dislike },
 					},
 					{
 						testName: "deliver id not existed with like ",
-						id: faker.string.uuid(),
+						id: generateId(),
 						dto: { type: QUIZ_REACTION.like },
 					},
 					{
@@ -497,7 +497,7 @@ describe("QuizController (e2e)", () => {
 					beforeAll(async () => {
 						const auth = testService.getBearerAuthCredential(testUser);
 						const response = await requestCreateReaction(
-							id,
+							id as number,
 							dto as CreateQuizReactionDto,
 							auth,
 						);
@@ -509,7 +509,7 @@ describe("QuizController (e2e)", () => {
 							receivedReaction = (
 								await quizService.findQuizLikes({
 									where: {
-										quiz_id: id,
+										quiz_id: id as number,
 										user_id: testUser.id,
 									},
 								})
@@ -559,7 +559,7 @@ describe("QuizController (e2e)", () => {
 		// - [x] 좋은 데이터 테스트 (:id path)
 		// - [x] 예외 상황 테스트 (  )
 		// - [x] 나쁜 데이터 테스트 (비유효 :id path)
-		async function requestDeleteReaction(id: string, bearerAuth: string) {
+		async function requestDeleteReaction(id: number, bearerAuth: string) {
 			const response = await client.DELETE(ApiPaths.QuizController_deleteQuizReaction, {
 				params: {
 					path: { id },
@@ -598,9 +598,9 @@ describe("QuizController (e2e)", () => {
 					const response = await requestDeleteReaction(expectedQuiz.id, auth);
 					receivedRes = response;
 					const findReactionFuncMap = {
-						[QUIZ_REACTION.like]: (quiz_id: string, user_id: string) =>
+						[QUIZ_REACTION.like]: (quiz_id: number, user_id: number) =>
 							quizService.findQuizLikes({ where: { quiz_id, user_id } }),
-						[QUIZ_REACTION.dislike]: (quiz_id: string, user_id: string) =>
+						[QUIZ_REACTION.dislike]: (quiz_id: number, user_id: number) =>
 							quizService.findQuizDislikes({ where: { quiz_id, user_id } }),
 					};
 					receivedReaction = (
@@ -661,10 +661,10 @@ describe("QuizController (e2e)", () => {
 			//-[x] 삭제된 Quiz id
 			//-[x] 비유효 id
 			//-[x] UUID 형식 이외의 ID
-			const deletedQuizId = faker.string.uuid();
+			const deletedQuizId = 44444;
 
 			beforeAll(async () => {
-				const owner = (await testService.seedUsersSingleInsert(1))[0];
+				const user = (await testService.seedUsersSingleInsert(1))[0];
 				const [answer, ...distractors] = await testService.seedPaintings(4);
 				const quizStub = factoryQuizStub();
 				quizStub.id = deletedQuizId;
@@ -672,20 +672,20 @@ describe("QuizController (e2e)", () => {
 				await testService.insertOneChoiceQuizStubs([
 					{
 						answer,
-						owner,
+						user,
 						quizStub,
 						distractors: distractors as [Painting, Painting, Painting],
 					},
 				]);
 
-				const qr = dbService.getQueryRunner();
+				const qr = await dbService.getQueryRunner();
 				await quizService.softDeleteQuiz(qr, deletedQuizId);
 				await qr.release();
 			});
 
 			describe.each([
 				{ invalidQuizId: deletedQuizId },
-				{ invalidQuizId: faker.string.uuid() },
+				{ invalidQuizId: deletedQuizId + 1 },
 				{ invalidQuizId: faker.internet.email() },
 			])("input : %o", ({ invalidQuizId }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestDeleteReaction>>;
@@ -695,7 +695,7 @@ describe("QuizController (e2e)", () => {
 
 					//request delete reaction
 					const auth = testService.getBearerAuthCredential(testUser);
-					const response = await requestDeleteReaction(invalidQuizId, auth);
+					const response = await requestDeleteReaction(invalidQuizId as number, auth);
 					receivedRes = response;
 				});
 
@@ -846,7 +846,7 @@ describe("QuizController (e2e)", () => {
 					testName: "deliver artist",
 					query: {
 						context: {
-							artist: getRandomElement(artistStubs)!.name,
+							artist: getRandomElement(artistStubs).name,
 							page: 0,
 						},
 						currentIndex: 0,
@@ -857,7 +857,7 @@ describe("QuizController (e2e)", () => {
 					testName: "deliver style",
 					query: {
 						context: {
-							style: getRandomElement(styleStubs)!.name,
+							style: getRandomElement(styleStubs).name,
 							page: 0,
 						},
 						currentIndex: 0,
@@ -868,7 +868,7 @@ describe("QuizController (e2e)", () => {
 					testName: "deliver tag",
 					query: {
 						context: {
-							tag: getRandomElement(tagStubs)!.name,
+							tag: getRandomElement(tagStubs).name,
 							page: 0,
 						},
 						currentIndex: 0,
@@ -1345,9 +1345,9 @@ describe("QuizController (e2e)", () => {
 			return response;
 		}
 
-		type StringLeast3 = [string, string, string];
+		type StringLeast3 = [number, number, number];
 		function factoryCreateQuizDto(
-			answerPaintingId: string,
+			answerPaintingId: number,
 			distractorPaintingIds: StringLeast3,
 		): CreateQuizDto {
 			const { time_limit: timeLimit, description, title } = factoryQuizStub();
@@ -1382,13 +1382,13 @@ describe("QuizController (e2e)", () => {
 						paintingDummy: stub,
 						tags: selectRandomElements(tags, 2),
 						styles: selectRandomElements(styles, 2),
-						artist: getRandomElement(artists)!,
+						artist: getRandomElement(artists),
 					}))
 					.concat({
 						paintingDummy: deletedPaintingStub,
 						tags: selectRandomElements(tags, 2),
 						styles: selectRandomElements(styles, 2),
-						artist: getRandomElement(artists)!,
+						artist: getRandomElement(artists),
 					}),
 			);
 
@@ -1396,7 +1396,7 @@ describe("QuizController (e2e)", () => {
 				where: { id: deletedPaintingStub.id },
 			});
 			assert(deletedPainting);
-			const qr = dbService.getQueryRunner();
+			const qr = await dbService.getQueryRunner();
 			await paintingService.deleteOne(qr, deletedPainting!);
 			await qr.release();
 		});
@@ -1446,7 +1446,7 @@ describe("QuizController (e2e)", () => {
 						description: dto.description,
 						time_limit: dto.timeLimit,
 						title: dto.title,
-						owner: creator,
+						user: creator,
 					};
 					const bearerAuth = testService.getBearerAuthCredential(creator);
 					receivedRes = await requestCreateQuiz(dto, bearerAuth);
@@ -1947,8 +1947,8 @@ describe("QuizController (e2e)", () => {
 		// - [ ] 경계 분석 테스트
 
 		async function requestReadQuiz(
-			id: string,
-			query?: { isS3Access?: boolean; userId?: string },
+			id: number,
+			query?: { isS3Access?: boolean; userId?: number },
 		) {
 			const response = await client.GET(ApiPaths.QuizController_getDetailQuiz, {
 				params: {
@@ -1972,13 +1972,13 @@ describe("QuizController (e2e)", () => {
 			const userStub = factoryUserStub(userType);
 
 			beforeAll(async () => {
-				const owner = (await testService.seedUsersSingleInsert(1))[0];
+				const user = (await testService.seedUsersSingleInsert(1))[0];
 				const [answer, ...distractors] = await testService.seedPaintings(4);
 
 				await testService.insertOneChoiceQuizStubs([
 					{
 						answer,
-						owner,
+						user,
 						quizStub,
 						distractors: distractors as [Painting, Painting, Painting],
 					},
@@ -2047,14 +2047,14 @@ describe("QuizController (e2e)", () => {
 				let testUser: User;
 
 				beforeAll(async () => {
-					const owner = (await testService.seedUsersSingleInsert(1))[0];
+					const user = (await testService.seedUsersSingleInsert(1))[0];
 					const [answer, ...distractors] = await testService.seedPaintings(4);
 
 					expectedQuiz = (
 						await testService.insertOneChoiceQuizStubs([
 							{
 								answer,
-								owner,
+								user,
 								quizStub,
 								distractors: distractors as [Painting, Painting, Painting],
 							},
@@ -2084,7 +2084,7 @@ describe("QuizController (e2e)", () => {
 					let receivedRes: Awaited<ReturnType<typeof requestReadQuiz>>;
 
 					beforeAll(async () => {
-						const qr = dbService.getQueryRunner();
+						const qr = await dbService.getQueryRunner();
 						if (reactionType === QUIZ_REACTION.dislike) {
 							await quizService.dislikeQuiz(qr, testUser, expectedQuiz);
 						} else {
@@ -2134,14 +2134,14 @@ describe("QuizController (e2e)", () => {
 			const deletedUserStub = factoryUserStub(userType);
 
 			beforeAll(async () => {
-				const owner = (await testService.seedUsersSingleInsert(1))[0];
+				const user = (await testService.seedUsersSingleInsert(1))[0];
 				const [answer, ...distractors] = await testService.seedPaintings(4);
 
 				expectedQuiz = (
 					await testService.insertOneChoiceQuizStubs([
 						{
 							answer,
-							owner,
+							user,
 							quizStub,
 							distractors: distractors as [Painting, Painting, Painting],
 						},
@@ -2150,7 +2150,7 @@ describe("QuizController (e2e)", () => {
 
 				await testService.insertStubUser(userStub);
 				await testService.insertStubUser(deletedUserStub);
-				const qr = dbService.getQueryRunner();
+				const qr = await dbService.getQueryRunner();
 				await userService.softDeleteUser(qr, deletedUserStub.id);
 				await qr.release();
 			});
@@ -2165,7 +2165,7 @@ describe("QuizController (e2e)", () => {
 				{
 					id: quizStub.id,
 					query: {
-						userId: faker.string.uuid(),
+						userId: generateId(),
 					},
 				},
 				{
@@ -2181,7 +2181,7 @@ describe("QuizController (e2e)", () => {
 				beforeAll(async () => {
 					receivedRes = await requestReadQuiz(
 						id,
-						query as { isS3Access?: boolean; userId?: string },
+						query as { isS3Access?: boolean; userId?: number },
 					);
 				});
 				it("response should match openapi doc", () => {
@@ -2214,45 +2214,45 @@ describe("QuizController (e2e)", () => {
 			const deletedQuizStub = factoryQuizStub();
 
 			beforeAll(async () => {
-				const owner = (await testService.seedUsersSingleInsert(1))[0];
+				const user = (await testService.seedUsersSingleInsert(1))[0];
 				const [answer, ...distractors] = await testService.seedPaintings(4);
 
 				await testService.insertOneChoiceQuizStubs([
 					{
 						answer,
-						owner,
+						user,
 						quizStub,
 						distractors: distractors as [Painting, Painting, Painting],
 					},
 					{
 						answer,
-						owner,
+						user,
 						quizStub: deletedQuizStub,
 						distractors: distractors as [Painting, Painting, Painting],
 					},
 				]);
 
 				await testService.insertStubUser(userStub);
-				const qr = dbService.getQueryRunner();
+				const qr = await dbService.getQueryRunner();
 				await quizService.softDeleteQuiz(qr, deletedQuizStub.id);
 				await qr.release();
 			});
 
 			describe.each([
 				{
-					testName: "UUID이외의 형식인 id",
+					testName: "int이외의 형식인 id",
 					invalidId: faker.internet.email(),
 				},
 				{
 					testName: "존재하지 않는 quiz id",
-					invalidId: faker.string.uuid(),
+					invalidId: 333333,
 				},
 				{
 					testName: "삭제된 quiz id",
 					invalidId: deletedQuizStub.id,
 				},
 				{
-					testName: "UUID이외의 형식인 userId",
+					testName: "int이외의 형식인 userId",
 					invalidId: quizStub.id,
 					inValidQuery: {
 						userId: faker.person.firstName(),
@@ -2263,8 +2263,8 @@ describe("QuizController (e2e)", () => {
 
 				beforeAll(async () => {
 					receivedRes = await requestReadQuiz(
-						invalidId,
-						inValidQuery as { isS3Access?: boolean; userId?: string },
+						invalidId as number,
+						inValidQuery as unknown as { isS3Access?: boolean; userId?: number },
 					);
 				});
 				it("response should match openapi doc", () => {
@@ -2283,7 +2283,7 @@ describe("QuizController (e2e)", () => {
 		// - [x] 나쁜 데이터 테스트 (비유효 query, dto body)
 		// - [x] 나쁜 데이터 테스트 (비권한 authorization header )
 		// - [ ] 경계 분석 테스트
-		async function requestReplaceQuiz(id: string, dto: ReplaceQuizDto, bearerAuth: string) {
+		async function requestReplaceQuiz(id: number, dto: ReplaceQuizDto, bearerAuth: string) {
 			const response = await client.PUT(ApiPaths.QuizController_update, {
 				params: {
 					path: { id },
@@ -2355,10 +2355,10 @@ describe("QuizController (e2e)", () => {
 
 			const quizStub = factoryQuizStub();
 			const ownerStub = factoryUserStub(userType);
-			let owner: User;
+			let user: User;
 
 			beforeAll(async () => {
-				owner = await testService.insertStubUser(ownerStub);
+				user = await testService.insertStubUser(ownerStub);
 
 				const answer = paintings[PAINTING_COUNT.answer - 1];
 				const distractors = paintings.slice(
@@ -2371,7 +2371,7 @@ describe("QuizController (e2e)", () => {
 				await testService.insertOneChoiceQuizStubs([
 					{
 						answer,
-						owner,
+						user,
 						quizStub,
 						distractors,
 					},
@@ -2388,6 +2388,7 @@ describe("QuizController (e2e)", () => {
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
+						type: QUIZ_TYPE.ONE_CHOICE,
 					},
 				},
 				{
@@ -2399,6 +2400,7 @@ describe("QuizController (e2e)", () => {
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
+						type: QUIZ_TYPE.ONE_CHOICE,
 					},
 				},
 			])("test : $testName", ({ id, dto }) => {
@@ -2419,12 +2421,12 @@ describe("QuizController (e2e)", () => {
 						description: dto.description,
 						title: dto.title,
 						time_limit: dto.timeLimit,
-						owner: owner,
+						user: user,
 						answer_paintings: [answer_painting!],
 						distractor_paintings: distractor_paintings,
 					};
 
-					const bearerAuth = testService.getBearerAuthCredential(owner);
+					const bearerAuth = testService.getBearerAuthCredential(user);
 					receivedRes = await requestReplaceQuiz(id, dto, bearerAuth);
 					receivedQuiz = (await findAllRelationQuiz(receivedRes.data!.id))!;
 				});
@@ -2453,11 +2455,11 @@ describe("QuizController (e2e)", () => {
 			const quizStub = factoryQuizStub();
 			const ownerStub = factoryUserStub(userType);
 			const deletedPaintingStub = factoryPaintingStub();
-			let owner: User;
+			let user: User;
 			const deletedQuizStub = factoryQuizStub();
 
 			beforeAll(async () => {
-				owner = await testService.insertStubUser(ownerStub);
+				user = await testService.insertStubUser(ownerStub);
 
 				const answer = paintings[PAINTING_COUNT.answer - 1];
 				const distractors = paintings.slice(
@@ -2470,7 +2472,7 @@ describe("QuizController (e2e)", () => {
 				await testService.insertOneChoiceQuizStubs([
 					{
 						answer,
-						owner,
+						user,
 						quizStub,
 						distractors,
 					},
@@ -2489,12 +2491,12 @@ describe("QuizController (e2e)", () => {
 
 				assert(deletedPainting !== undefined);
 
-				const qr = dbService.getQueryRunner();
+				const qr = await dbService.getQueryRunner();
 				await paintingService.deleteOne(qr, deletedPainting);
 				const [deletedQuiz] = await testService.insertOneChoiceQuizStubs([
 					{
 						answer,
-						owner,
+						user,
 						quizStub: deletedQuizStub,
 						distractors,
 					},
@@ -2507,7 +2509,7 @@ describe("QuizController (e2e)", () => {
 			describe.each([
 				{
 					testName: "invalid quizId",
-					invalidId: faker.string.uuid(),
+					invalidId: 33333333,
 					invalidDto: {
 						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
 						distractorPaintingIds: paintingStubs.slice(1, 4).map((p) => p.id),
@@ -2590,7 +2592,7 @@ describe("QuizController (e2e)", () => {
 				let receivedRes: Awaited<ReturnType<typeof requestReplaceQuiz>>;
 
 				beforeAll(async () => {
-					const bearerAuth = testService.getBearerAuthCredential(owner);
+					const bearerAuth = testService.getBearerAuthCredential(user);
 					receivedRes = await requestReplaceQuiz(
 						invalidId,
 						invalidDto as ReplaceQuizDto,
@@ -2621,10 +2623,10 @@ describe("QuizController (e2e)", () => {
 			const ownerStub = factoryUserStub(userType);
 			const otherUserStub = factoryUserStub("user");
 			const otherAdminStub = factoryUserStub("admin");
-			let owner: User;
+			let user: User;
 
 			beforeAll(async () => {
-				owner = await testService.insertStubUser(ownerStub);
+				user = await testService.insertStubUser(ownerStub);
 
 				const answer = paintings[PAINTING_COUNT.answer - 1];
 				const distractors = paintings.slice(
@@ -2637,7 +2639,7 @@ describe("QuizController (e2e)", () => {
 				await testService.insertOneChoiceQuizStubs([
 					{
 						answer,
-						owner,
+						user,
 						quizStub,
 						distractors,
 					},
@@ -2701,7 +2703,7 @@ describe("QuizController (e2e)", () => {
 		// - [x] 나쁜 데이터 테스트 (비유효 query, dto body)
 		// - [x] 나쁜 데이터 테스트 (비권한 authorization header )
 		// - [ ] 경계 분석 테스트
-		async function requestDeleteQuiz(id: string, bearerAuth: string) {
+		async function requestDeleteQuiz(id: number, bearerAuth: string) {
 			const response = await client.DELETE(ApiPaths.QuizController_delete, {
 				params: {
 					path: { id },
@@ -2728,10 +2730,10 @@ describe("QuizController (e2e)", () => {
 
 			const ownerStub = factoryUserStub(userType);
 			const quizStub = factoryQuizStub();
-			let owner: User;
+			let user: User;
 			let targetQuiz: Quiz;
 			beforeAll(async () => {
-				[owner] = await testService.insertUserStubs([ownerStub]);
+				[user] = await testService.insertUserStubs([ownerStub]);
 
 				const [answer, ...distractors] = await testService.seedPaintings(4);
 
@@ -2741,7 +2743,7 @@ describe("QuizController (e2e)", () => {
 						quizStub,
 						answer,
 						distractors: distractors as [Painting, Painting, Painting],
-						owner,
+						user,
 					},
 				]);
 				assert(isNotFalsy(targetQuiz));
@@ -2761,7 +2763,7 @@ describe("QuizController (e2e)", () => {
 				let receivedRes: Awaited<ReturnType<typeof requestDeleteQuiz>>;
 				let receivedQuiz: Quiz | null;
 				beforeAll(async () => {
-					const bearerAuth = testService.getBearerAuthCredential(owner);
+					const bearerAuth = testService.getBearerAuthCredential(user);
 					receivedRes = await requestDeleteQuiz(id, bearerAuth);
 					receivedQuiz = await findAllRelationQuiz(id);
 				});
@@ -2787,10 +2789,10 @@ describe("QuizController (e2e)", () => {
 			const deletedQuizStub = factoryQuizStub();
 			const ownerStub = factoryUserStub(userType);
 			const quizStub = factoryQuizStub();
-			let owner: User;
+			let user: User;
 			let targetQuiz: Quiz;
 			beforeAll(async () => {
-				[owner] = await testService.insertUserStubs([ownerStub]);
+				[user] = await testService.insertUserStubs([ownerStub]);
 
 				const [answer, ...distractors] = await testService.seedPaintings(4);
 
@@ -2800,7 +2802,7 @@ describe("QuizController (e2e)", () => {
 						quizStub,
 						answer,
 						distractors: distractors as [Painting, Painting, Painting],
-						owner,
+						user,
 					},
 				]);
 				assert(isNotFalsy(targetQuiz));
@@ -2810,10 +2812,10 @@ describe("QuizController (e2e)", () => {
 						quizStub: deletedQuizStub,
 						answer,
 						distractors: distractors as [Painting, Painting, Painting],
-						owner,
+						user,
 					},
 				]);
-				const qr = dbService.getQueryRunner();
+				const qr = await dbService.getQueryRunner();
 				await quizService.softDeleteQuiz(qr, deletedQuizStub.id);
 				await qr.release();
 			});
@@ -2827,7 +2829,7 @@ describe("QuizController (e2e)", () => {
 			describe.each([
 				{
 					testName: "deliver not existed quiz id",
-					invalidId: faker.string.uuid(),
+					invalidId: 33333,
 					userId: ownerStub.id,
 				},
 				{
@@ -2871,10 +2873,10 @@ describe("QuizController (e2e)", () => {
 			const otherAdminStub = factoryUserStub("user");
 			const ownerStub = factoryUserStub(userType);
 			const quizStub = factoryQuizStub();
-			let owner: User;
+			let user: User;
 			let targetQuiz: Quiz;
 			beforeAll(async () => {
-				[owner] = await testService.insertUserStubs([ownerStub]);
+				[user] = await testService.insertUserStubs([ownerStub]);
 
 				const [answer, ...distractors] = await testService.seedPaintings(4);
 
@@ -2884,7 +2886,7 @@ describe("QuizController (e2e)", () => {
 						quizStub,
 						answer,
 						distractors: distractors as [Painting, Painting, Painting],
-						owner,
+						user,
 					},
 				]);
 				assert(isNotFalsy(targetQuiz));

@@ -646,7 +646,7 @@ export type components = {
 			path: string;
 		};
 		ShowPainting: {
-			id: string;
+			id: number;
 			title: string;
 			image_url: string;
 			width: number;
@@ -654,7 +654,7 @@ export type components = {
 		};
 		ShowTagResponse: {
 			shortPaintings?: components["schemas"]["ShowPainting"][];
-			id: string;
+			id: number;
 			name: string;
 			info_url: string | null;
 		};
@@ -687,7 +687,7 @@ export type components = {
 		ShowUserResponse: {
 			role: components["schemas"]["USER_ROLE"];
 			active: components["schemas"]["USER_STATE"];
-			id: string;
+			id: number;
 			username: string;
 			/**
 			 * @description @format IsoDateTime
@@ -706,7 +706,7 @@ export type components = {
 			email: string;
 		};
 		ShowVerificationResponse: {
-			id: string;
+			id: number;
 			/**
 			 * @description @format IsoDateTime
 			 * @example 2011-10-05T14:48:00.000Z
@@ -724,7 +724,7 @@ export type components = {
 		ONE_TIME_TOKEN_PURPOSE: ONE_TIME_TOKEN_PURPOSE;
 		ShowOneTimeTokenResponse: {
 			purpose: components["schemas"]["ONE_TIME_TOKEN_PURPOSE"];
-			id: string;
+			id: number;
 			token: string;
 			/**
 			 * @description @format IsoDateTime
@@ -752,7 +752,7 @@ export type components = {
 		};
 		HashedOneTimeTokenResponse: {
 			purpose: components["schemas"]["ONE_TIME_TOKEN_PURPOSE"];
-			id: string;
+			id: number;
 			hashedToken: string;
 			/**
 			 * @description @format IsoDateTime
@@ -790,7 +790,7 @@ export type components = {
 		User: Record<string, never>;
 		ShowStyleResponse: {
 			shortPaintings?: components["schemas"]["ShowPainting"][];
-			id: string;
+			id: number;
 			name: string;
 			info_url: string | null;
 		};
@@ -810,17 +810,17 @@ export type components = {
 		};
 		Style: Record<string, never>;
 		ShowTag: {
-			id: string;
+			id: number;
 			name: string;
 			info_url: string | null;
 		};
 		ShowStyle: {
-			id: string;
+			id: number;
 			name: string;
 			info_url: string | null;
 		};
 		ShowArtist: {
-			id: string;
+			id: number;
 			name: string;
 			image_url: string | null;
 			/**
@@ -841,7 +841,7 @@ export type components = {
 			showArtist: components["schemas"]["ShowArtist"];
 			description: string;
 			completition_year: number | null;
-			id: string;
+			id: number;
 			title: string;
 			image_url: string;
 			width: number;
@@ -874,7 +874,7 @@ export type components = {
 			image_s3_key: string;
 		};
 		ShowArtistResponse: {
-			id: string;
+			id: number;
 			name: string;
 			image_url: string | null;
 			/**
@@ -926,7 +926,7 @@ export type components = {
 			page: number;
 		};
 		ShowQuiz: {
-			id: string;
+			id: number;
 			title: string;
 			time_limit: number;
 			/**
@@ -956,10 +956,10 @@ export type components = {
 		/** @enum {string} */
 		QUIZ_TYPE: QUIZ_TYPE;
 		CreateQuizDTO: {
-			examplePaintingId?: string;
+			examplePaintingId?: number;
 			type: components["schemas"]["QUIZ_TYPE"];
-			answerPaintingIds: string[];
-			distractorPaintingIds: string[];
+			answerPaintingIds: number[];
+			distractorPaintingIds: number[];
 			title: string;
 			timeLimit: number;
 			description: string;
@@ -976,8 +976,8 @@ export type components = {
 			artists: components["schemas"]["ShowArtist"][];
 			tags: components["schemas"]["ShowTag"][];
 			styles: components["schemas"]["ShowStyle"][];
-			owner: components["schemas"]["ShowUserResponse"];
-			id: string;
+			user: components["schemas"]["ShowUserResponse"];
+			id: number;
 			title: string;
 			time_limit: number;
 			/**
@@ -1002,9 +1002,10 @@ export type components = {
 			reactionCount: components["schemas"]["ShowQuizReactionCount"];
 		};
 		ReplaceQuizDTO: {
-			examplePaintingId?: string;
-			answerPaintingIds: string[];
-			distractorPaintingIds: string[];
+			examplePaintingId?: number;
+			type: components["schemas"]["QUIZ_TYPE"];
+			answerPaintingIds: number[];
+			distractorPaintingIds: number[];
 			title: string;
 			timeLimit: number;
 			description: string;
@@ -1254,7 +1255,7 @@ export interface operations {
 			query?: never;
 			header?: never;
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -1293,14 +1294,6 @@ export interface operations {
 				};
 				content: {
 					"application/json": components["schemas"]["ServiceException"];
-				};
-			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["ShowTagResponse"];
 				};
 			};
 		};
@@ -1502,14 +1495,6 @@ export interface operations {
 					"application/json": components["schemas"]["ServiceException"];
 				};
 			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["ShowTagResponse"];
-				};
-			};
 		};
 	};
 	TagController_create: {
@@ -1568,14 +1553,6 @@ export interface operations {
 					"application/json": components["schemas"]["ServiceException"];
 				};
 			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["ShowTagResponse"];
-				};
-			};
 		};
 	};
 	AuthController_signIn: {
@@ -1621,14 +1598,6 @@ export interface operations {
 				};
 				content: {
 					"application/json": components["schemas"]["ServiceException"];
-				};
-			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["SignInResponse"];
 				};
 			};
 		};
@@ -1681,14 +1650,6 @@ export interface operations {
 					"application/json": components["schemas"]["ServiceException"];
 				};
 			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["ShowVerificationResponse"];
-				};
-			};
 		};
 	};
 	AuthController_verifyPinCode: {
@@ -1737,14 +1698,6 @@ export interface operations {
 				};
 				content: {
 					"application/json": components["schemas"]["ServiceException"];
-				};
-			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["ShowOneTimeTokenResponse"];
 				};
 			};
 		};
@@ -1798,14 +1751,6 @@ export interface operations {
 					"application/json": components["schemas"]["ServiceException"];
 				};
 			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["ShowOneTimeTokenResponse"];
-				};
-			};
 		};
 	};
 	AuthController_emailSecurityToken: {
@@ -1853,12 +1798,6 @@ export interface operations {
 				content: {
 					"application/json": components["schemas"]["ServiceException"];
 				};
-			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content?: never;
 			};
 		};
 	};
@@ -1913,14 +1852,6 @@ export interface operations {
 					"application/json": components["schemas"]["ServiceException"];
 				};
 			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["EmailVerificationTokenResponse"];
-				};
-			};
 		};
 	};
 	AuthController_getOneTimeToken: {
@@ -1931,7 +1862,7 @@ export interface operations {
 				authorization: string;
 			};
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -1977,14 +1908,6 @@ export interface operations {
 					"application/json": components["schemas"]["ServiceException"];
 				};
 			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["HashedOneTimeTokenResponse"];
-				};
-			};
 		};
 	};
 	UserController_getOne: {
@@ -1992,7 +1915,7 @@ export interface operations {
 			query?: never;
 			header?: never;
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -2033,14 +1956,6 @@ export interface operations {
 					"application/json": components["schemas"]["ServiceException"];
 				};
 			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["ShowUserResponse"];
-				};
-			};
 		};
 	};
 	UserController_deleteUser: {
@@ -2053,7 +1968,7 @@ export interface operations {
 				"x-one-time-token-identifier": string;
 			};
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -2251,7 +2166,7 @@ export interface operations {
 				"x-one-time-token-identifier": string;
 			};
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -2309,7 +2224,7 @@ export interface operations {
 				authorization: string;
 			};
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -2367,7 +2282,7 @@ export interface operations {
 				authorization: string;
 			};
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -2427,7 +2342,7 @@ export interface operations {
 				"x-one-time-token-identifier": string;
 			};
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -2478,7 +2393,7 @@ export interface operations {
 			query?: never;
 			header?: never;
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -2517,14 +2432,6 @@ export interface operations {
 				};
 				content: {
 					"application/json": components["schemas"]["ServiceException"];
-				};
-			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["ShowStyleResponse"];
 				};
 			};
 		};
@@ -2808,7 +2715,7 @@ export interface operations {
 		parameters: {
 			query: {
 				isS3Access?: boolean;
-				ids: string[];
+				ids: number[];
 			};
 			header?: never;
 			path?: never;
@@ -2849,14 +2756,6 @@ export interface operations {
 				};
 				content: {
 					"application/json": components["schemas"]["ServiceException"];
-				};
-			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["ShowPaintingResponse"][];
 				};
 			};
 		};
@@ -2907,14 +2806,6 @@ export interface operations {
 					"application/json": components["schemas"]["ServiceException"];
 				};
 			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["ShowPaintingResponse"][];
-				};
-			};
 		};
 	};
 	PaintingController_getById: {
@@ -2924,7 +2815,7 @@ export interface operations {
 			};
 			header?: never;
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -2965,14 +2856,6 @@ export interface operations {
 					"application/json": components["schemas"]["ServiceException"];
 				};
 			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["ShowPaintingResponse"];
-				};
-			};
 		};
 	};
 	PaintingController_replacePainting: {
@@ -2983,7 +2866,7 @@ export interface operations {
 				authorization: string;
 			};
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -3033,14 +2916,6 @@ export interface operations {
 					"application/json": components["schemas"]["ServiceException"];
 				};
 			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["ShowPaintingResponse"];
-				};
-			};
 		};
 	};
 	PaintingController_deletePainting: {
@@ -3051,7 +2926,7 @@ export interface operations {
 				authorization: string;
 			};
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -3218,14 +3093,6 @@ export interface operations {
 					"application/json": components["schemas"]["ServiceException"];
 				};
 			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["ShowPainting"];
-				};
-			};
 		};
 	};
 	ArtistController_getOne: {
@@ -3233,7 +3100,7 @@ export interface operations {
 			query?: never;
 			header?: never;
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -3613,7 +3480,7 @@ export interface operations {
 			query?: never;
 			header?: never;
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -3665,7 +3532,7 @@ export interface operations {
 			};
 			header?: never;
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -3706,14 +3573,6 @@ export interface operations {
 					"application/json": components["schemas"]["ServiceException"];
 				};
 			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["ShowQuizReactionResponse"][];
-				};
-			};
 		};
 	};
 	QuizController_createQuizReaction: {
@@ -3724,7 +3583,7 @@ export interface operations {
 				authorization: string;
 			};
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -3775,7 +3634,7 @@ export interface operations {
 				authorization: string;
 			};
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -3862,14 +3721,6 @@ export interface operations {
 				};
 				content: {
 					"application/json": components["schemas"]["ServiceException"];
-				};
-			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["ScheduleQuizResponse"];
 				};
 			};
 		};
@@ -4050,14 +3901,6 @@ export interface operations {
 					"application/json": components["schemas"]["ServiceException"];
 				};
 			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["ShowQuizResponse"];
-				};
-			};
 		};
 	};
 	QuizController_getDetailQuiz: {
@@ -4065,11 +3908,11 @@ export interface operations {
 			query?: {
 				/** @description @description this field always transform invalid value or type into default value */
 				isS3Access?: boolean;
-				userId?: string;
+				userId?: number;
 			};
 			header?: never;
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -4110,14 +3953,6 @@ export interface operations {
 					"application/json": components["schemas"]["ServiceException"];
 				};
 			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["DetailQuizResponse"];
-				};
-			};
 		};
 	};
 	QuizController_update: {
@@ -4128,7 +3963,7 @@ export interface operations {
 				authorization: string;
 			};
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};
@@ -4178,14 +4013,6 @@ export interface operations {
 					"application/json": components["schemas"]["ServiceException"];
 				};
 			};
-			default: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["ShowQuizResponse"];
-				};
-			};
 		};
 	};
 	QuizController_delete: {
@@ -4196,7 +4023,7 @@ export interface operations {
 				authorization: string;
 			};
 			path: {
-				id: string;
+				id: number;
 			};
 			cookie?: never;
 		};

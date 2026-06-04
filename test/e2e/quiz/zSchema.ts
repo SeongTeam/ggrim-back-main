@@ -7,7 +7,7 @@ import { zShowTag } from "../tag/zodSchema";
 import { zShowStyle } from "../style/zodSchema";
 
 export const zShowQuiz = z.object({
-	id: z.string(),
+	id: z.number(),
 	title: z.string(),
 	time_limit: z.number(),
 	created_date: z.string(),
@@ -27,7 +27,7 @@ export const zShowQuizResponse = zShowQuiz.extend({
 	artists: zShowArtist.array(),
 	tags: zShowTag.array(),
 	styles: zShowStyle.array(),
-	owner: zShowUserResponse,
+	user: zShowUserResponse,
 });
 
 export const zShowQuizReactionCount = z.object({

@@ -47,6 +47,7 @@ describe("ArtistController (e2e)", () => {
 		dbService = moduleFixture.get(DatabaseService);
 		artistService = moduleFixture.get(ArtistService);
 		await dbService.resetDB();
+		await testService.initTables();
 		user = await testService.insertStubUser(factoryUserStub("user"));
 		admin = await testService.insertStubUser(factoryUserStub("admin"));
 
