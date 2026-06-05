@@ -7,7 +7,8 @@ import { generateId } from "./utils";
 export class ArtistDummy extends OmitType(Artist, ["paintings"]) {}
 
 export const factoryArtistStub = (): ArtistDummy => {
-	const name = faker.person.fullName();
+	const name =
+		faker.person.firstName() + faker.person.middleName() + faker.number.int().toString();
 	const start = new Date(1000, 0, 1);
 	const end = new Date(1900, 11, 31);
 

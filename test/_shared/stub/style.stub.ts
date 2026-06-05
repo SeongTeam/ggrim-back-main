@@ -7,7 +7,8 @@ import { generateId } from "./utils";
 export class StyleDummy extends OmitType(Style, ["paintings"]) {}
 
 export const factoryStyleStub = (): StyleDummy => {
-	const name = faker.location.streetAddress() + "+" + faker.book.series();
+	const name =
+		faker.location.streetAddress() + "+" + faker.book.series() + faker.number.int().toString();
 
 	return {
 		id: generateId(),

@@ -9,8 +9,8 @@ export class UserDummy extends OmitType(User, ["quizzes", "oneTimeTokens"]) {}
 
 export const factoryUserStub = (role: UserRole, state: UserState = "active"): UserDummy => {
 	const customBase = factoryCustomBaseStub();
-	const username = faker.internet.username();
-	const email = faker.internet.email();
+	const username = faker.internet.username() + faker.number.int().toString();
+	const email = username + faker.internet.email();
 	const password = faker.internet.password();
 	const last_login_date = customBase.updated_date;
 

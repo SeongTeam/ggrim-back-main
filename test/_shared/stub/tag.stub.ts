@@ -7,7 +7,8 @@ import { generateId } from "./utils";
 export class TagDummy extends OmitType(Tag, ["paintings"]) {}
 
 export const factoryTagStub = (): TagDummy => {
-	const name = faker.location.city() + "+" + faker.commerce.productName();
+	const name =
+		faker.location.city() + "+" + faker.commerce.productName() + faker.number.int().toString();
 
 	return {
 		id: generateId(),
