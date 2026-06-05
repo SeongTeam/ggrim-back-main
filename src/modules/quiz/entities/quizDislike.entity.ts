@@ -5,7 +5,7 @@ import { Quiz } from "./quiz.entity";
 import { QUIZ_REACTION } from "../const";
 
 @Entity()
-@Unique("uq_user_quiz_dislike", ["user", "quiz"])
+@Unique("uq_user_quiz_dislike", ["user_id", "quiz_id"])
 export class QuizDislike extends CustomBaseEntity {
 	readonly _type = QUIZ_REACTION.DISLIKE;
 
