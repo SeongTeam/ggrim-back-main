@@ -516,7 +516,7 @@ export class TestService {
 		}>,
 	): Promise<Painting[]> {
 		assert(count > 0);
-		assert(count < 1000);
+		assert(count <= 1000);
 		const tags: Tag[] = [];
 		const styles: Style[] = [];
 		const artists: Artist[] = [];
@@ -570,7 +570,7 @@ export class TestService {
 
 	async seedUsersMultipleInsert(count: number) {
 		assert(count > 0);
-		assert(count < 1000);
+		assert(count <= 1000);
 		const stubs = Array(count)
 			.fill(0)
 			.map(() => factoryUserStub("user"));
@@ -580,7 +580,7 @@ export class TestService {
 
 	async seedUsersSingleInsert(count: number, userType: UserRole = USER_ROLE.USER) {
 		assert(count > 0);
-		assert(count < 1000);
+		assert(count <= 1000);
 		const users = await Promise.all(
 			Array(count)
 				.fill(0)
@@ -592,7 +592,7 @@ export class TestService {
 
 	async seedAdmins(count: number) {
 		assert(count > 0);
-		assert(count < 1000);
+		assert(count <= 1000);
 		const stubs = Array(count)
 			.fill(0)
 			.map(() => factoryUserStub("admin"));
@@ -610,11 +610,11 @@ export class TestService {
 		userType: UserRole = USER_ROLE.USER,
 	) {
 		assert(count > 0);
-		assert(count < 1000);
+		assert(count <= 1000);
 		let paintings: Painting[] = [];
 		let owners: User[] = [];
 		if (!relations) {
-			const userCount = Math.min(10, count);
+			const userCount = Math.min(1, count);
 			const paintingCount = Math.min(30, count * 4);
 			[paintings, owners] = await Promise.all([
 				this.seedPaintings(paintingCount),
@@ -668,11 +668,10 @@ export class TestService {
 		userType: UserRole = USER_ROLE.USER,
 	): Promise<QuizDislike[] | QuizLike[]> {
 		assert(count > 0);
-		assert(count < 1000);
+		assert(count <= 1000);
 
-		const root = Math.ceil(Math.sqrt(count));
-		const quizCount = root;
-		const userCount = root;
+		const quizCount = count;
+		const userCount = Math.min(1, count);
 
 		assert(count <= quizCount * userCount);
 
