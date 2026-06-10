@@ -614,7 +614,7 @@ export class TestService {
 		let paintings: Painting[] = [];
 		let owners: User[] = [];
 		if (!relations) {
-			const userCount = Math.min(1, count);
+			const userCount = Math.min(10, count);
 			const paintingCount = Math.min(30, count * 4);
 			[paintings, owners] = await Promise.all([
 				this.seedPaintings(paintingCount),
@@ -670,8 +670,8 @@ export class TestService {
 		assert(count > 0);
 		assert(count <= 1000);
 
+		const userCount = Math.min(5, count);
 		const quizCount = count;
-		const userCount = Math.min(1, count);
 
 		assert(count <= quizCount * userCount);
 
