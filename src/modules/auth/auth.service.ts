@@ -1,11 +1,16 @@
-import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
+import { Inject, Injectable, Logger, OnModuleInit, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import * as crypto from "crypto";
 
 import { InjectRepository } from "@nestjs/typeorm";
-import { ENV_HASH_ROUNDS_KEY, ENV_JWT_SECRET_KEY, NODE_ENV } from "../_common/const/envKeys";
+import {
+	ENV_HASH_ROUNDS_KEY,
+	ENV_JWT_SECRET_KEY,
+	NODE_ENV,
+	PW_HASH,
+} from "../_common/const/envKeys";
 import {
 	DeepPartial,
 	FindManyOptions,
@@ -37,7 +42,7 @@ export const JWT_ERROR_NAME = {
 // * 참고: <관련 정보나 링크>
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
 	private ACCESS_TOKEN_TTL_SECOND = 3600 * 2;
 	private REFRESH_TOKEN_TTL_SECOND = 3600 * 10;
 	private ONE_TIME_TOKEN_TTL_SECOND = 15 * 60;
@@ -51,7 +56,8 @@ export class AuthService {
 		@InjectRepository(Verification) private readonly verificationRepo: Repository<Verification>,
 		@InjectRepository(OneTimeToken)
 		private readonly oneTimeTokenRepo: Repository<OneTimeToken>,
-	) {
+	) {}
+	onModuleInit() {
 		const envKeys = [ENV_HASH_ROUNDS_KEY, ENV_JWT_SECRET_KEY];
 		const envFile = this.configService.get(NODE_ENV)
 			? `.env.` + this.configService.get(NODE_ENV)
@@ -60,6 +66,12 @@ export class AuthService {
 			if (!this.configService.get(key)) {
 				throw new Error(`${key} is not exist on ${envFile}`);
 			}
+		}
+		if (this.configService.getOrThrow<string>(PW_HASH) === "false") {
+			Logger.warn(
+				"password is not hashed. if it is not intended, please set hash true",
+				AuthService.name,
+			);
 		}
 	}
 
@@ -151,6 +163,9 @@ export class AuthService {
 	}
 
 	async isHashMatched(target: string, hash: string) {
+		if (this.configService.get(PW_HASH) === "false") {
+			return target.localeCompare(hash);
+		}
 		const sha256 = crypto.createHash("sha256").update(target).digest("hex");
 		const passOk = await bcrypt.compare(sha256, hash);
 
@@ -158,6 +173,10 @@ export class AuthService {
 	}
 
 	async hash(src: string): Promise<string> {
+		if (this.configService.get(PW_HASH) === "false") {
+			return src;
+		}
+
 		// fix src size to 32byte
 		const sha256 = crypto.createHash("sha256").update(src).digest("hex");
 

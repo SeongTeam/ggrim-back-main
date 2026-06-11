@@ -426,7 +426,7 @@ describe("PaintingController (e2e)", () => {
 		describe("success when deliver valid body dto", () => {
 			let admin: User;
 			beforeAll(async () => {
-				[admin] = await testService.seedUsersSingleInsert(1, "admin");
+				[admin] = await testService.seedUsers(1, "admin");
 			});
 
 			describe.each([
@@ -476,7 +476,7 @@ describe("PaintingController (e2e)", () => {
 		describe("fail when deliver invalid body dto", () => {
 			let admin: User;
 			beforeAll(async () => {
-				[admin] = await testService.seedUsersSingleInsert(1, "admin");
+				[admin] = await testService.seedUsers(1, "admin");
 			});
 
 			describe.each([
@@ -604,7 +604,7 @@ describe("PaintingController (e2e)", () => {
 					artist: _artists[artistIndex],
 				}));
 				await testService.insertPaintingStubs(insertPaintingArgs);
-				[admin] = await testService.seedUsersSingleInsert(1, "admin");
+				[admin] = await testService.seedUsers(1, "admin");
 			});
 
 			describe.each([
@@ -667,7 +667,7 @@ describe("PaintingController (e2e)", () => {
 					artist: getRandomElement(_artists),
 				}));
 				await testService.insertPaintingStubs(insertPaintingArgs);
-				[admin] = await testService.seedUsersSingleInsert(1, "admin");
+				[admin] = await testService.seedUsers(1, "admin");
 			});
 
 			describe.each([
@@ -802,7 +802,7 @@ describe("PaintingController (e2e)", () => {
 						artist: getRandomElement(_artists),
 					}));
 					await testService.insertPaintingStubs(insertPaintingArgs);
-					[admin] = await testService.seedUsersSingleInsert(1, "admin");
+					[admin] = await testService.seedUsers(1, "admin");
 				});
 
 				describe.each([{ testName: "deliver valid id", id: paintingStubs[0].id }])(
@@ -839,7 +839,7 @@ describe("PaintingController (e2e)", () => {
 						artist: getRandomElement(_artists),
 					}));
 					await testService.insertPaintingStubs(insertPaintingArgs);
-					[admin] = await testService.seedUsersSingleInsert(1, "admin");
+					[admin] = await testService.seedUsers(1, "admin");
 
 					const [deletedPainting] = await testService.insertPaintingStubs([
 						{

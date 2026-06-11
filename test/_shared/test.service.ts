@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { DatabaseService } from "../../src/modules/db/db.service";
 import { AuthService } from "../../src/modules/auth/auth.service";
 import { factoryUserStub, UserDummy } from "./stub/user.stub";
@@ -23,9 +23,11 @@ import { getRandomElement, selectRandomElements } from "../../src/utils/random";
 import { assert } from "node:console";
 import { deduplicate } from "../../src/utils/object";
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
-import { EntityTarget, TypeORMError } from "typeorm";
+import { EntityTarget, In, TypeORMError } from "typeorm";
 import { USER_ROLE, UserRole } from "../../src/modules/user/const";
 import { ReadonlyDeep, WritableDeep } from "type-fest";
+import { ConfigService } from "@nestjs/config";
+import { NODE_ENV, PW_HASH } from "../../src/modules/_common/const/envKeys";
 
 // TODO: 데이터 시딩 로직 개선하기
 // - [x] connection pool 최대한 활용하기
@@ -67,13 +69,20 @@ export type InsertQuizReaction<T extends QuizLikeDummy | QuizDislikeDummy> = {
 };
 
 @Injectable()
-export class TestService {
+export class TestService implements OnModuleInit {
 	constructor(
 		private readonly dbService: DatabaseService,
 		private readonly authService: AuthService,
-	) {
-		if (process.env.NODE_ENV !== "test") {
+		private readonly configService: ConfigService,
+	) {}
+
+	onModuleInit() {
+		if (this.configService.getOrThrow(NODE_ENV) !== "test") {
 			throw new Error("ERROR-TEST-UTILS-ONLY-FOR-TESTS");
+		}
+
+		if (this.configService.getOrThrow<string>(PW_HASH) === "false") {
+			Logger.warn("password is not hashed. if it is not intended, please set hash true");
 		}
 	}
 
@@ -207,6 +216,19 @@ export class TestService {
 	//		-> 방향 : insertStubUser 를 병렬 호출하여 해결 예정
 	async insertUserStubs(userStubs: ReadonlyDeep<UserDummy[]>): Promise<User[]> {
 		assert(userStubs.length > 0);
+
+		if (this.configService.getOrThrow(PW_HASH) === "false") {
+			const repo = this.dbService.getRepository(User);
+
+			await repo.insert([...userStubs]);
+
+			const ids = userStubs.map((stub) => stub.id);
+			const users = await repo.findBy({
+				id: In(ids),
+			});
+
+			return users;
+		}
 
 		const users = Promise.all(userStubs.map((stub) => this.insertStubUser(stub)));
 
@@ -568,24 +590,14 @@ export class TestService {
 		return paintings;
 	}
 
-	async seedUsersMultipleInsert(count: number) {
+	async seedUsers(count: number, userType: UserRole = USER_ROLE.USER) {
 		assert(count > 0);
 		assert(count <= 1000);
+
 		const stubs = Array(count)
 			.fill(0)
-			.map(() => factoryUserStub("user"));
+			.map(() => factoryUserStub(userType));
 		const users = await this.insertUserStubs(stubs);
-		return users;
-	}
-
-	async seedUsersSingleInsert(count: number, userType: UserRole = USER_ROLE.USER) {
-		assert(count > 0);
-		assert(count <= 1000);
-		const users = await Promise.all(
-			Array(count)
-				.fill(0)
-				.map(() => this.insertStubUser(factoryUserStub(userType))),
-		);
 
 		return users;
 	}
@@ -618,7 +630,7 @@ export class TestService {
 			const paintingCount = Math.min(30, count * 4);
 			[paintings, owners] = await Promise.all([
 				this.seedPaintings(paintingCount),
-				this.seedUsersSingleInsert(userCount, userType),
+				this.seedUsers(userCount, userType),
 			]);
 		} else {
 			const clonedRelations = structuredClone(relations) as WritableDeep<typeof relations>;
@@ -677,7 +689,7 @@ export class TestService {
 
 		const [quizzes, users] = await Promise.all([
 			this.seedOneChoiceQuizzes(quizCount),
-			this.seedUsersSingleInsert(userCount, userType),
+			this.seedUsers(userCount, userType),
 		]);
 		let reactions: QuizLike[] | QuizDislike[] = [];
 

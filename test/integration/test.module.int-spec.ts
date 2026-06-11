@@ -210,15 +210,9 @@ describe("TestModule Integration Test", () => {
 		describe.each([{ count: 5 }, { count: 10 }, { count: 20 }, { count: 40 }, { count: 80 }])(
 			"should seed user limitation  : [$count]",
 			({ count }) => {
-				it("call seedUsersMultipleInsert()", async () => {
+				it("call seedUsers()", async () => {
 					console.log(`seed data count : ${count}`);
-					const users = await testService.seedUsersMultipleInsert(count);
-					expect(users.length).toBe(count);
-				});
-
-				it("call seedUsersSingleInsert()", async () => {
-					console.log(`seed data count : ${count}`);
-					const users = await testService.seedUsersSingleInsert(count);
+					const users = await testService.seedUsers(count);
 					expect(users.length).toBe(count);
 				});
 			},

@@ -184,7 +184,7 @@ describe("QuizController (e2e)", () => {
 
 			beforeAll(async () => {
 				const [answer, ...distractors] = await testService.seedPaintings(4);
-				const [user] = await testService.seedUsersSingleInsert(1);
+				const [user] = await testService.seedUsers(1);
 				const quizStub = factoryQuizStub();
 				quizStub.id = validId;
 
@@ -449,7 +449,7 @@ describe("QuizController (e2e)", () => {
 
 				beforeAll(async () => {
 					const [answer, ...distractors] = await testService.seedPaintings(4);
-					const [user] = await testService.seedUsersSingleInsert(1);
+					const [user] = await testService.seedUsers(1);
 					const quizStub = factoryQuizStub();
 					quizStub.id = validQuizId;
 
@@ -626,7 +626,7 @@ describe("QuizController (e2e)", () => {
 
 					beforeAll(async () => {
 						const quizzes = await testService.seedOneChoiceQuizzes(1);
-						const users = await testService.seedUsersSingleInsert(1, userType);
+						const users = await testService.seedUsers(1, userType);
 						const quiz = quizzes[0];
 						const user = users[0];
 
@@ -664,7 +664,7 @@ describe("QuizController (e2e)", () => {
 			const deletedQuizId = 44444;
 
 			beforeAll(async () => {
-				const user = (await testService.seedUsersSingleInsert(1))[0];
+				const user = (await testService.seedUsers(1))[0];
 				const [answer, ...distractors] = await testService.seedPaintings(4);
 				const quizStub = factoryQuizStub();
 				quizStub.id = deletedQuizId;
@@ -797,7 +797,7 @@ describe("QuizController (e2e)", () => {
 					styles,
 					tags,
 				}),
-				testService.seedUsersSingleInsert(10),
+				testService.seedUsers(10),
 			]);
 
 			const quizCount = 80;
@@ -1195,7 +1195,7 @@ describe("QuizController (e2e)", () => {
 					styles,
 					tags,
 				}),
-				testService.seedUsersSingleInsert(10),
+				testService.seedUsers(10),
 			]);
 
 			const quizCount = 50;
@@ -1751,7 +1751,7 @@ describe("QuizController (e2e)", () => {
 					styles,
 					tags,
 				}),
-				testService.seedUsersSingleInsert(10),
+				testService.seedUsers(10),
 			]);
 
 			const quizCount = 80;
@@ -1972,7 +1972,7 @@ describe("QuizController (e2e)", () => {
 			const userStub = factoryUserStub(userType);
 
 			beforeAll(async () => {
-				const user = (await testService.seedUsersSingleInsert(1))[0];
+				const user = (await testService.seedUsers(1))[0];
 				const [answer, ...distractors] = await testService.seedPaintings(4);
 
 				await testService.insertOneChoiceQuizStubs([
@@ -2047,7 +2047,7 @@ describe("QuizController (e2e)", () => {
 				let testUser: User;
 
 				beforeAll(async () => {
-					const user = (await testService.seedUsersSingleInsert(1))[0];
+					const user = (await testService.seedUsers(1))[0];
 					const [answer, ...distractors] = await testService.seedPaintings(4);
 
 					expectedQuiz = (
@@ -2134,7 +2134,7 @@ describe("QuizController (e2e)", () => {
 			const deletedUserStub = factoryUserStub(userType);
 
 			beforeAll(async () => {
-				const user = (await testService.seedUsersSingleInsert(1))[0];
+				const user = (await testService.seedUsers(1))[0];
 				const [answer, ...distractors] = await testService.seedPaintings(4);
 
 				expectedQuiz = (
@@ -2214,7 +2214,7 @@ describe("QuizController (e2e)", () => {
 			const deletedQuizStub = factoryQuizStub();
 
 			beforeAll(async () => {
-				const user = (await testService.seedUsersSingleInsert(1))[0];
+				const user = (await testService.seedUsers(1))[0];
 				const [answer, ...distractors] = await testService.seedPaintings(4);
 
 				await testService.insertOneChoiceQuizStubs([
