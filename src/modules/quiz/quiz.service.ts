@@ -71,6 +71,9 @@ export class QuizService {
 		return this.insertQuiz(queryRunner, quiz);
 	}
 
+	//[ ] page값만 전달되었을 때 쿼리 성능 개선하기.
+	//	-> 현재 쿼리는 중첩 SELECT를 통해서 searchQuiz를 진행함.
+	//[ ] artists,tags,styles가 전달되었을 때 쿼리 성능 개선하기
 	async searchQuiz(dto: SearchQuizQueryDTO): Promise<Pagination<Quiz>> {
 		//TODO 검색 로직 개선
 		//- [x] Dto 검증 구현
