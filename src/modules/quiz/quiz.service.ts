@@ -173,6 +173,8 @@ export class QuizService {
 		};
 	}
 
+	/* TODO : TypeOrm FindOne API 성능 개선하기
+	 */
 	/**
 	 *
 	 * @param findOptions
@@ -193,7 +195,11 @@ export class QuizService {
 			findOptions.relations = defaultRelations;
 		}
 
-		const quiz = await this.repo.findOne(findOptions);
+		const quiz = await this.repo.findOne({
+			relations: findOptions.relations,
+			where: findOptions.where,
+			comment: "findOne Quiz with relations",
+		});
 
 		return quiz;
 	}
