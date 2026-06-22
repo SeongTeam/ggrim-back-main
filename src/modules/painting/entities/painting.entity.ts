@@ -46,7 +46,7 @@ export class Painting extends CustomBaseEntity {
 	@Column()
 	image_s3_key!: string;
 
-	@ManyToMany(() => Tag, (tag) => tag.paintings, { onUpdate: "NO ACTION", onDelete: "NO ACTION" })
+	@ManyToMany(() => Tag, (tag) => tag.paintings, { onUpdate: "CASCADE", onDelete: "CASCADE" })
 	@JoinTable({
 		name: "painting_tags_tag",
 		joinColumns: [
@@ -67,8 +67,8 @@ export class Painting extends CustomBaseEntity {
 	tags!: Tag[];
 
 	@ManyToMany(() => Style, (style) => style.paintings, {
-		onUpdate: "NO ACTION",
-		onDelete: "NO ACTION",
+		onUpdate: "CASCADE",
+		onDelete: "CASCADE",
 	})
 	@JoinTable({
 		name: "painting_styles_style",

@@ -35,7 +35,7 @@ export class Quiz extends CustomBaseEntity {
 	@Column()
 	title!: string;
 
-	@ManyToMany(() => Painting, { onUpdate: "NO ACTION", onDelete: "NO ACTION" })
+	@ManyToMany(() => Painting, { onUpdate: "CASCADE", onDelete: "CASCADE" })
 	@JoinTable({
 		name: "quiz_distractor_paintings_painting",
 		joinColumns: [
@@ -55,7 +55,7 @@ export class Quiz extends CustomBaseEntity {
 	})
 	distractor_paintings!: Painting[];
 
-	@ManyToMany(() => Painting, { cascade: false })
+	@ManyToMany(() => Painting, { onUpdate: "CASCADE", onDelete: "CASCADE" })
 	@JoinTable({
 		name: "quiz_answer_paintings_painting",
 		joinColumns: [
@@ -121,7 +121,7 @@ export class Quiz extends CustomBaseEntity {
 	@Column()
 	type!: QuizType;
 
-	@ManyToMany(() => Artist, { onUpdate: "NO ACTION", onDelete: "NO ACTION" })
+	@ManyToMany(() => Artist, { onUpdate: "CASCADE", onDelete: "CASCADE" })
 	@JoinTable({
 		name: "quiz_artists_artist",
 		joinColumns: [
@@ -141,7 +141,7 @@ export class Quiz extends CustomBaseEntity {
 	})
 	artists!: Artist[];
 
-	@ManyToMany(() => Tag, { onUpdate: "NO ACTION", onDelete: "NO ACTION" })
+	@ManyToMany(() => Tag, { onUpdate: "CASCADE", onDelete: "CASCADE" })
 	@JoinTable({
 		name: "quiz_tags_tag",
 		joinColumns: [
@@ -161,7 +161,7 @@ export class Quiz extends CustomBaseEntity {
 	})
 	tags!: Tag[];
 
-	@ManyToMany(() => Style, { onUpdate: "NO ACTION", onDelete: "NO ACTION" })
+	@ManyToMany(() => Style, { onUpdate: "CASCADE", onDelete: "CASCADE" })
 	@JoinTable({
 		name: "quiz_styles_style",
 		joinColumns: [

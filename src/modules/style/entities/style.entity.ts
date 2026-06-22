@@ -20,8 +20,8 @@ export class Style extends CustomBaseEntity {
 	info_url!: string | null;
 
 	@ManyToMany(() => Painting, (painting) => painting.styles, {
-		onUpdate: "NO ACTION",
-		onDelete: "NO ACTION",
+		onUpdate: "CASCADE",
+		onDelete: "CASCADE",
 	})
 	@JoinTable({
 		name: "painting_styles_style",

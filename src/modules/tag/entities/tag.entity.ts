@@ -20,8 +20,8 @@ export class Tag extends CustomBaseEntity {
 	info_url!: string | null;
 
 	@ManyToMany(() => Painting, (painting) => painting.tags, {
-		onUpdate: "NO ACTION",
-		onDelete: "NO ACTION",
+		onUpdate: "CASCADE",
+		onDelete: "CASCADE",
 	})
 	@JoinTable({
 		name: "painting_tags_tag",
