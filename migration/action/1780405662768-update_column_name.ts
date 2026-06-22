@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class UpdateColumnName1780405662768 implements MigrationInterface {
-	name = "Test1780405662768";
+	name = "UpdateColumnName1780405662768";
 
 	targets = [
 		{
