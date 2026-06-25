@@ -1,10 +1,11 @@
-import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
+import { BadRequestException, CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { ModuleRef, Reflector } from "@nestjs/core";
 import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
 import { ADMIN_ACCESS_KEY } from "../../metadata/adminAccess";
 import { CHECK_OWNER_KEY, CheckOwnerOption } from "../../metadata/owner";
 import { AUTH_GUARD_PAYLOAD } from "../const";
 import { Request } from "express";
+import { transformToId } from "../../../../utils/obfuscate";
 
 // TODO: OwnerGuard 기능 개선
 // - [x] User Role = admin 일때, 통과시키기
@@ -46,33 +47,30 @@ export class OwnerGuard implements CanActivate {
 			);
 		}
 
-		const { serviceClass, idParam, ownerField, serviceMethod } = options;
+		const { serviceClass } = options;
 
-		const resourceId = request.params[idParam];
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+		const idParam = "id";
+		const externalId = request.params[idParam];
+
+		const resourceId = transformToId(externalId);
+
+		if (!resourceId) {
+			throw new BadRequestException(`id(${resourceId}) is invalid format. `);
+		}
+
 		const serviceInstance = this.moduleRef.get(serviceClass, { strict: false });
 
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-		if (!serviceInstance || typeof serviceInstance[serviceMethod] !== "function") {
+		if (!serviceInstance) {
 			throw new ServiceException(
 				`SERVICE_RUN_ERROR`,
 				`INTERNAL_SERVER_ERROR`,
-				`Service must have a '${serviceMethod}' method to retrieve the resource.`,
+				`Service '${serviceClass.name}' must to be existed.`,
 			);
 		}
 
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-		const resource = await serviceInstance[serviceMethod](resourceId);
-		if (!resource) {
-			throw new ServiceException(
-				`ENTITY_NOT_FOUND`,
-				"BAD_REQUEST",
-				`can't find resource ${resourceId}`,
-			);
-		}
+		const isOwner = await serviceInstance.isOwner(resourceId, user.id);
 
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-		if (resource[ownerField] !== user.id) {
+		if (!isOwner) {
 			throw new ServiceException(
 				`ENTITY_NOT_FOUND`,
 				`FORBIDDEN`,

@@ -326,9 +326,6 @@ export class AuthController {
 		{ guard: BasicGuard },
 		{
 			serviceClass: AuthService,
-			idParam: "id",
-			ownerField: "user_id",
-			serviceMethod: "findOneTimeTokenByID",
 		},
 	)
 	@Get("one-time-token/:id")

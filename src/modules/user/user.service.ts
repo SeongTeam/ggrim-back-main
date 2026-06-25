@@ -106,29 +106,15 @@ export class UserService extends TypeOrmCrudService<User> {
 		}
 	}
 
-	async findDeletedUserById(rawId: number | string): Promise<User | null> {
-		const id = Number(rawId);
-		if (!isNumber(id)) {
-			throw new ServiceException("BASE", "BAD_REQUEST", `not type int. ${rawId}`);
-		}
-
-		try {
-			const queryBuilder = this.repo.createQueryBuilder("user");
-			const deletedUser = await queryBuilder
-				.select()
-				.withDeleted()
-				.where("user.id= :id", { id })
-				.andWhere("user.deleted_date IS NOT NULL")
-				.getOne();
-
-			return deletedUser;
-		} catch (error) {
+	async isOwner(resourceId: number, userId: number): Promise<boolean> {
+		const user = await this.findUserById(resourceId);
+		if (!user) {
 			throw new ServiceException(
-				"EXTERNAL_SERVICE_FAILED",
-				"INTERNAL_SERVER_ERROR",
-				`Can't find deleted User(${id})`,
-				{ cause: error },
+				"ENTITY_NOT_FOUND",
+				"BAD_REQUEST",
+				`can't find resource ${resourceId}`,
 			);
 		}
+		return user.id === userId;
 	}
 }

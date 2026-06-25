@@ -41,6 +41,7 @@ import { UseTempUserGuard } from "../auth/guard/decorator/authentication";
 import { Pagination } from "../_common/types";
 import { ApiOkResponse, ApiParam } from "@nestjs/swagger";
 import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
+import { DeletedUserService } from "./deleted-user.service";
 
 @Crud({
 	model: {
@@ -172,9 +173,6 @@ export class UserController implements CrudController<User> {
 		{ guard: SecurityTokenGuard, purpose: "update-password" },
 		{
 			serviceClass: UserService,
-			idParam: "id",
-			serviceMethod: "findUserById",
-			ownerField: "id",
 		},
 	)
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -208,9 +206,6 @@ export class UserController implements CrudController<User> {
 		{ guard: TokenAuthGuard },
 		{
 			serviceClass: UserService,
-			idParam: "id",
-			serviceMethod: "findUserById",
-			ownerField: "id",
 		},
 	)
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -276,9 +271,6 @@ export class UserController implements CrudController<User> {
 		{ guard: SecurityTokenGuard, purpose: "delete-account" },
 		{
 			serviceClass: UserService,
-			idParam: "id",
-			serviceMethod: "findUserById",
-			ownerField: "id",
 		},
 	)
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -313,10 +305,7 @@ export class UserController implements CrudController<User> {
 			authOptions: { withDeleted: true },
 		},
 		{
-			serviceClass: UserService,
-			idParam: "id",
-			serviceMethod: "findDeletedUserById",
-			ownerField: "id",
+			serviceClass: DeletedUserService,
 		},
 	)
 	@UseInterceptors(QueryRunnerInterceptor)

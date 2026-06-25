@@ -358,9 +358,6 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		{ guard: TokenAuthGuard },
 		{
 			serviceClass: QuizService,
-			idParam: "id",
-			ownerField: "user_id",
-			serviceMethod: "getQuizById",
 		},
 	)
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -393,9 +390,6 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		{ guard: TokenAuthGuard },
 		{
 			serviceClass: QuizService,
-			idParam: "id",
-			ownerField: "user_id",
-			serviceMethod: "getQuizById",
 		},
 	)
 	@UseInterceptors(QueryRunnerInterceptor)

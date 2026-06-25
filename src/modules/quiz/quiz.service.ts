@@ -320,6 +320,18 @@ export class QuizService {
 		return { likeCount, dislikeCount };
 	}
 
+	async isOwner(resourceId: number, userId: number): Promise<boolean> {
+		const quiz = await this.repo.findOne({ where: { id: resourceId } });
+		if (!quiz) {
+			throw new ServiceException(
+				"ENTITY_NOT_FOUND",
+				"NOT_FOUND",
+				`Quiz with id ${resourceId} not found`,
+			);
+		}
+		return quiz.user_id === userId;
+	}
+
 	private async insertQuiz(queryRunner: QueryRunner, quiz: Quiz): Promise<Quiz> {
 		/*TODO 
       - Quiz.type 에 알맞은 그림 개수 검증필요

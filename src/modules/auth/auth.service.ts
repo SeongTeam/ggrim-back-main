@@ -464,4 +464,17 @@ export class AuthService implements OnModuleInit {
 
 		return results;
 	}
+
+	async isOwner(resourceId: number, userId: number): Promise<boolean> {
+		const oneTimeToken = await this.findOneTimeTokenByID(resourceId);
+		if (!oneTimeToken) {
+			throw new ServiceException(
+				"ENTITY_NOT_FOUND",
+				"BAD_REQUEST",
+				`not found oneTimeToken id(${resourceId})`,
+			);
+		}
+
+		return oneTimeToken.user_id === userId;
+	}
 }
