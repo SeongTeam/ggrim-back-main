@@ -39,7 +39,7 @@ import { ShowVerificationResponse } from "./dto/response/showVerfication.respons
 import { ShowOneTimeTokenResponse } from "./dto/response/showOneTimeToken.response";
 import { UseOwnerGuard } from "./guard/decorator/authorization";
 import { UseBasicAuthGuard, UseSecurityTokenGuard } from "./guard/decorator/authentication";
-import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
+import { ApiCreatedResponse, ApiOkResponse, ApiParam } from "@nestjs/swagger";
 import { HashedOneTimeTokenResponse } from "./dto/response/hashedOneTimeToken.response";
 import { EmailVerificationTokenResponse } from "./dto/response/emailVerificationToken.response";
 import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
@@ -313,6 +313,13 @@ export class AuthController {
 		return new EmailVerificationTokenResponse(securityToken, user);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@ApiOkResponse({ type: HashedOneTimeTokenResponse })
 	@HttpCode(HttpStatus.OK)
 	@UseOwnerGuard(

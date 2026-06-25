@@ -54,7 +54,7 @@ import { UseTokenAuthGuard } from "../auth/guard/decorator/authentication";
 import { GetQuizQueryDTO } from "./dto/request/getQuiz.query.dto";
 import { ShowQuizReactionResponse } from "./dto/response/showQuizReaction.response";
 import { ConfigService } from "@nestjs/config";
-import { ApiCreatedResponse, ApiOkResponse, ApiQuery } from "@nestjs/swagger";
+import { ApiCreatedResponse, ApiOkResponse, ApiParam, ApiQuery } from "@nestjs/swagger";
 import { QuizBatchService } from "./batch/quiz.batch.service";
 import { isNotFalsy } from "../../utils/validator";
 import { QuizType } from "./type";
@@ -97,6 +97,13 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		Logger.log(`[OnModuleDestroy] done `, QuizController.name);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@HttpCode(HttpStatus.CREATED)
 	@Post("submit/:id")
 	async submitQuiz(@Param("id", IdDeobfuscatePipe) id: number, @Body() dto: SubmitQuizDTO) {
@@ -109,6 +116,13 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		await this.batchService.insertSubmission(target.id, dto.isCorrect);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@ApiOkResponse({ type: ShowQuizReactionResponse, isArray: true })
 	@HttpCode(HttpStatus.OK)
 	@Get(":id/reactions")
@@ -146,6 +160,13 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		return res;
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@HttpCode(HttpStatus.CREATED)
 	@UseTokenAuthGuard()
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -175,6 +196,13 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		}
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@HttpCode(HttpStatus.OK)
 	@UseTokenAuthGuard()
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -279,6 +307,13 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		return new ShowQuizResponse(quiz);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@ApiOkResponse({ type: DetailQuizResponse })
 	@HttpCode(HttpStatus.OK)
 	@Get(":id")
@@ -310,6 +345,13 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		return new DetailQuizResponse(quiz, reactionCount, userReaction);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@ApiOkResponse({ type: ShowQuizResponse })
 	@HttpCode(HttpStatus.OK)
 	@UseOwnerGuard(
@@ -339,6 +381,13 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		return new ShowQuizResponse(updatedQuiz);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@HttpCode(HttpStatus.OK)
 	@UseOwnerGuard(
 		{ guard: TokenAuthGuard },

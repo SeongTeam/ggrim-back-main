@@ -17,6 +17,7 @@ import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { Pagination } from "../_common/types";
 import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
+import { ApiParam } from "@nestjs/swagger";
 @Crud({
 	model: {
 		type: Artist,
@@ -27,7 +28,7 @@ import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
 	params: {
 		id: {
 			field: "id",
-			type: "number",
+			type: "string",
 			primary: true,
 		},
 	},
@@ -55,6 +56,13 @@ export class ArtistController implements CrudController<Artist> {
 	 *
 	 */
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@Get(":id")
 	async getOne(@Param("id", IdDeobfuscatePipe) id: number): Promise<ShowArtistResponse> {
 		const artist = await this.service.findOne({

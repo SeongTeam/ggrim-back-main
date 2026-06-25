@@ -39,7 +39,7 @@ import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseOwnerGuard, UseRolesGuard } from "../auth/guard/decorator/authorization";
 import { UseTempUserGuard } from "../auth/guard/decorator/authentication";
 import { Pagination } from "../_common/types";
-import { ApiOkResponse } from "@nestjs/swagger";
+import { ApiOkResponse, ApiParam } from "@nestjs/swagger";
 import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
 
 @Crud({
@@ -80,6 +80,13 @@ export class UserController implements CrudController<User> {
 	// ? 질문: <의문점 또는 개선 방향>
 	// * 참고: <관련 정보나 링크>
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@ApiOkResponse({ type: ShowUserResponse })
 	@HttpCode(HttpStatus.OK)
 	@Get(":id")
@@ -154,6 +161,13 @@ export class UserController implements CrudController<User> {
 	// ? 질문: <의문점 또는 개선 방향>
 	// * 참고: <관련 정보나 링크>
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@UseOwnerGuard(
 		{ guard: SecurityTokenGuard, purpose: "update-password" },
 		{
@@ -183,6 +197,13 @@ export class UserController implements CrudController<User> {
 		await this.authService.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@UseOwnerGuard(
 		{ guard: TokenAuthGuard },
 		{
@@ -217,6 +238,13 @@ export class UserController implements CrudController<User> {
 		await this.service.updateUser(qr, user.id, dto);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@UseRolesGuard("admin")
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Put(":id/role")
@@ -237,6 +265,13 @@ export class UserController implements CrudController<User> {
 		await this.service.updateUser(qr, user.id, dto);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@UseOwnerGuard(
 		{ guard: SecurityTokenGuard, purpose: "delete-account" },
 		{
@@ -264,6 +299,13 @@ export class UserController implements CrudController<User> {
 		await this.authService.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@UseOwnerGuard(
 		{
 			guard: SecurityTokenGuard,

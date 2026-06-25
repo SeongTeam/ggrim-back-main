@@ -11,7 +11,7 @@ import { isArray } from "class-validator";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 import { Pagination } from "../_common/types";
-import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
+import { ApiCreatedResponse, ApiOkResponse, ApiParam } from "@nestjs/swagger";
 import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
 /*TODO
 - typeORM 에러 발생시, 특정 에러 메세지는 응답에 포함시켜 보내는 로직 구현 고려
@@ -25,7 +25,7 @@ import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
 	params: {
 		id: {
 			field: "id",
-			type: "number",
+			type: "string",
 			primary: true,
 		},
 	},
@@ -55,6 +55,13 @@ export class TagController implements CrudController<Tag> {
 		return this;
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the tag",
+		example: "so8jaGo",
+	})
 	@ApiOkResponse({ type: ShowTagResponse })
 	@HttpCode(HttpStatus.OK)
 	@Get(":id")
