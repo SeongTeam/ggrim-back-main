@@ -1,8 +1,9 @@
+import { obfuscateId } from "../../../../utils/obfuscate";
 import { ShowPainting } from "../../../painting/dto/response/showPainting.response";
 import { Artist } from "../../entities/artist.entity";
 
 export class ShowArtist {
-	readonly id: number;
+	readonly id: string;
 
 	readonly name: string;
 
@@ -23,7 +24,7 @@ export class ShowArtist {
 	readonly info_url: string | null;
 
 	constructor(artist: Artist) {
-		this.id = artist.id;
+		this.id = obfuscateId(artist.id);
 		this.name = artist.name;
 		this.image_url = artist.image_url;
 		this.birth_date = artist.birth_date ? artist.birth_date.toISOString() : null;

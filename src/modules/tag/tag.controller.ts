@@ -1,15 +1,5 @@
 import { Crud, CrudController, CrudRequest, Override, ParsedRequest } from "@dataui/crud";
-import {
-	Body,
-	Controller,
-	Get,
-	HttpCode,
-	HttpStatus,
-	Param,
-	ParseIntPipe,
-	Post,
-	Put,
-} from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Put } from "@nestjs/common";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 
 import { CreateTagDTO } from "./dto/request/createTag.dto";
@@ -22,6 +12,7 @@ import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 import { Pagination } from "../_common/types";
 import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
+import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
 /*TODO
 - typeORM 에러 발생시, 특정 에러 메세지는 응답에 포함시켜 보내는 로직 구현 고려
   1) unique constraint 열에 중복된 값을 삽입할 때,
@@ -67,7 +58,7 @@ export class TagController implements CrudController<Tag> {
 	@ApiOkResponse({ type: ShowTagResponse })
 	@HttpCode(HttpStatus.OK)
 	@Get(":id")
-	async getOne(@Param("id", ParseIntPipe) id: number): Promise<ShowTagResponse> {
+	async getOne(@Param("id", IdDeobfuscatePipe) id: number): Promise<ShowTagResponse> {
 		const tag = await this.service.findOne({
 			where: { id },
 			relations: { paintings: true },

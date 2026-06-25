@@ -9,7 +9,6 @@ import {
 	Inject,
 	Param,
 	ParseBoolPipe,
-	ParseIntPipe,
 	Post,
 	Put,
 	Query,
@@ -32,6 +31,7 @@ import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
 import { GetByIdsQueryDTO } from "./dto/request/getByIds.query.dto";
 import { SearchPaintingQueryDTO } from "./dto/request/searchPainting.query.dto";
+import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
 
 @Controller("painting")
 export class PaintingController {
@@ -82,7 +82,7 @@ export class PaintingController {
 	@HttpCode(HttpStatus.OK)
 	@Get(":id")
 	async getById(
-		@Param("id", ParseIntPipe) id: number,
+		@Param("id", IdDeobfuscatePipe) id: number,
 		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
 	): Promise<ShowPaintingResponse> {
 		let paintings = await this.service.getManyByIds([id]);
@@ -138,7 +138,7 @@ export class PaintingController {
 	@Put("/:id")
 	async replacePainting(
 		@DBQueryRunner() queryRunner: QueryRunner,
-		@Param("id", ParseIntPipe) id: number,
+		@Param("id", IdDeobfuscatePipe) id: number,
 		@Body() dto: ReplacePaintingDTO,
 	) {
 		const targetPainting = await this.service.findOne({ where: { id } });
@@ -157,7 +157,7 @@ export class PaintingController {
 	@Delete("/:id")
 	async deletePainting(
 		@DBQueryRunner() queryRunner: QueryRunner,
-		@Param("id", ParseIntPipe) id: number,
+		@Param("id", IdDeobfuscatePipe) id: number,
 	) {
 		const targetPainting = await this.service.findOne({ where: { id } });
 		if (!targetPainting) {

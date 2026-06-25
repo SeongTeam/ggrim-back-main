@@ -1,9 +1,10 @@
 import { User } from "../../../entity/user.entity";
 import { USER_ROLE, USER_STATE, UserRole, UserState } from "../../../const";
 import { ApiProperty } from "@nestjs/swagger";
+import { obfuscateId } from "../../../../../utils/obfuscate";
 
 export class ShowUserResponse {
-	id: number;
+	id: string;
 
 	@ApiProperty({ enum: Object.values(USER_ROLE), enumName: "USER_ROLE" })
 	role: UserRole;
@@ -27,7 +28,7 @@ export class ShowUserResponse {
 	oauth_provider_id: string | null;
 
 	constructor(user: User) {
-		this.id = user.id;
+		this.id = obfuscateId(user.id);
 		this.role = user.role;
 		this.username = user.username;
 		this.active = user.active;

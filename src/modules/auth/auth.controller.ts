@@ -7,7 +7,6 @@ import {
 	HttpStatus,
 	Inject,
 	Param,
-	ParseIntPipe,
 	Post,
 	Req,
 	UseInterceptors,
@@ -43,6 +42,7 @@ import { UseBasicAuthGuard, UseSecurityTokenGuard } from "./guard/decorator/auth
 import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
 import { HashedOneTimeTokenResponse } from "./dto/response/hashedOneTimeToken.response";
 import { EmailVerificationTokenResponse } from "./dto/response/emailVerificationToken.response";
+import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
 
 @Controller("auth")
 export class AuthController {
@@ -326,7 +326,7 @@ export class AuthController {
 	)
 	@Get("one-time-token/:id")
 	async getOneTimeToken(
-		@Param("id", ParseIntPipe) id: number,
+		@Param("id", IdDeobfuscatePipe) id: number,
 	): Promise<HashedOneTimeTokenResponse> {
 		const findOne = await this.service.findOneTimeToken({ where: { id } });
 

@@ -6,7 +6,7 @@ import {
 	ParsedBody,
 	ParsedRequest,
 } from "@dataui/crud";
-import { Controller, Get, Param, ParseIntPipe } from "@nestjs/common";
+import { Controller, Get, Param } from "@nestjs/common";
 import { ArtistService } from "./artist.service";
 import { CreateArtistDTO } from "./dto/request/createArtist.dto";
 import { Artist } from "./entities/artist.entity";
@@ -16,6 +16,7 @@ import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { Pagination } from "../_common/types";
+import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
 @Crud({
 	model: {
 		type: Artist,
@@ -55,7 +56,7 @@ export class ArtistController implements CrudController<Artist> {
 	 */
 
 	@Get(":id")
-	async getOne(@Param("id", ParseIntPipe) id: number): Promise<ShowArtistResponse> {
+	async getOne(@Param("id", IdDeobfuscatePipe) id: number): Promise<ShowArtistResponse> {
 		const artist = await this.service.findOne({
 			where: { id },
 			relations: { paintings: true },

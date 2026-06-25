@@ -6,7 +6,7 @@ import {
 	ParsedBody,
 	ParsedRequest,
 } from "@dataui/crud";
-import { Controller, Get, HttpCode, HttpStatus, Param, ParseIntPipe } from "@nestjs/common";
+import { Controller, Get, HttpCode, HttpStatus, Param } from "@nestjs/common";
 
 import { CreateStyleDTO } from "./dto/request/createStyle.dto";
 import { ReplaceStyleDTO } from "./dto/request/replaceStyle.dto";
@@ -19,6 +19,7 @@ import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { ApiOkResponse } from "@nestjs/swagger";
 import { Pagination } from "../_common/types";
+import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
 
 /*TODO
 - soft-deleted 상태인 데이터가 replace method 사용시 수정되는 것이 위험한지 고민하기
@@ -68,7 +69,7 @@ export class StyleController implements CrudController<Style> {
 	@ApiOkResponse({ type: ShowStyleResponse })
 	@HttpCode(HttpStatus.OK)
 	@Get(":id")
-	async getOne(@Param("id", ParseIntPipe) id: number): Promise<ShowStyleResponse> {
+	async getOne(@Param("id", IdDeobfuscatePipe) id: number): Promise<ShowStyleResponse> {
 		const style = await this.service.findOne({
 			where: { id },
 			relations: { paintings: true },

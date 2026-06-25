@@ -10,7 +10,6 @@ import {
 	OnApplicationBootstrap,
 	OnModuleDestroy,
 	Param,
-	ParseIntPipe,
 	Post,
 	Put,
 	Query,
@@ -59,6 +58,7 @@ import { ApiCreatedResponse, ApiOkResponse, ApiQuery } from "@nestjs/swagger";
 import { QuizBatchService } from "./batch/quiz.batch.service";
 import { isNotFalsy } from "../../utils/validator";
 import { QuizType } from "./type";
+import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
 
 //TODO whitelist 옵션 추가하여 보안강화 고려하기
 @Controller("quiz")
@@ -99,7 +99,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 
 	@HttpCode(HttpStatus.CREATED)
 	@Post("submit/:id")
-	async submitQuiz(@Param("id", ParseIntPipe) id: number, @Body() dto: SubmitQuizDTO) {
+	async submitQuiz(@Param("id", IdDeobfuscatePipe) id: number, @Body() dto: SubmitQuizDTO) {
 		const target = await this.service.findOne({ where: { id } });
 
 		if (!target) {
@@ -113,7 +113,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	@HttpCode(HttpStatus.OK)
 	@Get(":id/reactions")
 	async getQuizReactions(
-		@Param("id", ParseIntPipe) id: number,
+		@Param("id", IdDeobfuscatePipe) id: number,
 		@Query() dto: QuizReactionQueryDTO,
 	): Promise<ShowQuizReactionResponse[]> {
 		const target = await this.service.findOne({ where: { id } });
@@ -153,7 +153,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	async createQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		@Param("id", ParseIntPipe) id: number,
+		@Param("id", IdDeobfuscatePipe) id: number,
 		@Body() dto: CreateQuizReactionDTO,
 	): Promise<void> {
 		const userPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
@@ -182,7 +182,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	async deleteQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		@Param("id", ParseIntPipe) id: number,
+		@Param("id", IdDeobfuscatePipe) id: number,
 	): Promise<void> {
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = userPayload;
@@ -283,7 +283,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	@HttpCode(HttpStatus.OK)
 	@Get(":id")
 	async getDetailQuiz(
-		@Param("id", ParseIntPipe) id: number,
+		@Param("id", IdDeobfuscatePipe) id: number,
 		@Query() query: GetQuizQueryDTO,
 	): Promise<DetailQuizResponse> {
 		let quiz = await this.service.findOne({ where: { id } });
@@ -326,7 +326,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	async update(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		@Param("id", ParseIntPipe) id: number,
+		@Param("id", IdDeobfuscatePipe) id: number,
 		@Body() dto: ReplaceQuizDTO,
 	): Promise<ShowQuizResponse> {
 		const quiz = await this.service.findOne({ where: { id } });
@@ -351,7 +351,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	)
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Delete(":id")
-	async delete(@DBQueryRunner() qr: QueryRunner, @Param("id", ParseIntPipe) id: number) {
+	async delete(@DBQueryRunner() qr: QueryRunner, @Param("id", IdDeobfuscatePipe) id: number) {
 		await this.service.softDeleteQuiz(qr, id);
 	}
 
