@@ -3,7 +3,7 @@ import { zShowPainting } from "../painting/zodSchema";
 
 // ShowArtist 클래스에 대응되는 스키마
 export const zShowArtist = z.object({
-	id: z.number(),
+	id: z.string(),
 	name: z.string(),
 	image_url: z.string().nullish(),
 	birth_date: z.string().nullish(),

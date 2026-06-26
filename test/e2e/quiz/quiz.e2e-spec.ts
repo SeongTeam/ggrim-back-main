@@ -58,6 +58,7 @@ import { factoryPaintingStub } from "../../_shared/stub/painting.stub";
 import { assert } from "console";
 import { UserService } from "../../../src/modules/user/user.service";
 import { generateId } from "../../_shared/stub/utils";
+import { deobfuscateId, obfuscateId } from "../../../src/utils/obfuscate";
 
 // TODO: QuizController API 테스트 구현
 // - [x] API 별로 테스트 시나리오 설계
@@ -140,10 +141,10 @@ describe("QuizController (e2e)", () => {
 		// - [x] 좋은 데이터 테스트 (모든 dto 경우에 대해 테스트)
 		// - [x] 나쁜 데이터 테스트 (비유효 path)
 		// - [x] 나쁜 데이터 테스트 (비유효 dto)
-		async function requestSubmitQuiz(id: number, dto: SubmitQuizDto) {
+		async function requestSubmitQuiz(externalId: string, dto: SubmitQuizDto) {
 			const response = await client.POST(ApiPaths.QuizController_submitQuiz, {
 				params: {
-					path: { id },
+					path: { id: externalId },
 				},
 				body: dto,
 			});
@@ -161,7 +162,8 @@ describe("QuizController (e2e)", () => {
 					beforeAll(async () => {
 						const quizzes = await testService.seedOneChoiceQuizzes(1);
 						expectedQuiz = quizzes[0];
-						receivedRes = await requestSubmitQuiz(expectedQuiz.id, dto);
+						const externalId = obfuscateId(expectedQuiz.id);
+						receivedRes = await requestSubmitQuiz(externalId, dto);
 
 						//run batch
 						await quizBatchService.flushSubmissionMap();
@@ -233,7 +235,11 @@ describe("QuizController (e2e)", () => {
 				let receivedRes: Awaited<ReturnType<typeof requestSubmitQuiz>>;
 
 				beforeAll(async () => {
-					receivedRes = await requestSubmitQuiz(id, dto as { isCorrect: boolean });
+					const externalId = obfuscateId(id);
+					receivedRes = await requestSubmitQuiz(
+						externalId,
+						dto as { isCorrect: boolean },
+					);
 
 					//run batch
 					await quizBatchService.flushSubmissionMap();
@@ -251,10 +257,10 @@ describe("QuizController (e2e)", () => {
 		// - [x] 공통 로직 구현
 		// - [x] 좋은 데이터 테스트 (:id path)
 		// - [x] 나쁜 데이터 테스트 (비유효 :id path)
-		async function requestReadReactions(id: number) {
+		async function requestReadReactions(externalId: string) {
 			const response = await client.GET(ApiPaths.QuizController_getQuizReactions, {
 				params: {
-					path: { id },
+					path: { id: externalId },
 				},
 			});
 
@@ -271,7 +277,8 @@ describe("QuizController (e2e)", () => {
 					(like) => like.quiz_id === targetQuiz.id,
 				);
 
-				receivedRes = await requestReadReactions(targetQuiz.id);
+				const externalId = obfuscateId(targetQuiz.id);
+				receivedRes = await requestReadReactions(externalId);
 			});
 
 			it("response should match openapi doc", () => {
@@ -280,12 +287,12 @@ describe("QuizController (e2e)", () => {
 			});
 
 			it("response should read db resource ", () => {
-				const receivedData = receivedRes.data!.sort(
-					(data1, data2) => data1.user.id - data2.user.id,
+				const receivedData = receivedRes.data!.sort((data1, data2) =>
+					data1.user.id.localeCompare(data2.user.id),
 				);
 				const expectedData = expectedLikeReactions
-					.sort((data1, data2) => data1.user.id - data2.user.id)
-					.map((reaction) => new ShowQuizReactionResponse(reaction));
+					.map((reaction) => new ShowQuizReactionResponse(reaction))
+					.sort((data1, data2) => data1.user.id.localeCompare(data2.user.id));
 
 				expect(receivedData).toEqual(expectedData);
 			});
@@ -302,7 +309,7 @@ describe("QuizController (e2e)", () => {
 			])("input : %p", ({ invalidId }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestReadReactions>>;
 				beforeAll(async () => {
-					const response = await requestReadReactions(invalidId as unknown as number);
+					const response = await requestReadReactions(invalidId as unknown as string);
 					receivedRes = response;
 				});
 
@@ -321,13 +328,13 @@ describe("QuizController (e2e)", () => {
 		// - [x] 나쁜 데이터 테스트 (비권한 authorization header )
 		// - [x] 임계 영역 테스트 ( like, dislike 연속 생성)
 		async function requestCreateReaction(
-			id: number,
+			externalId: string,
 			dto: CreateQuizReactionDto,
 			bearerAuth: string,
 		) {
 			const response = await client.POST(ApiPaths.QuizController_createQuizReaction, {
 				params: {
-					path: { id },
+					path: { id: externalId },
 					header: {
 						authorization: bearerAuth,
 					},
@@ -352,8 +359,9 @@ describe("QuizController (e2e)", () => {
 					const testUser = await testService.insertStubUser(factoryUserStub(userType));
 					const expectedQuiz = quizzes[0];
 
+					const externalId = obfuscateId(expectedQuiz.id);
 					const auth = testService.getBearerAuthCredential(testUser);
-					const response = await requestCreateReaction(expectedQuiz.id, dto, auth);
+					const response = await requestCreateReaction(externalId, dto, auth);
 					receivedRes = response;
 
 					const findReactionFuncMap = {
@@ -409,7 +417,8 @@ describe("QuizController (e2e)", () => {
 					const dto: CreateQuizReactionDto = {
 						type: laterReactionType,
 					};
-					const response = await requestCreateReaction(expectedQuiz.id, dto, auth);
+					const externalId = obfuscateId(expectedQuiz.id);
+					const response = await requestCreateReaction(externalId, dto, auth);
 					receivedRes = response;
 					const findReactionFuncMap = {
 						[QUIZ_REACTION.like]: (quiz_id: number, user_id: number) =>
@@ -497,7 +506,7 @@ describe("QuizController (e2e)", () => {
 					beforeAll(async () => {
 						const auth = testService.getBearerAuthCredential(testUser);
 						const response = await requestCreateReaction(
-							id as number,
+							id as string,
 							dto as CreateQuizReactionDto,
 							auth,
 						);
@@ -539,11 +548,8 @@ describe("QuizController (e2e)", () => {
 				};
 
 				const invalidBearerAuth = faker.internet.jwt();
-				const response = await requestCreateReaction(
-					expectedQuiz.id,
-					dto,
-					invalidBearerAuth,
-				);
+				const externalId = obfuscateId(expectedQuiz.id);
+				const response = await requestCreateReaction(externalId, dto, invalidBearerAuth);
 				receivedRes = response;
 			});
 
@@ -559,10 +565,10 @@ describe("QuizController (e2e)", () => {
 		// - [x] 좋은 데이터 테스트 (:id path)
 		// - [x] 예외 상황 테스트 (  )
 		// - [x] 나쁜 데이터 테스트 (비유효 :id path)
-		async function requestDeleteReaction(id: number, bearerAuth: string) {
+		async function requestDeleteReaction(externalId: string, bearerAuth: string) {
 			const response = await client.DELETE(ApiPaths.QuizController_deleteQuizReaction, {
 				params: {
-					path: { id },
+					path: { id: externalId },
 					header: {
 						authorization: bearerAuth,
 					},
@@ -595,7 +601,8 @@ describe("QuizController (e2e)", () => {
 					const user = deletedReaction.user;
 
 					const auth = testService.getBearerAuthCredential(user);
-					const response = await requestDeleteReaction(expectedQuiz.id, auth);
+					const externalId = obfuscateId(expectedQuiz.id);
+					const response = await requestDeleteReaction(externalId, auth);
 					receivedRes = response;
 					const findReactionFuncMap = {
 						[QUIZ_REACTION.like]: (quiz_id: number, user_id: number) =>
@@ -632,7 +639,8 @@ describe("QuizController (e2e)", () => {
 
 						//request delete reaction
 						const auth = testService.getBearerAuthCredential(user);
-						const response = await requestDeleteReaction(quiz.id, auth);
+						const externalId = obfuscateId(quiz.id);
+						const response = await requestDeleteReaction(externalId, auth);
 						receivedRes = response;
 						receivedReaction = (
 							await quizService.findQuizDislikes({
@@ -695,7 +703,7 @@ describe("QuizController (e2e)", () => {
 
 					//request delete reaction
 					const auth = testService.getBearerAuthCredential(testUser);
-					const response = await requestDeleteReaction(invalidQuizId as number, auth);
+					const response = await requestDeleteReaction(invalidQuizId as string, auth);
 					receivedRes = response;
 				});
 
@@ -750,7 +758,8 @@ describe("QuizController (e2e)", () => {
 				}
 			}
 
-			const expectedQuiz = await findAllRelationQuiz(res.shortQuiz.id);
+			const resourceId = deobfuscateId(res.shortQuiz.id);
+			const expectedQuiz = await findAllRelationQuiz(resourceId);
 			expect(expectedQuiz).toBeDefined();
 			expect(res.shortQuiz).toEqual(new ShowQuiz(expectedQuiz!));
 
@@ -1450,7 +1459,8 @@ describe("QuizController (e2e)", () => {
 					};
 					const bearerAuth = testService.getBearerAuthCredential(creator);
 					receivedRes = await requestCreateQuiz(dto, bearerAuth);
-					receivedQuiz = await findAllRelationQuiz(receivedRes.data!.id);
+					const resourceId = deobfuscateId(receivedRes.data!.id);
+					receivedQuiz = await findAllRelationQuiz(resourceId);
 				});
 
 				it("response should follow openapi doc", () => {
@@ -1695,7 +1705,7 @@ describe("QuizController (e2e)", () => {
 		) {
 			assert(receivedPagination.data.length !== 0);
 			const quizzes = await Promise.all(
-				receivedPagination.data.map((info) => findAllRelationQuiz(info.id)),
+				receivedPagination.data.map((info) => findAllRelationQuiz(deobfuscateId(info.id))),
 			);
 
 			for (const quiz of quizzes) {
@@ -1947,12 +1957,12 @@ describe("QuizController (e2e)", () => {
 		// - [ ] 경계 분석 테스트
 
 		async function requestReadQuiz(
-			id: number,
+			externalId: string,
 			query?: { isS3Access?: boolean; userId?: number },
 		) {
 			const response = await client.GET(ApiPaths.QuizController_getDetailQuiz, {
 				params: {
-					path: { id },
+					path: { id: externalId },
 					query,
 				},
 			});
@@ -2015,7 +2025,8 @@ describe("QuizController (e2e)", () => {
 					expectedQuiz = (await findAllRelationQuiz(id))!;
 					assert(expectedQuiz !== null);
 
-					receivedRes = await requestReadQuiz(id, query);
+					const externalId = obfuscateId(expectedQuiz.id);
+					receivedRes = await requestReadQuiz(externalId, query);
 				});
 				it("response should match openapi doc", () => {
 					expect(receivedRes.response.status).toBe(HttpStatus.OK);
@@ -2092,7 +2103,8 @@ describe("QuizController (e2e)", () => {
 						}
 						await qr.release();
 
-						receivedRes = await requestReadQuiz(id, query);
+						const externalId = obfuscateId(id);
+						receivedRes = await requestReadQuiz(externalId, query);
 					});
 					it("response should match openapi doc", () => {
 						expect(receivedRes.response.status).toBe(HttpStatus.OK);
@@ -2179,8 +2191,9 @@ describe("QuizController (e2e)", () => {
 				let receivedRes: Awaited<ReturnType<typeof requestReadQuiz>>;
 
 				beforeAll(async () => {
+					const externalId = obfuscateId(id);
 					receivedRes = await requestReadQuiz(
-						id,
+						externalId,
 						query as { isS3Access?: boolean; userId?: number },
 					);
 				});
@@ -2263,7 +2276,7 @@ describe("QuizController (e2e)", () => {
 
 				beforeAll(async () => {
 					receivedRes = await requestReadQuiz(
-						invalidId as number,
+						invalidId as string,
 						inValidQuery as unknown as { isS3Access?: boolean; userId?: number },
 					);
 				});
@@ -2283,10 +2296,14 @@ describe("QuizController (e2e)", () => {
 		// - [x] 나쁜 데이터 테스트 (비유효 query, dto body)
 		// - [x] 나쁜 데이터 테스트 (비권한 authorization header )
 		// - [ ] 경계 분석 테스트
-		async function requestReplaceQuiz(id: number, dto: ReplaceQuizDto, bearerAuth: string) {
+		async function requestReplaceQuiz(
+			externalId: string,
+			dto: ReplaceQuizDto,
+			bearerAuth: string,
+		) {
 			const response = await client.PUT(ApiPaths.QuizController_update, {
 				params: {
-					path: { id },
+					path: { id: externalId },
 					header: {
 						authorization: bearerAuth,
 					},
@@ -2427,8 +2444,10 @@ describe("QuizController (e2e)", () => {
 					};
 
 					const bearerAuth = testService.getBearerAuthCredential(user);
-					receivedRes = await requestReplaceQuiz(id, dto, bearerAuth);
-					receivedQuiz = (await findAllRelationQuiz(receivedRes.data!.id))!;
+					const externalId = obfuscateId(id);
+					receivedRes = await requestReplaceQuiz(externalId, dto, bearerAuth);
+					const resourceId = deobfuscateId(receivedRes.data!.id);
+					receivedQuiz = (await findAllRelationQuiz(resourceId))!;
 				});
 
 				it("response should match openapi doc", () => {
@@ -2593,8 +2612,9 @@ describe("QuizController (e2e)", () => {
 
 				beforeAll(async () => {
 					const bearerAuth = testService.getBearerAuthCredential(user);
+					const externalId = obfuscateId(invalidId);
 					receivedRes = await requestReplaceQuiz(
-						invalidId,
+						externalId,
 						invalidDto as ReplaceQuizDto,
 						bearerAuth,
 					);
@@ -2681,8 +2701,9 @@ describe("QuizController (e2e)", () => {
 					assert(user !== null);
 
 					const bearerAuth = testService.getBearerAuthCredential(user!);
+					const externalId = obfuscateId(invalidId);
 					receivedRes = await requestReplaceQuiz(
-						invalidId,
+						externalId,
 						invalidDto as ReplaceQuizDto,
 						bearerAuth,
 					);
@@ -2703,10 +2724,10 @@ describe("QuizController (e2e)", () => {
 		// - [x] 나쁜 데이터 테스트 (비유효 query, dto body)
 		// - [x] 나쁜 데이터 테스트 (비권한 authorization header )
 		// - [ ] 경계 분석 테스트
-		async function requestDeleteQuiz(id: number, bearerAuth: string) {
+		async function requestDeleteQuiz(externalId: string, bearerAuth: string) {
 			const response = await client.DELETE(ApiPaths.QuizController_delete, {
 				params: {
-					path: { id },
+					path: { id: externalId },
 					header: {
 						authorization: bearerAuth,
 					},
@@ -2763,8 +2784,9 @@ describe("QuizController (e2e)", () => {
 				let receivedRes: Awaited<ReturnType<typeof requestDeleteQuiz>>;
 				let receivedQuiz: Quiz | null;
 				beforeAll(async () => {
+					const externalId = obfuscateId(id);
 					const bearerAuth = testService.getBearerAuthCredential(user);
-					receivedRes = await requestDeleteQuiz(id, bearerAuth);
+					receivedRes = await requestDeleteQuiz(externalId, bearerAuth);
 					receivedQuiz = await findAllRelationQuiz(id);
 				});
 				it("response should match openapi doc", () => {
@@ -2829,12 +2851,12 @@ describe("QuizController (e2e)", () => {
 			describe.each([
 				{
 					testName: "deliver not existed quiz id",
-					invalidId: 33333,
+					invalidId: faker.string.uuid(),
 					userId: ownerStub.id,
 				},
 				{
 					testName: "deliver deleted quiz id",
-					invalidId: deletedQuizStub.id,
+					invalidId: obfuscateId(deletedQuizStub.id),
 					userId: ownerStub.id,
 				},
 			])("test : $testName", ({ invalidId, userId }) => {
@@ -2902,12 +2924,12 @@ describe("QuizController (e2e)", () => {
 			describe.each([
 				{
 					testName: "deliver other user id",
-					invalidId: quizStub.id,
+					invalidId: obfuscateId(quizStub.id),
 					userId: otherUserStub.id,
 				},
 				{
 					testName: "deliver other admin id",
-					invalidId: quizStub.id,
+					invalidId: obfuscateId(quizStub.id),
 					userId: otherAdminStub.id,
 				},
 			])("test : $testName", ({ invalidId, userId }) => {

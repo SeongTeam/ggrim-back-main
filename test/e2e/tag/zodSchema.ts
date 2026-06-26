@@ -3,7 +3,7 @@ import { zShowPainting } from "../painting/zodSchema";
 
 // ShowStyle 클래스 대응
 export const zShowTag = z.object({
-	id: z.number(),
+	id: z.string(),
 	name: z.string(),
 	info_url: z.string().nullish(),
 });

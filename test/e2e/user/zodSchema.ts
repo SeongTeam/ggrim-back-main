@@ -2,7 +2,7 @@ import * as z from "zod";
 import { USER_ROLE, USER_STATE } from "../../generated/dto-types";
 
 export const zShowUserResponse = z.object({
-	id: z.number(),
+	id: z.string(),
 	role: z.enum(Object.values(USER_ROLE)),
 	username: z.string(),
 	active: z.enum(Object.values(USER_STATE)),

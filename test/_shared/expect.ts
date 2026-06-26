@@ -99,7 +99,9 @@ export function expectShowQuizResponse(received: ShowQuizResponse, expected: Sho
 		const r = received[field];
 		const e = expected[field];
 		if (isArray(r) && isArray(e)) {
-			expect(r.sort((a, b) => a.id - b.id)).toEqual(e.sort((a, b) => a.id - b.id));
+			expect(r.sort((a, b) => a.id.localeCompare(b.id))).toEqual(
+				e.sort((a, b) => a.id.localeCompare(b.id)),
+			);
 		}
 	});
 

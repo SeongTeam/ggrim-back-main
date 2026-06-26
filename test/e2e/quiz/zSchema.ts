@@ -7,7 +7,7 @@ import { zShowTag } from "../tag/zodSchema";
 import { zShowStyle } from "../style/zodSchema";
 
 export const zShowQuiz = z.object({
-	id: z.number(),
+	id: z.string(),
 	title: z.string(),
 	time_limit: z.number(),
 	created_date: z.string(),

@@ -4,7 +4,7 @@ import { zShowTag } from "../tag/zodSchema";
 import { zShowStyle } from "../style/zodSchema";
 
 export const zShowPainting = z.object({
-	id: z.number(),
+	id: z.string(),
 	title: z.string(),
 	image_url: z.url(),
 	width: z.number(),

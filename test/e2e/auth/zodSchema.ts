@@ -11,7 +11,7 @@ export const zSignInResponse = z.object({
 });
 
 export const zShowOneTimeTokenResponse = z.object({
-	id: z.number(),
+	id: z.string(),
 	token: z.jwt(),
 	used_date: z.iso.datetime().nullish(),
 	expired_date: z.iso.datetime(),
@@ -19,7 +19,7 @@ export const zShowOneTimeTokenResponse = z.object({
 });
 
 export const zShowVerification = z.object({
-	id: z.number(),
+	id: z.string(),
 	verification_success_date: z.iso.datetime().nullish(),
 	last_verified_date: z.iso.datetime().nullish(),
 	hashedPinCode: z.string().regex(bcryptPattern),
@@ -27,7 +27,7 @@ export const zShowVerification = z.object({
 });
 
 export const zHashedOneTimeToken = z.object({
-	id: z.number(),
+	id: z.string(),
 	hashedToken: z.string().regex(bcryptPattern),
 	used_date: z.iso.datetime().nullish(),
 	expired_date: z.iso.datetime(),
