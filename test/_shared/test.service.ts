@@ -729,6 +729,19 @@ export class TestService implements OnModuleInit {
 
 		return reactions.slice(0, count);
 	}
+	async truncateTable(tableName: string) {
+		const qr = await this.dbService.getQueryRunner();
+		try {
+			await qr.startTransaction();
+			await qr.query(`TRUNCATE TABLE core.${tableName} CASCADE`);
+			await qr.commitTransaction();
+		} catch (err) {
+			await qr.rollbackTransaction();
+			throw err;
+		} finally {
+			await qr.release();
+		}
+	}
 
 	private handleInsertError(error: unknown, params: unknown) {
 		if (error instanceof TypeORMError) {
