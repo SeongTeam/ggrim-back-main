@@ -325,7 +325,7 @@ export class QuizService {
 		if (!quiz) {
 			throw new ServiceException(
 				"ENTITY_NOT_FOUND",
-				"NOT_FOUND",
+				"BAD_REQUEST",
 				`Quiz with id ${resourceId} not found`,
 			);
 		}
