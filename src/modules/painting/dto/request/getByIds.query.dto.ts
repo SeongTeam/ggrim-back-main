@@ -11,6 +11,11 @@ export class GetByIdsQueryDTO {
 	)
 	@IsArray()
 	@IsNumber({ allowInfinity: false, allowNaN: false }, { each: true })
+	@ApiProperty({
+		type: "string",
+		isArray: true,
+		description: "obfuscated ids like /path?ids=ac31&ads=scd1",
+	})
 	ids!: number[];
 
 	@ApiProperty({ default: false })
