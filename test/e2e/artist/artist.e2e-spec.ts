@@ -18,6 +18,7 @@ import { expectResponseBody } from "../_common/jest-zod";
 import { zShowArtist, zShowArtistResponse } from "./zodSchema";
 import { CondOperator, RequestQueryBuilder } from "@dataui/crud-request";
 import { zPagination } from "../_common/zodSchema";
+import { obfuscateId } from "../../../src/utils/obfuscate";
 
 if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 	console.log("Set setTimeout for debugging");
@@ -103,6 +104,10 @@ describe("ArtistController (e2e)", () => {
 				receivedArtist = (await artistService.findOne({
 					where: { name: expectedArtistSubset.name },
 				}))!;
+			});
+
+			afterAll(async () => {
+				await testService.truncateTable("artist");
 			});
 
 			it("response status should be Created", () => {
@@ -227,6 +232,42 @@ describe("ArtistController (e2e)", () => {
 				for (const artist of artists) {
 					expect(artist.name).toMatch(new RegExp(`^${query.value}`, "i"));
 				}
+			});
+		});
+	});
+
+	describe("/artist/{id} (GET)", () => {
+		async function getArtist(externalId: string) {
+			const result = await client.GET(ApiPaths.ArtistController_getOne, {
+				params: {
+					path: {
+						id: externalId,
+					},
+				},
+			});
+
+			return result;
+		}
+
+		describe("success when request", () => {
+			let response: Awaited<ReturnType<typeof getArtist>>;
+			const artistStub = factoryArtistStub();
+
+			beforeAll(async () => {
+				await dbService.resetDB();
+				await testService.insertArtistStubs([artistStub]);
+				const externalId = obfuscateId(artistStub.id);
+				response = await getArtist(externalId);
+			});
+
+			it("response status should be ok", () => {
+				expect(response.response.status).toBe(HttpStatus.OK);
+			});
+
+			it("response should match to spec", () => {
+				const receivedRes = response.data;
+				expect(receivedRes).toBeDefined();
+				expectResponseBody(zShowArtist, receivedRes);
 			});
 		});
 	});
