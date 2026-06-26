@@ -3933,7 +3933,7 @@ export interface operations {
             query?: {
                 /** @description @description this field always transform invalid value or type into default value */
                 isS3Access?: boolean;
-                userId?: number;
+                userId?: string;
             };
             header?: never;
             path: {

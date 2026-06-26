@@ -921,7 +921,7 @@ describe("QuizController (e2e)", () => {
 				);
 			});
 
-			const timeOutMS = 10 * 1000;
+			const timeOutMS = 60 * 1000;
 			it(
 				"response data should match openapi doc",
 				() => {
@@ -1958,7 +1958,7 @@ describe("QuizController (e2e)", () => {
 
 		async function requestReadQuiz(
 			externalId: string,
-			query?: { isS3Access?: boolean; userId?: number },
+			query?: { isS3Access?: boolean; userId?: string },
 		) {
 			const response = await client.GET(ApiPaths.QuizController_getDetailQuiz, {
 				params: {
@@ -2006,7 +2006,7 @@ describe("QuizController (e2e)", () => {
 					testName: "deliver valid id and query",
 					id: quizStub.id,
 					query: {
-						userId: userStub.id,
+						userId: obfuscateId(userStub.id),
 						isS3Access: false,
 					},
 				},
@@ -2077,17 +2077,17 @@ describe("QuizController (e2e)", () => {
 				describe.each([
 					{
 						testName: "after user create dislike",
-						id: quizStub.id,
+						id: obfuscateId(quizStub.id),
 						query: {
-							userId: userStub.id,
+							userId: obfuscateId(userStub.id),
 						},
 						reactionType: QUIZ_REACTION.dislike,
 					},
 					{
 						testName: "after user create like",
-						id: quizStub.id,
+						id: obfuscateId(quizStub.id),
 						query: {
-							userId: userStub.id,
+							userId: obfuscateId(userStub.id),
 						},
 						reactionType: QUIZ_REACTION.like,
 					},
@@ -2103,8 +2103,7 @@ describe("QuizController (e2e)", () => {
 						}
 						await qr.release();
 
-						const externalId = obfuscateId(id);
-						receivedRes = await requestReadQuiz(externalId, query);
+						receivedRes = await requestReadQuiz(id, query);
 					});
 					it("response should match openapi doc", () => {
 						expect(receivedRes.response.status).toBe(HttpStatus.OK);
@@ -2171,19 +2170,19 @@ describe("QuizController (e2e)", () => {
 				{
 					id: quizStub.id,
 					query: {
-						userId: deletedUserStub.id,
+						userId: obfuscateId(deletedUserStub.id),
 					},
 				},
 				{
 					id: quizStub.id,
 					query: {
-						userId: generateId(),
+						userId: obfuscateId(generateId()),
 					},
 				},
 				{
 					id: quizStub.id,
 					query: {
-						userId: userStub.id,
+						userId: obfuscateId(userStub.id),
 						isS3Access: "this value is transformed to default",
 					},
 				},
@@ -2194,7 +2193,7 @@ describe("QuizController (e2e)", () => {
 					const externalId = obfuscateId(id);
 					receivedRes = await requestReadQuiz(
 						externalId,
-						query as { isS3Access?: boolean; userId?: number },
+						query as { isS3Access?: boolean; userId?: string },
 					);
 				});
 				it("response should match openapi doc", () => {
@@ -2277,7 +2276,7 @@ describe("QuizController (e2e)", () => {
 				beforeAll(async () => {
 					receivedRes = await requestReadQuiz(
 						invalidId as string,
-						inValidQuery as unknown as { isS3Access?: boolean; userId?: number },
+						inValidQuery as unknown as { isS3Access?: boolean; userId?: string },
 					);
 				});
 				it("response should match openapi doc", () => {

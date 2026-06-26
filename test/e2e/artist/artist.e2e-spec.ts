@@ -254,7 +254,7 @@ describe("ArtistController (e2e)", () => {
 			const artistStub = factoryArtistStub();
 
 			beforeAll(async () => {
-				await dbService.resetDB();
+				await testService.truncateTable("artist");
 				await testService.insertArtistStubs([artistStub]);
 				const externalId = obfuscateId(artistStub.id);
 				response = await getArtist(externalId);
