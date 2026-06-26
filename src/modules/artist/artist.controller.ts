@@ -63,6 +63,7 @@ export class ArtistController implements CrudController<Artist> {
 		description: "obfuscated id of the resource",
 		example: "so8jaGo",
 	})
+	@ApiOverride("getOneBase", ShowArtistResponse)
 	@Get(":id")
 	async getOne(@Param("id", IdDeobfuscatePipe) id: number): Promise<ShowArtistResponse> {
 		const artist = await this.service.findOne({
