@@ -25,7 +25,7 @@ import { ExpressAdapter, NestExpressApplication } from "@nestjs/platform-express
 export function configNestApp<T extends INestApplication>(app: T): void {
 	app.useGlobalPipes(
 		new ValidationPipe({
-			transform: true,
+			// transform: true,
 			whitelist: true,
 			forbidNonWhitelisted: true,
 			exceptionFactory: (errors) => {
