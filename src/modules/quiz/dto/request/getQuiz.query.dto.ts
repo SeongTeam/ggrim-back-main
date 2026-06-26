@@ -14,8 +14,23 @@ export class GetQuizQueryDTO {
 	@IsBoolean()
 	isS3Access: boolean = false;
 
+	@ApiProperty({ type: "string", default: false })
 	@IsOptionalProperty()
-	@Transform(({ value }) => transformToId(value))
+	@Transform(
+		({ value }) => {
+			// console.log("transform GetQuizQueryDTO");
+			/**WARNING
+			 * because of nest.js feature, setting ValidationPipe.transform=false make @Transform() works twice.
+			 * ex : rawData -> transform(rawData) -> transform(transform(rawData)) -> validate
+			 * To prevent it, need to option toClassOnly:true,
+			 * Ref : https://github.com/nestjs/nest/issues/3842,https://github.com/nestjs/nest/issues/5852
+			 */
+			return transformToId(value);
+		},
+		{
+			toClassOnly: true,
+		},
+	)
 	@IsNumber({ allowInfinity: false, allowNaN: false })
 	userId?: number;
 }

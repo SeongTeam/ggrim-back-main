@@ -5,17 +5,20 @@ import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-val
 import { transformToId } from "../../../../utils/obfuscate";
 
 export class GetByIdsQueryDTO {
-	@Transform(({ value }) =>
-		// Array.isArray(value) ? value.map((v) => Number(v)) : [Number(value)],
-		Array.isArray(value) ? value.map((v) => transformToId(v)) : [transformToId(value)],
-	)
-	@IsArray()
-	@IsNumber({ allowInfinity: false, allowNaN: false }, { each: true })
 	@ApiProperty({
 		type: "string",
 		isArray: true,
 		description: "obfuscated ids like /path?ids=ac31&ads=scd1",
 	})
+	@Transform(
+		({ value }) =>
+			Array.isArray(value) ? value.map((v) => transformToId(v)) : [transformToId(value)],
+		{
+			toClassOnly: true,
+		},
+	)
+	@IsArray()
+	@IsNumber({ allowInfinity: false, allowNaN: false }, { each: true })
 	ids!: number[];
 
 	@ApiProperty({ default: false })
