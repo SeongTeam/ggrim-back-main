@@ -584,8 +584,8 @@ describe("UserController (e2e)", () => {
 						userId: userStub.id,
 						body: {
 							username:
-								faker.internet.username({ firstName: "upDated" }) +
-								faker.animal.petName(),
+								faker.internet.username({ firstName: "upDt" }) +
+								faker.number.int({ min: 0, max: 100 }),
 						},
 					},
 				])("test : $testName", ({ userId, body }) => {
