@@ -21,6 +21,7 @@ import {
 	ServiceExceptionSchema,
 } from "./modules/_common/filter/exception/openapi/schema";
 import { ExpressAdapter, NestExpressApplication } from "@nestjs/platform-express";
+import { NODE_ENV } from "./modules/_common/const/envKeys";
 
 export function configNestApp<T extends INestApplication>(app: T): void {
 	app.useGlobalPipes(
@@ -29,8 +30,9 @@ export function configNestApp<T extends INestApplication>(app: T): void {
 			whitelist: true,
 			forbidNonWhitelisted: true,
 			exceptionFactory: (errors) => {
-				debugger;
-				console.log("validator error", errors);
+				if (process.env[NODE_ENV] !== "production") {
+					console.debug("validator error", errors);
+				}
 
 				const messages = errors.map((e) => JSON.stringify(e.constraints));
 
