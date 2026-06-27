@@ -431,12 +431,18 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		Logger.log(`[onApplicationBootstrap] run`, QuizController.name);
 		const weeklyPaintings = await this.paintingService.getWeeklyPaintings();
 
-		const fixedContexts: QuizContext[] = weeklyPaintings.map((p) => {
-			return {
-				artist: p.artist.name,
-				page: 0,
-			};
-		});
+		const artistSet = weeklyPaintings.reduce((set, p) => {
+			if (!set.has(p.artist.name)) {
+				set.add(p.artist.name);
+			}
+			return set;
+		}, new Set<string>());
+
+		const fixedContexts: QuizContext[] = Array.from(artistSet).map((name) => ({
+			artist: name,
+			page: 0,
+		}));
+
 		await this.scheduleService.initialize(fixedContexts);
 		Logger.log(`[onApplicationBootstrap] done`, QuizController.name);
 	}
