@@ -1,29 +1,60 @@
-import { ArrayNotEmpty, IsArray, IsNumber, IsString, Min } from "class-validator";
+import { isArray, IsNumber, IsString, Min } from "class-validator";
 import { IsInArray } from "../../../../utils/classValidator";
 import { QUIZ_TYPE } from "../../const";
 import { QuizType } from "../../type";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 import { ApiProperty } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
+import { transformToId } from "../../../../utils/obfuscate";
+import { isArrayEmpty } from "../../../../utils/validator";
 
 export class CreateQuizDTO {
-	/*TODO
-    - answerPainting 과 distractor painting 크기 제한하기
-    - 퀴즈 타입 사양에 맞추기
-  */
-	@IsArray()
-	@ArrayNotEmpty()
+	@ApiProperty({ type: "string", isArray: true })
+	@Transform(
+		({ value }) => {
+			if (!isArray(value)) {
+				return null;
+			}
+			if (isArrayEmpty(value)) {
+				return null;
+			}
+			return value.map((v) => transformToId(v));
+		},
+		{ toClassOnly: true },
+	)
 	@IsNumber(undefined, {
 		each: true,
 	})
 	answerPaintingIds!: number[];
 
-	@IsArray()
-	@ArrayNotEmpty()
+	@ApiProperty({ type: "string", isArray: true })
+	@Transform(
+		({ value }) => {
+			if (!isArray(value)) {
+				return null;
+			}
+			if (isArrayEmpty(value)) {
+				return null;
+			}
+			return value.map((v) => transformToId(v));
+		},
+		{ toClassOnly: true },
+	)
 	@IsNumber(undefined, {
 		each: true,
 	})
 	distractorPaintingIds!: number[];
 
+	@ApiProperty({ type: "string" })
+	@Transform(
+		({ value }) => {
+			if (value === undefined) {
+				return undefined;
+			}
+			return transformToId(value);
+		},
+		{ toClassOnly: true },
+	)
 	@IsOptionalProperty()
 	@IsNumber(undefined)
 	examplePaintingId?: number;
