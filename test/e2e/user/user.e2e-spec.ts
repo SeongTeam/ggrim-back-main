@@ -583,7 +583,9 @@ describe("UserController (e2e)", () => {
 						testName: "deliver valid userId path and body",
 						userId: userStub.id,
 						body: {
-							username: faker.internet.username({ firstName: "upDate" }),
+							username:
+								faker.internet.username({ firstName: "upDated" }) +
+								faker.animal.petName(),
 						},
 					},
 				])("test : $testName", ({ userId, body }) => {
