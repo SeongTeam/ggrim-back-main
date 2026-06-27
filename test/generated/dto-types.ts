@@ -956,10 +956,10 @@ export type components = {
         /** @enum {string} */
         QUIZ_TYPE: QUIZ_TYPE;
         CreateQuizDTO: {
-            examplePaintingId?: number;
+            answerPaintingIds: string[];
+            distractorPaintingIds: string[];
+            examplePaintingId?: string;
             type: components["schemas"]["QUIZ_TYPE"];
-            answerPaintingIds: number[];
-            distractorPaintingIds: number[];
             title: string;
             timeLimit: number;
             description: string;
@@ -1002,10 +1002,10 @@ export type components = {
             reactionCount: components["schemas"]["ShowQuizReactionCount"];
         };
         ReplaceQuizDTO: {
-            examplePaintingId?: number;
+            answerPaintingIds: string[];
+            distractorPaintingIds: string[];
+            examplePaintingId?: string;
             type: components["schemas"]["QUIZ_TYPE"];
-            answerPaintingIds: number[];
-            distractorPaintingIds: number[];
             title: string;
             timeLimit: number;
             description: string;

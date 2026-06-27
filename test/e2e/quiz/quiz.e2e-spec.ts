@@ -1362,8 +1362,8 @@ describe("QuizController (e2e)", () => {
 			const { time_limit: timeLimit, description, title } = factoryQuizStub();
 			const dto: CreateQuizDto = {
 				type: QUIZ_TYPE.ONE_CHOICE,
-				answerPaintingIds: [answerPaintingId],
-				distractorPaintingIds: distractorPaintingIds,
+				answerPaintingIds: [obfuscateId(answerPaintingId)],
+				distractorPaintingIds: distractorPaintingIds.map((id) => obfuscateId(id)),
 				title,
 				timeLimit,
 				description,
@@ -1423,8 +1423,10 @@ describe("QuizController (e2e)", () => {
 					testName: "deliver ONE_CHOICE type",
 					dto: {
 						type: QUIZ_TYPE.ONE_CHOICE,
-						answerPaintingIds: [paintingStubs[0].id],
-						distractorPaintingIds: paintingStubs.slice(1, 4).map((stub) => stub.id),
+						answerPaintingIds: [obfuscateId(paintingStubs[0].id)],
+						distractorPaintingIds: paintingStubs
+							.slice(1, 4)
+							.map((stub) => obfuscateId(stub.id)),
 						title: "quiz create",
 						timeLimit: 10,
 						description: "anything what you can",
@@ -1439,12 +1441,14 @@ describe("QuizController (e2e)", () => {
 				beforeAll(async () => {
 					const creator = await testService.insertStubUser(factoryUserStub(userType));
 
+					const answerPaintingResourceId = deobfuscateId(dto.answerPaintingIds[0]);
 					const answer = await paintingService.findOne({
-						where: { id: dto.answerPaintingIds[0] },
+						where: { id: answerPaintingResourceId },
 					});
-					const distractors = await paintingService.getManyByIds(
-						dto.distractorPaintingIds,
+					const distractorsResourceIds = dto.distractorPaintingIds.map((externalId) =>
+						deobfuscateId(externalId),
 					);
+					const distractors = await paintingService.getManyByIds(distractorsResourceIds);
 
 					assert(answer);
 					assert(distractors.length === dto.distractorPaintingIds.length);
@@ -1635,11 +1639,12 @@ describe("QuizController (e2e)", () => {
 					testName: "deliver too much distractorPaintingIds ",
 					inValidDto: {
 						type: QUIZ_TYPE.ONE_CHOICE,
-						answerPaintingIds: [paintingStubs[0].id],
+						answerPaintingIds: [obfuscateId(paintingStubs[0].id)],
 						distractorPaintingIds: paintingStubs
 							.slice(1, 10)
 							.map((stub) => stub.id)
-							.concat(deletedPaintingStub.id),
+							.concat(deletedPaintingStub.id)
+							.map((id) => obfuscateId(id)),
 						title: "quiz create",
 						timeLimit: 10,
 						description: faker.commerce.productDescription(),
@@ -2399,8 +2404,10 @@ describe("QuizController (e2e)", () => {
 					testName: "title, timeLimit,description 수정",
 					id: quizStub.id,
 					dto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
-						distractorPaintingIds: paintingStubs.slice(1, 4).map((p) => p.id),
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => obfuscateId(p.id)),
+						distractorPaintingIds: paintingStubs
+							.slice(1, 4)
+							.map((p) => obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2411,8 +2418,10 @@ describe("QuizController (e2e)", () => {
 					testName: "answerPaintingIds와 distractorPaintingIds수정",
 					id: quizStub.id,
 					dto: {
-						answerPaintingIds: paintingStubs.slice(1, 2).map((p) => p.id),
-						distractorPaintingIds: paintingStubs.slice(2, 5).map((p) => p.id),
+						answerPaintingIds: paintingStubs.slice(1, 2).map((p) => obfuscateId(p.id)),
+						distractorPaintingIds: paintingStubs
+							.slice(2, 5)
+							.map((p) => obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2425,12 +2434,15 @@ describe("QuizController (e2e)", () => {
 				let receivedQuiz: Quiz;
 
 				beforeAll(async () => {
+					const answerPaintingResourceId = deobfuscateId(dto.answerPaintingIds[0]);
 					const answer_painting = await paintingService.findOne({
-						where: { id: dto.answerPaintingIds[0] },
+						where: { id: answerPaintingResourceId },
 					});
-					const distractor_paintings = await paintingService.getManyByIds(
-						dto.distractorPaintingIds,
+					const distractorResourceIds = dto.distractorPaintingIds.map((id) =>
+						deobfuscateId(id),
 					);
+					const distractor_paintings =
+						await paintingService.getManyByIds(distractorResourceIds);
 					assert(answer_painting !== null);
 
 					expectedQuizPart = {
@@ -2529,8 +2541,10 @@ describe("QuizController (e2e)", () => {
 					testName: "invalid quizId",
 					invalidId: 33333333,
 					invalidDto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
-						distractorPaintingIds: paintingStubs.slice(1, 4).map((p) => p.id),
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => obfuscateId(p.id)),
+						distractorPaintingIds: paintingStubs
+							.slice(1, 4)
+							.map((p) => obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2541,8 +2555,10 @@ describe("QuizController (e2e)", () => {
 					testName: "deleted quizId",
 					invalidId: deletedQuizStub.id,
 					invalidDto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
-						distractorPaintingIds: paintingStubs.slice(1, 4).map((p) => p.id),
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => obfuscateId(p.id)),
+						distractorPaintingIds: paintingStubs
+							.slice(1, 4)
+							.map((p) => obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2553,8 +2569,10 @@ describe("QuizController (e2e)", () => {
 					testName: "deleted paintingId in answer",
 					invalidId: quizStub.id,
 					invalidDto: {
-						answerPaintingIds: [deletedPaintingStub.id],
-						distractorPaintingIds: paintingStubs.slice(0, 3).map((p) => p.id),
+						answerPaintingIds: [obfuscateId(deletedPaintingStub.id)],
+						distractorPaintingIds: paintingStubs
+							.slice(0, 3)
+							.map((p) => obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2564,10 +2582,10 @@ describe("QuizController (e2e)", () => {
 					testName: "deleted paintingId in distractor",
 					invalidId: quizStub.id,
 					invalidDto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
-						distractorPaintingIds: [deletedPaintingStub.id].concat(
-							paintingStubs.slice(1, 3).map((p) => p.id),
-						),
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => obfuscateId(p.id)),
+						distractorPaintingIds: [deletedPaintingStub.id]
+							.concat(paintingStubs.slice(1, 3).map((p) => p.id))
+							.map((id) => obfuscateId(id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2588,8 +2606,8 @@ describe("QuizController (e2e)", () => {
 					testName: "over distractorIds",
 					invalidId: quizStub.id,
 					invalidDto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
-						distractorPaintingIds: paintingStubs.slice(1).map((p) => p.id),
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => obfuscateId(p.id)),
+						distractorPaintingIds: paintingStubs.slice(1).map((p) => obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2599,8 +2617,10 @@ describe("QuizController (e2e)", () => {
 					testName: "duplicate distractorIds",
 					invalidId: quizStub.id,
 					invalidDto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
-						distractorPaintingIds: paintingStubs.slice(0, 3).map((p) => p.id),
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => obfuscateId(p.id)),
+						distractorPaintingIds: paintingStubs
+							.slice(0, 3)
+							.map((p) => obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2672,8 +2692,10 @@ describe("QuizController (e2e)", () => {
 					testName: "tried by other user",
 					invalidId: quizStub.id,
 					invalidDto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
-						distractorPaintingIds: paintingStubs.slice(1, 4).map((p) => p.id),
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => obfuscateId(p.id)),
+						distractorPaintingIds: paintingStubs
+							.slice(1, 4)
+							.map((p) => obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2684,8 +2706,10 @@ describe("QuizController (e2e)", () => {
 					testName: "tried by other admin",
 					invalidId: quizStub.id,
 					invalidDto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => p.id),
-						distractorPaintingIds: paintingStubs.slice(1, 4).map((p) => p.id),
+						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => obfuscateId(p.id)),
+						distractorPaintingIds: paintingStubs
+							.slice(1, 4)
+							.map((p) => obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
