@@ -34,6 +34,21 @@ export class UpdateColumnName1780405662768 implements MigrationInterface {
 			beforeColumn: ["paintingId", "quizId"],
 			afterColumn: ["painting_id", "quiz_id"],
 		},
+		{
+			table: "quiz_artists_artist",
+			beforeColumn: ["artistId", "quizId"],
+			afterColumn: ["artist_id", "quiz_id"],
+		},
+		{
+			table: "quiz_tags_tag",
+			beforeColumn: ["tagId", "quizId"],
+			afterColumn: ["tag_id", "quiz_id"],
+		},
+		{
+			table: "quiz_styles_style",
+			beforeColumn: ["styleId", "quizId"],
+			afterColumn: ["style_id", "quiz_id"],
+		},
 	];
 
 	public async up(queryRunner: QueryRunner): Promise<void> {
