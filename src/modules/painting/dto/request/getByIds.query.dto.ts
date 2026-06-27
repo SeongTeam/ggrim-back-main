@@ -22,7 +22,9 @@ export class GetByIdsQueryDTO {
 	ids!: number[];
 
 	@ApiProperty({ default: false })
-	@Transform(({ value }) => (value === "true" ? true : false))
+	@Transform(({ value }) => (value === "true" ? true : false), {
+		toClassOnly: true,
+	})
 	@IsOptionalProperty()
 	@IsBoolean()
 	isS3Access: boolean = false;

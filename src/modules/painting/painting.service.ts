@@ -448,22 +448,21 @@ export class PaintingService {
 	public async getWeeklyPaintings() {
 		const artistNames = [
 			"John Constable",
-			// "Titian",
-			// "Honore Daumier",
-			// "Kazimir Malevich",
-			// "Ivan Shishkin",
-			// "Edvard Munch ",
-			// "Leon Bakst",
+			"Titian",
+			"Honore Daumier",
+			"Kazimir Malevich",
+			"Ivan Shishkin",
+			"Alphonse Mucha",
+			"Arkhip Kuindzhi",
 		];
-
-		const artist = artistNames[0];
 
 		const paintings = await this.repo
 			.createQueryBuilder("p")
 			.select()
 			.innerJoinAndSelect("p.artist", "a")
-			.where("a.name = :name", { name: artist })
-			.limit(5)
+			.innerJoinAndSelect("p.tags", "tag")
+			.innerJoinAndSelect("p.styles", "styles")
+			.where("a.name IN (:...artistNames)", { artistNames })
 			.getMany();
 
 		return paintings;

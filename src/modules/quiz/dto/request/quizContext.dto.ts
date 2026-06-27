@@ -24,8 +24,11 @@ export class QuizContextDTO implements QuizContext {
 
 	@ApiHideProperty()
 	@Expose()
-	@Transform(({ obj }: { obj: QuizContextDTO }) =>
-		[obj.artist, obj.tag, obj.style].filter((v) => v),
+	@Transform(
+		({ obj }: { obj: QuizContextDTO }) => [obj.artist, obj.tag, obj.style].filter((v) => v),
+		{
+			toClassOnly: true,
+		},
 	)
 	@ArrayNotEmpty({ message: "At least one of artist, tag, or style must be provided!" })
 	_atLeastOne!: object; // 내부 필드 검증용 더미 객체
