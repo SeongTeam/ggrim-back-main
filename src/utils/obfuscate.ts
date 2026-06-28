@@ -1,89 +1,112 @@
 import { isString } from "class-validator";
 import Sqids from "sqids";
 
-const sqids = new Sqids({
-	alphabet:
-		process.env.ENV_OBFUSCATE_ALPHABET ||
-		"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-	minLength: parseInt(process.env.ENV_OBFUSCATE_MIN_LENGTH || "8"),
-});
+export class ObfuscateUtil {
+	private static OBFUSCATE_CONFIG = {
+		maxIdLength: 40,
+		maxIdValue: 2 ** 31 - 1,
+		allowedChars: /^[a-zA-Z0-9]+$/, // 서비스에 설정된 알파벳에 맞게 조정
+		isObfuscate: false,
+		defaultPrefix: "IDis",
+	};
 
-const OBFUSCATE_CONFIG = {
-	MAX_ID_LENGTH: 40,
-	MAX_ID_VALUE: 2 ** 31 - 1,
-	ALLOWED_CHARS: /^[a-zA-Z0-9]+$/, // 서비스에 설정된 알파벳에 맞게 조정
-	IS_OBFUSCATE: process.env.ENV_OBFUSCATE === "true",
-} as const;
-const NOT_OBFUSCATE_PREFIX = `IDis`;
+	private static sqids = new Sqids({
+		alphabet: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+		minLength: 6,
+	});
+	static initialize({
+		isObfuscate,
+		alphabet,
+		minLength,
+	}: {
+		isObfuscate: boolean;
+		alphabet: string;
+		minLength: number;
+	}) {
+		this.OBFUSCATE_CONFIG.isObfuscate = isObfuscate;
 
-export function obfuscateId(id: number): string {
-	if (!OBFUSCATE_CONFIG.IS_OBFUSCATE) {
-		return `${NOT_OBFUSCATE_PREFIX}${id}`;
+		this.sqids = new Sqids({
+			alphabet: alphabet,
+			minLength: minLength,
+		});
+		console.log(`ObfuscateUtil initialized`, this.OBFUSCATE_CONFIG);
+		// console.debug(
+		// 	process.env[ENV_OBFUSCATE],
+		// 	process.env[ENV_OBFUSCATE_ALPHABET],
+		// 	process.env[ENV_OBFUSCATE_MIN_LENGTH],
+		// 	`isProduction: ${process.env[NODE_ENV] === "production"}`,
+		// 	`appName: ${process.env[APP_NAME_KEY] || "App_NAME_UNDEFINED"}`,
+		// );
 	}
-
-	return sqids.encode([id]);
-}
-
-export function deobfuscateId(obfuscatedId: string): number {
-	if (!OBFUSCATE_CONFIG.IS_OBFUSCATE) {
-		const rawId = obfuscatedId.slice(NOT_OBFUSCATE_PREFIX.length);
-
-		try {
-			const id = Number(rawId);
-			return id;
-		} catch (err) {
-			throw err;
+	static obfuscateId(id: number): string {
+		if (!this.OBFUSCATE_CONFIG.isObfuscate) {
+			return `${this.OBFUSCATE_CONFIG.defaultPrefix}${id}`;
 		}
-	}
-	const decoded = sqids.decode(obfuscatedId);
-	if (decoded.length === 0) {
-		throw new Error(`Failed to deobfuscate id: ${obfuscatedId}`);
+
+		return this.sqids.encode([id]);
 	}
 
-	return decoded[0];
-}
+	static deobfuscateId(obfuscatedId: string): number {
+		if (!this.OBFUSCATE_CONFIG.isObfuscate) {
+			const rawId = obfuscatedId.slice(this.OBFUSCATE_CONFIG.defaultPrefix.length);
 
-export function validateObfuscated(obfuscated: unknown): obfuscated is string {
-	if (isString(obfuscated) === false) {
-		return false;
+			try {
+				const id = Number(rawId);
+				return id;
+			} catch (err) {
+				throw err;
+			}
+		}
+		const decoded = this.sqids.decode(obfuscatedId);
+		if (decoded.length === 0) {
+			throw new Error(`Failed to deobfuscate id: ${obfuscatedId}`);
+		}
+
+		return decoded[0];
 	}
 
-	if (!obfuscated || obfuscated.trim() === "") {
-		return false;
+	static validateObfuscated(obfuscated: unknown): obfuscated is string {
+		if (isString(obfuscated) === false) {
+			return false;
+		}
+
+		if (!obfuscated || obfuscated.trim() === "") {
+			return false;
+		}
+
+		if (obfuscated.length > this.OBFUSCATE_CONFIG.maxIdLength) {
+			return false;
+		}
+
+		if (!this.OBFUSCATE_CONFIG.isObfuscate) {
+			const rawId = obfuscated.slice(this.OBFUSCATE_CONFIG.defaultPrefix.length);
+			const regExr = /^\d+$/;
+			return regExr.test(rawId);
+		}
+
+		return this.OBFUSCATE_CONFIG.allowedChars.test(obfuscated);
 	}
 
-	if (obfuscated.length > OBFUSCATE_CONFIG.MAX_ID_LENGTH) {
-		return false;
+	static validateDeobfuscated(id: number): id is number {
+		if (id > this.OBFUSCATE_CONFIG.maxIdValue) {
+			return false;
+		}
+
+		return true;
 	}
 
-	if (!OBFUSCATE_CONFIG.IS_OBFUSCATE) {
-		const rawId = obfuscated.slice(NOT_OBFUSCATE_PREFIX.length);
-		const regExr = /^\d+$/;
-		return regExr.test(rawId);
-	}
-
-	return OBFUSCATE_CONFIG.ALLOWED_CHARS.test(obfuscated);
-}
-
-export function validateDeobfuscated(id: number): id is number {
-	if (id > OBFUSCATE_CONFIG.MAX_ID_VALUE) {
-		return false;
-	}
-
-	return true;
-}
-
-export function transformToId(obfuscated: unknown): number | null {
-	if (!validateObfuscated(obfuscated)) {
-		return null;
-	}
-	try {
-		const id = deobfuscateId(obfuscated);
-		if (!validateDeobfuscated(id)) {
+	static transformToId(obfuscated: unknown): number | null {
+		if (!this.validateObfuscated(obfuscated)) {
 			return null;
 		}
-		return id;
-	} catch {
-		return null;
+		try {
+			const id = this.deobfuscateId(obfuscated);
+			if (!this.validateDeobfuscated(id)) {
+				return null;
+			}
+			return id;
+		} catch {
+			return null;
+		}
 	}
 }

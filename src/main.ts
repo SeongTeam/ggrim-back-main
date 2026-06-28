@@ -2,7 +2,7 @@ import { NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
 import { winstonLogger } from "./utils/winston.config";
-import { configNestApp, configSwagger } from "./app.config";
+import { configNestApp, configSwagger, configUtil } from "./app.config";
 
 async function bootstrap() {
 	const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -12,6 +12,7 @@ async function bootstrap() {
 
 	configNestApp(app);
 	configSwagger(app);
+	configUtil(app);
 
 	//Shutdown Hook is not supported to Window platform
 	//ref : https://docs.nestjs.com/fundamentals/lifecycle-events#application-shutdown
