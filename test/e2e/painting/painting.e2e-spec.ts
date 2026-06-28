@@ -115,7 +115,7 @@ describe("PaintingController (e2e)", () => {
 		}
 
 		describe("success when deliver valid query", () => {
-			const paintingTitlePrefix = faker.book.title() + "subtitle";
+			const paintingTitlePrefix = "subtitle";
 
 			beforeAll(async () => {
 				const prefixedPaintingStubs = Array(10)
