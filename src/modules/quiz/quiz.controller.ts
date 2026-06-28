@@ -10,7 +10,6 @@ import {
 	OnApplicationBootstrap,
 	OnModuleDestroy,
 	Param,
-	ParseUUIDPipe,
 	Post,
 	Put,
 	Query,
@@ -55,10 +54,11 @@ import { UseTokenAuthGuard } from "../auth/guard/decorator/authentication";
 import { GetQuizQueryDTO } from "./dto/request/getQuiz.query.dto";
 import { ShowQuizReactionResponse } from "./dto/response/showQuizReaction.response";
 import { ConfigService } from "@nestjs/config";
-import { ApiCreatedResponse, ApiOkResponse, ApiQuery } from "@nestjs/swagger";
+import { ApiCreatedResponse, ApiOkResponse, ApiParam, ApiQuery } from "@nestjs/swagger";
 import { QuizBatchService } from "./batch/quiz.batch.service";
 import { isNotFalsy } from "../../utils/validator";
 import { QuizType } from "./type";
+import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
 
 //TODO whitelist 옵션 추가하여 보안강화 고려하기
 @Controller("quiz")
@@ -97,9 +97,16 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		Logger.log(`[OnModuleDestroy] done `, QuizController.name);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@HttpCode(HttpStatus.CREATED)
 	@Post("submit/:id")
-	async submitQuiz(@Param("id", ParseUUIDPipe) id: string, @Body() dto: SubmitQuizDTO) {
+	async submitQuiz(@Param("id", IdDeobfuscatePipe) id: number, @Body() dto: SubmitQuizDTO) {
 		const target = await this.service.findOne({ where: { id } });
 
 		if (!target) {
@@ -109,11 +116,18 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		await this.batchService.insertSubmission(target.id, dto.isCorrect);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@ApiOkResponse({ type: ShowQuizReactionResponse, isArray: true })
 	@HttpCode(HttpStatus.OK)
 	@Get(":id/reactions")
 	async getQuizReactions(
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", IdDeobfuscatePipe) id: number,
 		@Query() dto: QuizReactionQueryDTO,
 	): Promise<ShowQuizReactionResponse[]> {
 		const target = await this.service.findOne({ where: { id } });
@@ -146,6 +160,13 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		return res;
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@HttpCode(HttpStatus.CREATED)
 	@UseTokenAuthGuard()
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -153,7 +174,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	async createQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", IdDeobfuscatePipe) id: number,
 		@Body() dto: CreateQuizReactionDTO,
 	): Promise<void> {
 		const userPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
@@ -175,6 +196,13 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		}
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@HttpCode(HttpStatus.OK)
 	@UseTokenAuthGuard()
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -182,7 +210,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	async deleteQuizReaction(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", IdDeobfuscatePipe) id: number,
 	): Promise<void> {
 		const userPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = userPayload;
@@ -279,11 +307,18 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		return new ShowQuizResponse(quiz);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@ApiOkResponse({ type: DetailQuizResponse })
 	@HttpCode(HttpStatus.OK)
 	@Get(":id")
 	async getDetailQuiz(
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", IdDeobfuscatePipe) id: number,
 		@Query() query: GetQuizQueryDTO,
 	): Promise<DetailQuizResponse> {
 		let quiz = await this.service.findOne({ where: { id } });
@@ -310,15 +345,19 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		return new DetailQuizResponse(quiz, reactionCount, userReaction);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@ApiOkResponse({ type: ShowQuizResponse })
 	@HttpCode(HttpStatus.OK)
 	@UseOwnerGuard(
 		{ guard: TokenAuthGuard },
 		{
 			serviceClass: QuizService,
-			idParam: "id",
-			ownerField: "owner_id",
-			serviceMethod: "getQuizById",
 		},
 	)
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -326,7 +365,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 	async update(
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", IdDeobfuscatePipe) id: number,
 		@Body() dto: ReplaceQuizDTO,
 	): Promise<ShowQuizResponse> {
 		const quiz = await this.service.findOne({ where: { id } });
@@ -339,19 +378,23 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		return new ShowQuizResponse(updatedQuiz);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@HttpCode(HttpStatus.OK)
 	@UseOwnerGuard(
 		{ guard: TokenAuthGuard },
 		{
 			serviceClass: QuizService,
-			idParam: "id",
-			ownerField: "owner_id",
-			serviceMethod: "getQuizById",
 		},
 	)
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Delete(":id")
-	async delete(@DBQueryRunner() qr: QueryRunner, @Param("id", ParseUUIDPipe) id: string) {
+	async delete(@DBQueryRunner() qr: QueryRunner, @Param("id", IdDeobfuscatePipe) id: number) {
 		await this.service.softDeleteQuiz(qr, id);
 	}
 
@@ -388,12 +431,18 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		Logger.log(`[onApplicationBootstrap] run`, QuizController.name);
 		const weeklyPaintings = await this.paintingService.getWeeklyPaintings();
 
-		const fixedContexts: QuizContext[] = weeklyPaintings.map((p) => {
-			return {
-				artist: p.artist.name,
-				page: 0,
-			};
-		});
+		const artistSet = weeklyPaintings.reduce((set, p) => {
+			if (!set.has(p.artist.name)) {
+				set.add(p.artist.name);
+			}
+			return set;
+		}, new Set<string>());
+
+		const fixedContexts: QuizContext[] = Array.from(artistSet).map((name) => ({
+			artist: name,
+			page: 0,
+		}));
+
 		await this.scheduleService.initialize(fixedContexts);
 		Logger.log(`[onApplicationBootstrap] done`, QuizController.name);
 	}
@@ -493,7 +542,7 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		const EXPECTED = { answer: 1, distractor: 3 };
 
 		// 개수 검증
-		const checks: [string, string[], number][] = [
+		const checks: [string, number[], number][] = [
 			["answer", answerPaintingIds, EXPECTED.answer],
 			["distractor", distractorPaintingIds, EXPECTED.distractor],
 		];
@@ -509,8 +558,8 @@ export class QuizController implements OnApplicationBootstrap, OnModuleDestroy {
 		}
 
 		const ids = [...answerPaintingIds, ...distractorPaintingIds];
-		const seen = new Set<string>();
-		const duplicates = new Set<string>();
+		const seen = new Set<number>();
+		const duplicates = new Set<number>();
 
 		for (const id of ids) {
 			if (seen.has(id)) {

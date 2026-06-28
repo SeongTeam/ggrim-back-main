@@ -18,6 +18,7 @@ import { pick } from "../../../src/utils/object";
 import assert from "assert";
 import { arrangeDeletedUser, getOneTimeTokenHeader } from "./util";
 import { HeaderOneTimeToken } from "../_common/type";
+import { ObfuscateUtil } from "../../../src/utils/obfuscate";
 
 if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 	console.log("Set setTimeout for debugging");
@@ -56,6 +57,7 @@ describe("UserController (e2e)", () => {
 		authService = moduleFixture.get(AuthService);
 		dbService = moduleFixture.get(DatabaseService);
 		await dbService.resetDB();
+		await testService.initTables();
 		await app.listen(port);
 	});
 
@@ -69,12 +71,12 @@ describe("UserController (e2e)", () => {
 		// - [x] 좋은 데이터 테스트
 		// - [x] 나쁜 데이터 테스트 (비유효 id path)
 
-		async function requestReadUser(id: string) {
+		async function requestReadUser(externalId: string) {
 			const route = ApiPaths.UserController_getOne;
 			const response = await client.GET(route, {
 				params: {
 					path: {
-						id,
+						id: externalId,
 					},
 				},
 			});
@@ -98,7 +100,8 @@ describe("UserController (e2e)", () => {
 				])("test : $testName", ({ id }) => {
 					let receivedRes: Awaited<ReturnType<typeof requestReadUser>>;
 					beforeAll(async () => {
-						receivedRes = await requestReadUser(id);
+						const externalId = ObfuscateUtil.obfuscateId(id);
+						receivedRes = await requestReadUser(externalId);
 					});
 					it("response should match the OpenAPI documentation.", () => {
 						expect(receivedRes.response.status).toBe(HttpStatus.OK);
@@ -125,7 +128,7 @@ describe("UserController (e2e)", () => {
 				},
 				{
 					testName: "deliver not existed id path",
-					invalidId: faker.string.uuid(),
+					invalidId: 100000,
 				},
 				{
 					testName: "deliver deleted User's id path",
@@ -138,7 +141,7 @@ describe("UserController (e2e)", () => {
 			])("test : $testName", ({ invalidId }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestReadUser>>;
 				beforeAll(async () => {
-					receivedRes = await requestReadUser(invalidId);
+					receivedRes = await requestReadUser(invalidId as string);
 				});
 				it("response should match the OpenAPI documentation.", () => {
 					expect(receivedRes.response.status).toBe(HttpStatus.BAD_REQUEST);
@@ -183,6 +186,9 @@ describe("UserController (e2e)", () => {
 			])("test : $testName", ({ email, body }) => {
 				let receivedRes: Awaited<ReturnType<typeof requestCreateUser>>;
 				beforeAll(async () => {
+					//reset rows
+					await testService.truncateTable("user");
+
 					const header = await getOneTimeTokenHeader(moduleFixture, email, "sign-up");
 					receivedRes = await requestCreateUser(body, header);
 				});
@@ -195,8 +201,9 @@ describe("UserController (e2e)", () => {
 				});
 				it("User entity should be created", async () => {
 					const receivedBody = receivedRes.data!;
+					const resourceId = ObfuscateUtil.deobfuscateId(receivedBody.id);
 					const receivedEntity = await userService.findOne({
-						where: { id: receivedBody.id },
+						where: { id: resourceId },
 					});
 					expect(receivedEntity).toBeDefined();
 				});
@@ -321,7 +328,7 @@ describe("UserController (e2e)", () => {
 		// - [ ] 특수 상황 테스트 (만료된 oneTimeToken)
 		// - [ ] 특수 상황 테스트 (oneTimeToken 발급 직후 계정 삭제한 상황에서의 요청)
 		async function requestUpdatePassword(
-			id: string,
+			externalId: string,
 			body: { password: string },
 			header: HeaderOneTimeToken,
 		) {
@@ -329,7 +336,7 @@ describe("UserController (e2e)", () => {
 			const response = await client.PUT(route, {
 				params: {
 					path: {
-						id,
+						id: externalId,
 					},
 					header,
 				},
@@ -364,8 +371,8 @@ describe("UserController (e2e)", () => {
 							userEmail,
 							"update-password",
 						);
-
-						receivedRes = await requestUpdatePassword(userId, body, header);
+						const externalUserId = ObfuscateUtil.obfuscateId(userId);
+						receivedRes = await requestUpdatePassword(externalUserId, body, header);
 					});
 
 					it("response should match the OpenAPI documentation. doc", () => {
@@ -399,7 +406,7 @@ describe("UserController (e2e)", () => {
 				describe.each([
 					{
 						testName: "deliver not existed user id",
-						userId: faker.string.uuid(),
+						userId: 240000,
 						requestUserEmail: userStub.email,
 						body: {
 							password: "updatedPassword",
@@ -432,8 +439,8 @@ describe("UserController (e2e)", () => {
 							requestUserEmail,
 							"update-password",
 						);
-
-						receivedRes = await requestUpdatePassword(userId, body, header);
+						const externalUserId = ObfuscateUtil.obfuscateId(userId);
+						receivedRes = await requestUpdatePassword(externalUserId, body, header);
 					});
 
 					it("response should match the OpenAPI documentation. doc", () => {
@@ -497,8 +504,8 @@ describe("UserController (e2e)", () => {
 							"update-password",
 							oneTimeTokenOption,
 						);
-
-						receivedRes = await requestUpdatePassword(userId, body, header);
+						const externalUserId = ObfuscateUtil.obfuscateId(userId);
+						receivedRes = await requestUpdatePassword(externalUserId, body, header);
 					});
 
 					it("response should match the OpenAPI documentation", () => {
@@ -512,7 +519,7 @@ describe("UserController (e2e)", () => {
 			it("deliver oneTimeToken from deleted user", async () => {
 				//1. arrange
 				const deletedUserStub = factoryUserStub("user");
-				const targetUserId = deletedUserStub.id;
+				const userId = deletedUserStub.id;
 				await testService.insertStubUser(deletedUserStub);
 				const header = await getOneTimeTokenHeader(
 					moduleFixture,
@@ -525,7 +532,8 @@ describe("UserController (e2e)", () => {
 				await arrangeDeletedUser(moduleFixture, deletedUserStub);
 
 				//2. action
-				const receivedRes = await requestUpdatePassword(targetUserId, body, header);
+				const externalUserId = ObfuscateUtil.obfuscateId(userId);
+				const receivedRes = await requestUpdatePassword(externalUserId, body, header);
 
 				//3. assert
 				expect(receivedRes.response.status).toBe(HttpStatus.UNAUTHORIZED);
@@ -543,7 +551,7 @@ describe("UserController (e2e)", () => {
 		// - [ ] 특수 상황 테스트 (만료된 jwt(authorization) 전달)
 
 		async function requestUpdateUsername(
-			id: string,
+			externalId: string,
 			body: { username: string },
 			authorization: string,
 		) {
@@ -551,7 +559,7 @@ describe("UserController (e2e)", () => {
 			const response = await client.PUT(route, {
 				params: {
 					path: {
-						id: id,
+						id: externalId,
 					},
 					header: {
 						authorization,
@@ -575,7 +583,9 @@ describe("UserController (e2e)", () => {
 						testName: "deliver valid userId path and body",
 						userId: userStub.id,
 						body: {
-							username: faker.internet.username({ firstName: "upDate" }),
+							username:
+								faker.internet.username({ firstName: "upDt" }) +
+								faker.number.int({ min: 0, max: 100 }),
 						},
 					},
 				])("test : $testName", ({ userId, body }) => {
@@ -585,7 +595,12 @@ describe("UserController (e2e)", () => {
 						const user = await userService.findOne({ where: { id: userId } });
 						assert(user !== null);
 						const authorization = testService.getBearerAuthCredential(user);
-						receivedRes = await requestUpdateUsername(userId, body, authorization);
+						const externalUserId = ObfuscateUtil.obfuscateId(userId);
+						receivedRes = await requestUpdateUsername(
+							externalUserId,
+							body,
+							authorization,
+						);
 					});
 
 					it("response should match the OpenAPI documentation.", () => {
@@ -614,7 +629,7 @@ describe("UserController (e2e)", () => {
 				describe.each([
 					{
 						testName: "deliver not existed id path",
-						invalidId: faker.string.uuid(),
+						invalidId: "240000",
 						requestUserEmail: userStub.email,
 						invalidBody: {
 							username: "updatedUsername",
@@ -670,7 +685,12 @@ describe("UserController (e2e)", () => {
 				let receivedRes: Awaited<ReturnType<typeof requestUpdateUsername>>;
 
 				beforeAll(async () => {
-					receivedRes = await requestUpdateUsername(userId, body, invalidAuthorization);
+					const externalUserId = ObfuscateUtil.obfuscateId(userId);
+					receivedRes = await requestUpdateUsername(
+						externalUserId,
+						body,
+						invalidAuthorization,
+					);
 				});
 
 				it("response should match the OpenAPI documentation.", () => {
@@ -719,7 +739,8 @@ describe("UserController (e2e)", () => {
 					});
 					assert(authorizationUser !== null);
 					const authorization = testService.getBearerAuthCredential(authorizationUser);
-					receivedRes = await requestUpdateUsername(userId, body, authorization);
+					const externalUserId = ObfuscateUtil.obfuscateId(userId);
+					receivedRes = await requestUpdateUsername(externalUserId, body, authorization);
 				});
 
 				it("response should match the OpenAPI documentation.", () => {
@@ -738,7 +759,7 @@ describe("UserController (e2e)", () => {
 		// - [x] 특수 상황 테스트 ( 일반 사용자가 요청, 삭제된 관리자로 요청)
 		// - [ ] 특수 상황 테스트 ( 만료된 jwt(authorization) 전달달)
 		async function requestUpdateUserRole(
-			id: string,
+			externalId: string,
 			body: {
 				role: USER_ROLE;
 			},
@@ -748,7 +769,7 @@ describe("UserController (e2e)", () => {
 			const response = await client.PUT(route, {
 				params: {
 					path: {
-						id,
+						id: externalId,
 					},
 					header: {
 						authorization: adminAuthorization,
@@ -789,7 +810,8 @@ describe("UserController (e2e)", () => {
 						});
 						assert(requestUser !== null);
 						const authorization = testService.getBearerAuthCredential(requestUser);
-						receivedRes = await requestUpdateUserRole(id, body, authorization);
+						const externalId = ObfuscateUtil.obfuscateId(id);
+						receivedRes = await requestUpdateUserRole(externalId, body, authorization);
 					});
 
 					it("response should match the OpenAPI documentation.", () => {
@@ -822,7 +844,7 @@ describe("UserController (e2e)", () => {
 				describe.each([
 					{
 						testName: "deliver not existed user's email",
-						invalidId: faker.string.uuid(),
+						invalidId: "100000",
 						requestUserEmail: requestUserStub.email,
 						invalidBody: {
 							role: userType === USER_ROLE.user ? USER_ROLE.admin : USER_ROLE.user,
@@ -830,7 +852,7 @@ describe("UserController (e2e)", () => {
 					},
 					{
 						testName: "deliver invalid body",
-						invalidId: faker.string.uuid(),
+						invalidId: "10000",
 						requestUserEmail: requestUserStub.email,
 						invalidBody: {
 							role: "NOT_DEFINED_ROLE",
@@ -871,18 +893,19 @@ describe("UserController (e2e)", () => {
 				describe.each([
 					{
 						testName: "deliver faker authorization",
-						email: targetUserStub.email,
+						id: targetUserStub.id,
 						invalidAuthorization: faker.internet.jwt(),
 						body: {
 							role: userType === USER_ROLE.user ? USER_ROLE.admin : USER_ROLE.user,
 						},
 					},
-				])("test : $testName", ({ email, body, invalidAuthorization }) => {
+				])("test : $testName", ({ id, body, invalidAuthorization }) => {
 					let receivedRes: Awaited<ReturnType<typeof requestUpdateUserRole>>;
 
 					beforeAll(async () => {
+						const externalId = ObfuscateUtil.obfuscateId(id);
 						receivedRes = await requestUpdateUserRole(
-							email,
+							externalId,
 							body,
 							invalidAuthorization,
 						);
@@ -913,13 +936,13 @@ describe("UserController (e2e)", () => {
 				describe.each([
 					{
 						testName: "flip role when request by normal user",
-						email: targetUserStub.email,
+						id: targetUserStub.id,
 						requestUserEmail: normalUserStub.email,
 						body: {
 							role: userType === USER_ROLE.user ? USER_ROLE.admin : USER_ROLE.user,
 						},
 					},
-				])("test : $testName", ({ email, body, requestUserEmail }) => {
+				])("test : $testName", ({ id, body, requestUserEmail }) => {
 					let receivedRes: Awaited<ReturnType<typeof requestUpdateUserRole>>;
 
 					beforeAll(async () => {
@@ -928,7 +951,8 @@ describe("UserController (e2e)", () => {
 						});
 						assert(requestUser !== null);
 						const authorization = testService.getBearerAuthCredential(requestUser);
-						receivedRes = await requestUpdateUserRole(email, body, authorization);
+						const externalId = ObfuscateUtil.obfuscateId(id);
+						receivedRes = await requestUpdateUserRole(externalId, body, authorization);
 					});
 
 					it("response should match the OpenAPI documentation.", () => {
@@ -945,7 +969,6 @@ describe("UserController (e2e)", () => {
 					//1. arrange
 					const targetUserStub = factoryUserStub("user");
 					const deletedAdminStub = factoryUserStub("admin");
-					const targetEmail = targetUserStub.email;
 					const [, deletedAdmin] = await testService.insertUserStubs([
 						targetUserStub,
 						deletedAdminStub,
@@ -958,8 +981,9 @@ describe("UserController (e2e)", () => {
 					await arrangeDeletedUser(moduleFixture, deletedAdminStub);
 
 					//2. action
+					const externalId = ObfuscateUtil.obfuscateId(targetUserStub.id);
 					const receivedRes = await requestUpdateUserRole(
-						targetEmail,
+						externalId,
 						body,
 						authorization,
 					);
@@ -1017,7 +1041,8 @@ describe("UserController (e2e)", () => {
 							requestUserEmail,
 							"delete-account",
 						);
-						receivedRes = await requestDeleteUser(userId, header);
+						const externalUserId = ObfuscateUtil.obfuscateId(userId);
+						receivedRes = await requestDeleteUser(externalUserId, header);
 					});
 
 					it("response should match the OpenAPI documentation.", () => {
@@ -1047,11 +1072,11 @@ describe("UserController (e2e)", () => {
 				describe.each([
 					{
 						testName: "deliver not existed user id",
-						invalidId: faker.string.uuid(),
+						invalidId: "20000",
 						requestUserEmail: targetUserStub.email,
 					},
 					{
-						testName: "deliver not uuid format",
+						testName: "deliver not int format",
 						invalidId: faker.internet.ipv4(),
 						requestUserEmail: targetUserStub.email,
 					},
@@ -1121,7 +1146,8 @@ describe("UserController (e2e)", () => {
 								"delete-account",
 								oneTimeTokenOption,
 							);
-							receivedRes = await requestDeleteUser(userId, header);
+							const externalUserId = ObfuscateUtil.obfuscateId(userId);
+							receivedRes = await requestDeleteUser(externalUserId, header);
 						});
 
 						it("response should match the OpenAPI documentation.", () => {
@@ -1147,7 +1173,8 @@ describe("UserController (e2e)", () => {
 				await arrangeDeletedUser(moduleFixture, deletedUserStub);
 
 				//2. action
-				const receivedRes = await requestDeleteUser(userId, header);
+				const externalUserId = ObfuscateUtil.obfuscateId(userId);
+				const receivedRes = await requestDeleteUser(externalUserId, header);
 
 				//3. assert
 				expect(receivedRes.response.status).toBe(HttpStatus.UNAUTHORIZED);
@@ -1168,7 +1195,8 @@ describe("UserController (e2e)", () => {
 				await arrangeDeletedUser(moduleFixture, deletedUserStub);
 
 				//2. action
-				const receivedRes = await requestDeleteUser(userId, header);
+				const externalUserId = ObfuscateUtil.obfuscateId(userId);
+				const receivedRes = await requestDeleteUser(externalUserId, header);
 
 				//3. assert
 				expect(receivedRes.response.status).toBe(HttpStatus.UNAUTHORIZED);
@@ -1187,7 +1215,8 @@ describe("UserController (e2e)", () => {
 				);
 
 				//2.action
-				const receivedRes = await requestDeleteUser(targetUser.id, header);
+				const externalUserId = ObfuscateUtil.obfuscateId(targetUser.id);
+				const receivedRes = await requestDeleteUser(externalUserId, header);
 
 				//3.assert
 				expect(receivedRes.response.status).toBe(HttpStatus.UNAUTHORIZED);
@@ -1203,12 +1232,12 @@ describe("UserController (e2e)", () => {
 		// - [x] 나쁜 데이터 테스트 (비유효 header authorization field)
 		// - [x] 특수 상황 테스트 (타인 일반 사용자가 요청, 타인 관리자가 요청, 삭제된 사용자가 요청,이미 사용된 oneTimeToken 전달,사용자가 삭제되지 않은 상황)
 
-		async function requestRecoverUser(id: string, header: HeaderOneTimeToken) {
+		async function requestRecoverUser(externalId: string, header: HeaderOneTimeToken) {
 			const route = ApiPaths.UserController_recoverUser;
 			const response = await client.PUT(route, {
 				params: {
 					path: {
-						id,
+						id: externalId,
 					},
 					header,
 				},
@@ -1242,7 +1271,8 @@ describe("UserController (e2e)", () => {
 							requestUserEmail,
 							"recover-account",
 						);
-						receivedRes = await requestRecoverUser(userId, header);
+						const externalId = ObfuscateUtil.obfuscateId(userId);
+						receivedRes = await requestRecoverUser(externalId, header);
 					});
 
 					it("response should match the OpenAPI documentation.", () => {
@@ -1272,12 +1302,12 @@ describe("UserController (e2e)", () => {
 				describe.each([
 					{
 						testName: "deliver not existed user's id",
-						userId: faker.string.uuid(),
+						userId: "24000",
 						requestUserEmail: targetUserStub.email,
 					},
 					{
 						testName: "deliver incorrect format",
-						userId: faker.internet.jwt(),
+						userId: faker.string.uuid(),
 						requestUserEmail: targetUserStub.email,
 					},
 				])("test : $testName ", ({ userId, requestUserEmail }) => {
@@ -1312,7 +1342,7 @@ describe("UserController (e2e)", () => {
 				describe.each([
 					{
 						testName: "deliver faker oneTimeToken",
-						userId: targetUserStub.id,
+						userId: ObfuscateUtil.obfuscateId(targetUserStub.id),
 						header: {
 							"x-one-time-token-identifier": faker.string.uuid(),
 							"x-one-time-token-value": faker.internet.jwt(),
@@ -1396,7 +1426,8 @@ describe("UserController (e2e)", () => {
 								"recover-account",
 								oneTimeTokenOption,
 							);
-							receivedRes = await requestRecoverUser(userId, header);
+							const externalId = ObfuscateUtil.obfuscateId(userId);
+							receivedRes = await requestRecoverUser(externalId, header);
 						});
 
 						it("response should match the OpenAPI documentation.", () => {
@@ -1424,7 +1455,8 @@ describe("UserController (e2e)", () => {
 				await arrangeDeletedUser(moduleFixture, deletedUserStub);
 
 				//2. action
-				const receivedRes = await requestRecoverUser(userId, header);
+				const externalId = ObfuscateUtil.obfuscateId(userId);
+				const receivedRes = await requestRecoverUser(externalId, header);
 
 				//3. assert
 				expect(receivedRes.response.status).toBe(HttpStatus.FORBIDDEN); // result from OwnerGuard

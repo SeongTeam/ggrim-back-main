@@ -27,7 +27,7 @@ export const zShowQuizResponse = zShowQuiz.extend({
 	artists: zShowArtist.array(),
 	tags: zShowTag.array(),
 	styles: zShowStyle.array(),
-	owner: zShowUserResponse,
+	user: zShowUserResponse,
 });
 
 export const zShowQuizReactionCount = z.object({

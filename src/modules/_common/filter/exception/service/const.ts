@@ -2,6 +2,7 @@ export const SERVICE_EXCEPTION_STATUS = {
 	// Example :
 	BASE: "Base Exception Situation",
 	NOT_IMPLEMENTED: "Not implemented Function",
+	// INVALID_ID_FORMAT: "Invalid ID Format", ServiceException대신 BadRequestException으로 처리
 
 	//Related to typeORM Entity task
 	ENTITY_NOT_FOUND: "Entity Not Found",

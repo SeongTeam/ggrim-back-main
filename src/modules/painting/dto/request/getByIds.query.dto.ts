@@ -1,17 +1,32 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsArray, IsBoolean, IsUUID } from "class-validator";
+import { IsArray, IsBoolean, IsNumber } from "class-validator";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
+import { ObfuscateUtil } from "../../../../utils/obfuscate";
 
 export class GetByIdsQueryDTO {
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+	@ApiProperty({
+		type: "string",
+		isArray: true,
+		description: "obfuscated ids like /path?ids=ac31&ads=scd1",
+	})
+	@Transform(
+		({ value }) =>
+			Array.isArray(value)
+				? value.map((v) => ObfuscateUtil.transformToId(v))
+				: [ObfuscateUtil.transformToId(value)],
+		{
+			toClassOnly: true,
+		},
+	)
 	@IsArray()
-	@IsUUID("all", { each: true })
-	ids!: string[];
+	@IsNumber({ allowInfinity: false, allowNaN: false }, { each: true })
+	ids!: number[];
 
 	@ApiProperty({ default: false })
-	@Transform(({ value }) => (value === "true" ? true : false))
+	@Transform(({ value }) => (value === "true" ? true : false), {
+		toClassOnly: true,
+	})
 	@IsOptionalProperty()
 	@IsBoolean()
 	isS3Access: boolean = false;

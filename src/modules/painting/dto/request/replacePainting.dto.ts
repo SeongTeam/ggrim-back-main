@@ -17,13 +17,17 @@ export class ReplacePaintingDTO extends PickType(CreatePaintingDTO, [
 	"image_s3_key",
 ]) {
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+	@Transform(({ value }) => (Array.isArray(value) ? value : [value]), {
+		toClassOnly: true,
+	})
 	@IsArray()
 	@IsString({ each: true })
 	tags!: string[];
 
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+	@Transform(({ value }) => (Array.isArray(value) ? value : [value]), {
+		toClassOnly: true,
+	})
 	@IsArray()
 	@IsString({ each: true })
 	styles!: string[];

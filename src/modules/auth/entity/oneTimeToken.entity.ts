@@ -6,8 +6,13 @@ import { OneTimeTokenPurpose } from "../types/oneTimeToken";
 
 @Entity()
 export class OneTimeToken extends CustomBaseEntity {
-	@PrimaryGeneratedColumn("uuid")
-	id!: string;
+	@PrimaryGeneratedColumn("identity", {
+		type: "integer",
+		primaryKeyConstraintName: "pk_one_time_token",
+		name: "id",
+		generatedIdentity: "ALWAYS",
+	})
+	id!: number;
 
 	@Column()
 	email!: string;
@@ -22,12 +27,25 @@ export class OneTimeToken extends CustomBaseEntity {
 	expired_date!: Date;
 
 	// 외래 키 컬럼 명시적으로 정의
-	@Column({ type: "uuid", nullable: true })
-	user_id!: string | null;
+	@Column({
+		name: "user_id",
+		type: "integer",
+		nullable: true,
+		foreignKeyConstraintName: "fk_user_id",
+	})
+	user_id!: number | null;
 
 	@Exclude()
-	@ManyToOne(() => User, (user) => user.oneTimeTokens, { nullable: true })
-	@JoinColumn({ name: "user_id" })
+	@ManyToOne(() => User, (user) => user.oneTimeTokens, {
+		onUpdate: "NO ACTION",
+		onDelete: "NO ACTION",
+		nullable: true,
+	})
+	@JoinColumn({
+		name: "user_id",
+		foreignKeyConstraintName: "fk_user_id",
+		referencedColumnName: "id",
+	})
 	user!: User | null;
 
 	@Column()

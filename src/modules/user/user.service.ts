@@ -5,7 +5,7 @@ import { DeepPartial, QueryRunner, Repository } from "typeorm";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { createTransactionQueryBuilder } from "../db/query-runner/queryRunner.lib";
 import { User } from "./entity/user.entity";
-import { isUUID } from "class-validator";
+import { isNumber } from "class-validator";
 
 @Injectable()
 export class UserService extends TypeOrmCrudService<User> {
@@ -13,9 +13,10 @@ export class UserService extends TypeOrmCrudService<User> {
 		super(repo);
 	}
 
-	async findUserById(id: string): Promise<User | null> {
-		if (!isUUID(id)) {
-			throw new ServiceException("BASE", "BAD_REQUEST", `not type uuid. ${id}`);
+	async findUserById(rawId: number | string): Promise<User | null> {
+		const id = Number(rawId);
+		if (!isNumber(id)) {
+			throw new ServiceException("BASE", "BAD_REQUEST", `not type int. ${rawId}`);
 		}
 		return await this.findOne({ where: { id } });
 	}
@@ -23,7 +24,7 @@ export class UserService extends TypeOrmCrudService<User> {
 		return await this.findOne({ where: { email } });
 	}
 
-	async updateUser(queryRunner: QueryRunner, id: string, dto: DeepPartial<User>): Promise<void> {
+	async updateUser(queryRunner: QueryRunner, id: number, dto: DeepPartial<User>): Promise<void> {
 		try {
 			await createTransactionQueryBuilder(queryRunner, User)
 				.update()
@@ -70,7 +71,7 @@ export class UserService extends TypeOrmCrudService<User> {
 		}
 	}
 
-	async softDeleteUser(queryRunner: QueryRunner, id: string): Promise<void> {
+	async softDeleteUser(queryRunner: QueryRunner, id: number): Promise<void> {
 		try {
 			await createTransactionQueryBuilder(queryRunner, User)
 				.softDelete()
@@ -87,7 +88,7 @@ export class UserService extends TypeOrmCrudService<User> {
 		}
 	}
 
-	async recoverUser(queryRunner: QueryRunner, id: string): Promise<void> {
+	async recoverUser(queryRunner: QueryRunner, id: number): Promise<void> {
 		try {
 			await createTransactionQueryBuilder(queryRunner, User)
 				.restore()
@@ -105,28 +106,15 @@ export class UserService extends TypeOrmCrudService<User> {
 		}
 	}
 
-	async findDeletedUserById(id: string): Promise<User | null> {
-		if (!isUUID(id)) {
-			throw new ServiceException("BASE", "BAD_REQUEST", `not type uuid. ${id}`);
-		}
-
-		try {
-			const queryBuilder = this.repo.createQueryBuilder("user");
-			const deletedUser = await queryBuilder
-				.select()
-				.withDeleted()
-				.where("user.id= :id", { id })
-				.andWhere("user.deleted_date IS NOT NULL")
-				.getOne();
-
-			return deletedUser;
-		} catch (error) {
+	async isOwner(resourceId: number, userId: number): Promise<boolean> {
+		const user = await this.findUserById(resourceId);
+		if (!user) {
 			throw new ServiceException(
-				"EXTERNAL_SERVICE_FAILED",
-				"INTERNAL_SERVER_ERROR",
-				`Can't find deleted User(${id})`,
-				{ cause: error },
+				"ENTITY_NOT_FOUND",
+				"BAD_REQUEST",
+				`can't find resource ${resourceId}`,
 			);
 		}
+		return user.id === userId;
 	}
 }

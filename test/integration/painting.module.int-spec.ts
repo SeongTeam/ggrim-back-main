@@ -33,7 +33,7 @@ describe("PaintingModule Integration Test", () => {
 		testService = module.get<TestService>(TestService);
 		dbService = module.get<DatabaseService>(DatabaseService);
 		await dbService.resetDB();
-
+		await testService.initTables();
 		assert(testService);
 	});
 

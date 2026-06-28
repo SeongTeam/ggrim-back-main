@@ -37,7 +37,7 @@ export async function getOneTimeTokenHeader(
 		oneTimeToken = await testService.createOneTimeToken(user, purpose);
 	}
 
-	header["x-one-time-token-identifier"] = oneTimeToken.id;
+	header["x-one-time-token-identifier"] = oneTimeToken.id.toString();
 	header["x-one-time-token-value"] = oneTimeToken.token;
 
 	if (options?.isUsed) {
@@ -52,7 +52,7 @@ export async function arrangeDeletedUser(testModule: TestingModule, deletedUserS
 	const dbService = testModule.get(DatabaseService);
 	const targetUser = await userService.findOne({ where: { email: deletedUserStub.email } });
 	assert(targetUser !== null);
-	const qr = dbService.getQueryRunner();
+	const qr = await dbService.getQueryRunner();
 	await userService.softDeleteUser(qr, targetUser.id);
 	await qr.release();
 }

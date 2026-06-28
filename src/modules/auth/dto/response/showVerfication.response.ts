@@ -1,3 +1,4 @@
+import { ObfuscateUtil } from "../../../../utils/obfuscate";
 import { Verification } from "../../entity/verification.entity";
 
 export class ShowVerificationResponse {
@@ -13,7 +14,7 @@ export class ShowVerificationResponse {
 	readonly pin_code_expired_date: string;
 
 	constructor(verification: Verification) {
-		this.id = verification.id;
+		this.id = ObfuscateUtil.obfuscateId(verification.id);
 		this.verification_success_date = verification.verification_success_date
 			? verification.verification_success_date.toISOString()
 			: null;

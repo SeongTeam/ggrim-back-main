@@ -6,14 +6,14 @@ export interface AuthUserPayload {
 }
 
 export interface OneTimeTokenPayload {
-	oneTimeTokenID: string;
+	oneTimeTokenID: number;
 	oneTimeToken: string;
 }
 
 export type SecurityTokenPayload = OneTimeTokenPayload;
 
 export interface AccessTokenPayload {
-	userId: string;
+	userId: number;
 	decodedToken: JWTDecode;
 }
 

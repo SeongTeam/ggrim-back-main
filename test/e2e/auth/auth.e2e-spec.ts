@@ -41,6 +41,7 @@ import {
 	registerVerifyInfo,
 	useVerifyInfo,
 } from "./util";
+import { ObfuscateUtil } from "../../../src/utils/obfuscate";
 
 describe("AuthController (e2e)", () => {
 	function sleep(ms: number) {
@@ -69,7 +70,7 @@ describe("AuthController (e2e)", () => {
 		authService = moduleFixture.get(AuthService);
 		userService = moduleFixture.get(UserService);
 		await dbService.resetDB();
-
+		await testService.initTables();
 		await app.listen(port);
 	});
 
@@ -139,7 +140,7 @@ describe("AuthController (e2e)", () => {
 			beforeAll(async () => {
 				const deletedUser = await testService.insertStubUser(deletedUserStub);
 
-				const qr = dbService.getQueryRunner();
+				const qr = await dbService.getQueryRunner();
 				await userService.softDeleteUser(qr, deletedUser.id);
 				await qr.release();
 			});
@@ -391,9 +392,9 @@ describe("AuthController (e2e)", () => {
 
 				it("entity should be created in DB", async () => {
 					const receivedData = receivedRes.data!;
-
+					const resourceId = ObfuscateUtil.deobfuscateId(receivedData.id);
 					const receivedEntity = await authService.findOneTimeToken({
-						where: { id: receivedData.id },
+						where: { id: resourceId },
 					});
 					expect(receivedEntity).toBeDefined();
 					await expectOneTimeToken(moduleFixture, receivedData, receivedEntity!);
@@ -618,7 +619,7 @@ describe("AuthController (e2e)", () => {
 						const receivedData = receivedRes.data!;
 
 						const receivedEntity = await authService.findOneTimeToken({
-							where: { id: receivedData.id },
+							where: { id: ObfuscateUtil.deobfuscateId(receivedData.id) },
 						});
 						expect(receivedEntity).toBeDefined();
 						await expectOneTimeToken(moduleFixture, receivedData, receivedEntity!);
@@ -678,7 +679,7 @@ describe("AuthController (e2e)", () => {
 					await testService.insertStubUser(userStub);
 
 					const deletedUser = await testService.insertStubUser(deletedUserStub);
-					const qr = dbService.getQueryRunner();
+					const qr = await dbService.getQueryRunner();
 					await userService.softDeleteUser(qr, deletedUser.id);
 					await qr.release();
 				});
@@ -883,7 +884,7 @@ describe("AuthController (e2e)", () => {
 
 					const deletedUser = await testService.insertStubUser(deletedUserStub);
 
-					const qr = dbService.getQueryRunner();
+					const qr = await dbService.getQueryRunner();
 					await userService.softDeleteUser(qr, deletedUser.id);
 					await qr.release();
 				});
@@ -997,7 +998,7 @@ describe("AuthController (e2e)", () => {
 						);
 						const header = {
 							"x-one-time-token-value": oneTimeToken.token,
-							"x-one-time-token-identifier": oneTimeToken.id,
+							"x-one-time-token-identifier": oneTimeToken.id.toString(),
 						};
 
 						receivedRes = await requestSecurityTokenFromEmailVerification(header, body);
@@ -1017,7 +1018,7 @@ describe("AuthController (e2e)", () => {
 						const receivedData = receivedRes.data!;
 						const { oneTimeToken } = receivedData;
 						const receivedEntity = await authService.findOneTimeToken({
-							where: { id: oneTimeToken.id },
+							where: { id: ObfuscateUtil.deobfuscateId(oneTimeToken.id) },
 						});
 						expect(receivedEntity).toBeDefined();
 
@@ -1065,7 +1066,7 @@ describe("AuthController (e2e)", () => {
 						);
 						const header = {
 							"x-one-time-token-value": oneTimeToken.token,
-							"x-one-time-token-identifier": oneTimeToken.id,
+							"x-one-time-token-identifier": oneTimeToken.id.toString(),
 						};
 
 						receivedRes = await requestSecurityTokenFromEmailVerification(
@@ -1100,13 +1101,13 @@ describe("AuthController (e2e)", () => {
 				email: string;
 				password: string;
 			},
-			oneTimeTokenId: string,
+			oneTimeTokenExternalId: string,
 		) {
 			const authorization = testService.getBasicAuthCredential(auth.email, auth.password);
 			const res = await client.GET(ApiPaths.AuthController_getOneTimeToken, {
 				params: {
 					path: {
-						id: oneTimeTokenId,
+						id: oneTimeTokenExternalId,
 					},
 					header: {
 						authorization,
@@ -1133,7 +1134,8 @@ describe("AuthController (e2e)", () => {
 					}))!;
 					assert(receivedEntity !== null);
 
-					receivedRes = await requestGetSecurityToken({ ...userStub }, receivedEntity.id);
+					const externalId = ObfuscateUtil.obfuscateId(receivedEntity.id);
+					receivedRes = await requestGetSecurityToken({ ...userStub }, externalId);
 				});
 
 				it("response should match openapi", () => {

@@ -13,7 +13,7 @@ const ESSENTIAL_QUIZ__FIELD = [
 	"description",
 	"time_limit",
 	"title",
-	"owner",
+	"user",
 ] as const;
 export type EssentialQuizField = (typeof ESSENTIAL_QUIZ__FIELD)[number];
 export type ExpectedQuizPart = Pick<Quiz, EssentialQuizField>;

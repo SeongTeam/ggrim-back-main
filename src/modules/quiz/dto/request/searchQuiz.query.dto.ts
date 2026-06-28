@@ -10,7 +10,9 @@ export class SearchQuizQueryDTO {
 	 * @example /route?artists=name1&artists=name2
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+	@Transform(({ value }) => (Array.isArray(value) ? value : [value]), {
+		toClassOnly: true,
+	})
 	@IsOptionalProperty()
 	@IsArray()
 	@IsString({ each: true })
@@ -22,7 +24,9 @@ export class SearchQuizQueryDTO {
 	 * @example /route?tags=name1&tags=name2
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+	@Transform(({ value }) => (Array.isArray(value) ? value : [value]), {
+		toClassOnly: true,
+	})
 	@IsOptionalProperty()
 	@IsArray()
 	@IsString({ each: true })
@@ -34,21 +38,27 @@ export class SearchQuizQueryDTO {
 	 * @example /route?styles=name1&tags=name2
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+	@Transform(({ value }) => (Array.isArray(value) ? value : [value]), {
+		toClassOnly: true,
+	})
 	@IsOptionalProperty()
 	@IsArray()
 	@IsString({ each: true })
 	styles: string[] = [];
 
 	@ApiProperty({ default: 0 })
-	@Transform(({ value }) => (isNaN(Number(value)) ? 0 : Number(value)))
+	@Transform(({ value }) => (isNaN(Number(value)) ? 0 : Number(value)), {
+		toClassOnly: true,
+	})
 	@IsOptionalProperty()
 	@Min(0)
 	@IsNumber()
 	page: number = 0;
 
 	@ApiProperty({ default: 20 })
-	@Transform(({ value }) => (isNaN(Number(value)) ? 20 : Number(value)))
+	@Transform(({ value }) => (isNaN(Number(value)) ? 20 : Number(value)), {
+		toClassOnly: true,
+	})
 	@IsOptionalProperty()
 	@IsNumber()
 	count: number = 20;

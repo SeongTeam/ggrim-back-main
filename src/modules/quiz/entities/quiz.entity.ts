@@ -24,32 +24,77 @@ import { QuizType } from "../type";
 */
 @Entity()
 export class Quiz extends CustomBaseEntity {
-	@PrimaryGeneratedColumn("uuid")
-	id!: string;
+	@PrimaryGeneratedColumn("identity", {
+		type: "integer",
+		primaryKeyConstraintName: "pk_quiz",
+		name: "id",
+		generatedIdentity: "ALWAYS",
+	})
+	id!: number;
 
 	@Column()
 	title!: string;
 
-	@ManyToMany(() => Painting, {
-		cascade: ["update", "insert"],
+	@ManyToMany(() => Painting, { onUpdate: "CASCADE", onDelete: "CASCADE" })
+	@JoinTable({
+		name: "quiz_distractor_paintings_painting",
+		joinColumns: [
+			{
+				name: "quiz_id",
+				referencedColumnName: "id",
+				foreignKeyConstraintName: "fk_quiz_id",
+			},
+		],
+		inverseJoinColumns: [
+			{
+				name: "painting_id",
+				referencedColumnName: "id",
+				foreignKeyConstraintName: "fk_painting_id",
+			},
+		],
 	})
-	@JoinTable()
 	distractor_paintings!: Painting[];
 
-	@ManyToMany(() => Painting, {
-		cascade: ["update", "insert"],
+	@ManyToMany(() => Painting, { onUpdate: "CASCADE", onDelete: "CASCADE" })
+	@JoinTable({
+		name: "quiz_answer_paintings_painting",
+		joinColumns: [
+			{
+				name: "quiz_id",
+				referencedColumnName: "id",
+				foreignKeyConstraintName: "fk_quiz_id",
+			},
+		],
+		inverseJoinColumns: [
+			{
+				name: "painting_id",
+				referencedColumnName: "id",
+				foreignKeyConstraintName: "fk_painting_id",
+			},
+		],
 	})
-	@JoinTable()
 	answer_paintings!: Painting[];
+
+	@Column({
+		name: "example_painting_id",
+		nullable: true,
+		foreignKeyConstraintName: "fk_example_painting_id",
+	})
+	example_painting_id!: number;
 
 	/*TODO
     - 추가된 컬럼을 반영하여 CRUD 로직 수정하기
   */
 	@ManyToOne(() => Painting, {
-		cascade: ["update", "insert"],
+		onUpdate: "NO ACTION",
+		onDelete: "NO ACTION",
 		nullable: true,
 	})
-	@JoinTable()
+	@JoinColumn({
+		name: "example_painting_id",
+		referencedColumnName: "id",
+		foreignKeyConstraintName: "fk_example_painting_id",
+	})
 	example_painting!: Painting | null;
 
 	@Column({ default: 0 })
@@ -76,28 +121,74 @@ export class Quiz extends CustomBaseEntity {
 	@Column()
 	type!: QuizType;
 
-	@ManyToMany(() => Artist, {
-		cascade: ["update", "insert"],
+	@ManyToMany(() => Artist, { onUpdate: "CASCADE", onDelete: "CASCADE" })
+	@JoinTable({
+		name: "quiz_artists_artist",
+		joinColumns: [
+			{
+				name: "quiz_id",
+				referencedColumnName: "id",
+				foreignKeyConstraintName: "fk_quiz_id",
+			},
+		],
+		inverseJoinColumns: [
+			{
+				name: "artist_id",
+				referencedColumnName: "id",
+				foreignKeyConstraintName: "fk_artist_id",
+			},
+		],
 	})
-	@JoinTable()
 	artists!: Artist[];
 
-	@ManyToMany(() => Tag, {
-		cascade: ["update", "insert"],
+	@ManyToMany(() => Tag, { onUpdate: "CASCADE", onDelete: "CASCADE" })
+	@JoinTable({
+		name: "quiz_tags_tag",
+		joinColumns: [
+			{
+				name: "quiz_id",
+				referencedColumnName: "id",
+				foreignKeyConstraintName: "fk_quiz_id",
+			},
+		],
+		inverseJoinColumns: [
+			{
+				name: "tag_id",
+				referencedColumnName: "id",
+				foreignKeyConstraintName: "fk_tag_id",
+			},
+		],
 	})
-	@JoinTable()
 	tags!: Tag[];
 
-	@ManyToMany(() => Style, {
-		cascade: ["update", "insert"],
+	@ManyToMany(() => Style, { onUpdate: "CASCADE", onDelete: "CASCADE" })
+	@JoinTable({
+		name: "quiz_styles_style",
+		joinColumns: [
+			{
+				name: "quiz_id",
+				referencedColumnName: "id",
+				foreignKeyConstraintName: "fk_quiz_id",
+			},
+		],
+		inverseJoinColumns: [
+			{
+				name: "style_id",
+				referencedColumnName: "id",
+				foreignKeyConstraintName: "fk_style_id",
+			},
+		],
 	})
-	@JoinTable()
 	styles!: Style[];
 
-	@Column()
-	owner_id!: string;
+	@Column({ type: "integer" })
+	user_id!: number;
 
-	@ManyToOne(() => User, (user) => user.quizzes)
-	@JoinColumn({ name: "owner_id" })
-	owner!: User;
+	@ManyToOne(() => User, (user) => user.quizzes, { onUpdate: "NO ACTION", onDelete: "NO ACTION" })
+	@JoinColumn({
+		name: "user_id",
+		foreignKeyConstraintName: "pk_user_id",
+		referencedColumnName: "id",
+	})
+	user!: User;
 }

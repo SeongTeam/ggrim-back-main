@@ -32,7 +32,9 @@ export class CreatePaintingDTO {
     - 방법 1 : @IsInArray() 데코레이터를 활용  
   */
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+	@Transform(({ value }) => (Array.isArray(value) ? value : [value]), {
+		toClassOnly: true,
+	})
 	@IsOptionalProperty()
 	@IsArray()
 	@IsString({
@@ -41,7 +43,9 @@ export class CreatePaintingDTO {
 	tags: string[] = [];
 
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+	@Transform(({ value }) => (Array.isArray(value) ? value : [value]), {
+		toClassOnly: true,
+	})
 	@IsOptionalProperty()
 	@IsArray()
 	@IsString({

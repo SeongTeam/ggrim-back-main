@@ -8,8 +8,13 @@ import { UserRole, UserState } from "../const";
 @Entity()
 @Unique(["email", "username"])
 export class User extends CustomBaseEntity {
-	@PrimaryGeneratedColumn("uuid")
-	id!: string;
+	@PrimaryGeneratedColumn("identity", {
+		type: "integer",
+		primaryKeyConstraintName: "pk_user",
+		name: "id",
+		generatedIdentity: "ALWAYS",
+	})
+	id!: number;
 
 	@Column()
 	email!: string;
@@ -46,6 +51,6 @@ export class User extends CustomBaseEntity {
 	@OneToMany(() => OneTimeToken, (oneTimeToken) => oneTimeToken.user)
 	oneTimeTokens!: OneTimeToken[];
 
-	@OneToMany(() => Quiz, (quiz) => quiz.owner)
+	@OneToMany(() => Quiz, (quiz) => quiz.user)
 	quizzes!: Quiz[];
 }

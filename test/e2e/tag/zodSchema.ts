@@ -5,7 +5,7 @@ import { zShowPainting } from "../painting/zodSchema";
 export const zShowTag = z.object({
 	id: z.string(),
 	name: z.string(),
-	info_url: z.string().nullable(),
+	info_url: z.string().nullish(),
 });
 
 // ShowStyleResponse 클래스 대응

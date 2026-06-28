@@ -6,8 +6,13 @@ import { CustomBaseEntity } from "../../db/entity/customBase.entity";
 //  => 현재는 만료 기간이 5분, 짧으므로 당장은 불필요.
 @Entity()
 export class Verification extends CustomBaseEntity {
-	@PrimaryGeneratedColumn("uuid")
-	id!: string;
+	@PrimaryGeneratedColumn("identity", {
+		type: "integer",
+		primaryKeyConstraintName: "pk_verification",
+		name: "id",
+		generatedIdentity: "ALWAYS",
+	})
+	id!: number;
 
 	@Column()
 	email!: string;

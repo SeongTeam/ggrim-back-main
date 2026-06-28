@@ -7,6 +7,7 @@ import { ConfigModule } from "@nestjs/config";
 import { NODE_ENV } from "../../src/modules/_common/const/envKeys";
 import { QuizModule } from "../../src/modules/quiz/quiz.module";
 import { ClsModule } from "nestjs-cls";
+import { LoggerModule } from "../../src/modules/logger/logger.module";
 
 /* TestModule
 ## Purpose:
@@ -36,6 +37,7 @@ const ENV = process.env[NODE_ENV];
 				mount: true,
 			},
 		}),
+		LoggerModule,
 	],
 	providers: [TestService],
 	exports: [TestService],

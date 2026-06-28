@@ -21,16 +21,26 @@ import {
 	ServiceExceptionSchema,
 } from "./modules/_common/filter/exception/openapi/schema";
 import { ExpressAdapter, NestExpressApplication } from "@nestjs/platform-express";
+import {
+	ENV_OBFUSCATE,
+	ENV_OBFUSCATE_ALPHABET,
+	ENV_OBFUSCATE_MIN_LENGTH,
+	NODE_ENV,
+} from "./modules/_common/const/envKeys";
+import { ConfigService } from "@nestjs/config";
+import { ObfuscateUtil } from "./utils/obfuscate";
+import { isNumberString } from "class-validator";
 
 export function configNestApp<T extends INestApplication>(app: T): void {
 	app.useGlobalPipes(
 		new ValidationPipe({
-			transform: true,
+			// transform: true,
 			whitelist: true,
 			forbidNonWhitelisted: true,
 			exceptionFactory: (errors) => {
-				debugger;
-				console.log("validator error", errors);
+				if (process.env[NODE_ENV] !== "production") {
+					console.debug("validator error", errors);
+				}
 
 				const messages = errors.map((e) => JSON.stringify(e.constraints));
 
@@ -89,6 +99,27 @@ export function configSwagger<T extends INestApplication>(app: T): void {
 	});
 
 	SwaggerModule.setup("api", app, document);
+}
+
+export function configUtil<T extends INestApplication>(app: T): void {
+	const configService = app.get(ConfigService);
+
+	const isObfuscate = configService.get<string>(ENV_OBFUSCATE) === "true";
+	const alphabet = configService.get<string>(ENV_OBFUSCATE_ALPHABET);
+	const rawMinLength = configService.get<string>(ENV_OBFUSCATE_MIN_LENGTH);
+
+	if (!alphabet) {
+		throw new Error(`check env variable ${ENV_OBFUSCATE_ALPHABET}`);
+	}
+	if (!rawMinLength || !isNumberString(rawMinLength)) {
+		throw new Error(`check env variable ${ENV_OBFUSCATE_MIN_LENGTH}`);
+	}
+
+	ObfuscateUtil.initialize({
+		isObfuscate,
+		alphabet,
+		minLength: parseInt(rawMinLength),
+	});
 }
 
 function isExpressApp(app: INestApplication): app is NestExpressApplication {

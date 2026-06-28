@@ -6,7 +6,7 @@ import {
 	ParsedBody,
 	ParsedRequest,
 } from "@dataui/crud";
-import { Controller, Get, Param, ParseUUIDPipe } from "@nestjs/common";
+import { Controller, Get, Param } from "@nestjs/common";
 import { ArtistService } from "./artist.service";
 import { CreateArtistDTO } from "./dto/request/createArtist.dto";
 import { Artist } from "./entities/artist.entity";
@@ -16,6 +16,8 @@ import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { Pagination } from "../_common/types";
+import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
+import { ApiParam } from "@nestjs/swagger";
 @Crud({
 	model: {
 		type: Artist,
@@ -26,7 +28,7 @@ import { Pagination } from "../_common/types";
 	params: {
 		id: {
 			field: "id",
-			type: "uuid",
+			type: "string",
 			primary: true,
 		},
 	},
@@ -54,8 +56,16 @@ export class ArtistController implements CrudController<Artist> {
 	 *
 	 */
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
+	@ApiOverride("getOneBase", ShowArtistResponse)
 	@Get(":id")
-	async getOne(@Param("id", ParseUUIDPipe) id: string): Promise<ShowArtistResponse> {
+	async getOne(@Param("id", IdDeobfuscatePipe) id: number): Promise<ShowArtistResponse> {
 		const artist = await this.service.findOne({
 			where: { id },
 			relations: { paintings: true },

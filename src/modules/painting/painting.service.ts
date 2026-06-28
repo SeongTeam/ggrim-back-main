@@ -1,8 +1,6 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { existsSync } from "fs";
 import { Brackets, FindOneOptions, QueryRunner, Repository } from "typeorm";
-import { CONFIG_FILE_PATH } from "../_common/const/defaultValue";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
 import { Pagination } from "../_common/types";
 import { ArtistService } from "../artist/artist.service";
@@ -12,11 +10,8 @@ import { Style } from "../style/entities/style.entity";
 import { StyleService } from "../style/style.service";
 import { Tag } from "../tag/entities/tag.entity";
 import { TagService } from "../tag/tag.service";
-import { getLatestMonday } from "../../utils/date";
-import { loadObjectFromJSON } from "../../utils/json";
 import { isArrayEmpty, isFalsy, isNotFalsy } from "../../utils/validator";
 import { CreatePaintingDTO } from "./dto/request/createPainting.dto";
-import { WeeklyArtWorkSet } from "./types/weeklyArtWorkSet";
 import { ReplacePaintingDTO } from "./dto/request/replacePainting.dto";
 import { SearchPaintingQueryDTO } from "./dto/request/searchPainting.query.dto";
 import { Painting } from "./entities/painting.entity";
@@ -164,11 +159,11 @@ export class PaintingService {
 			const subQueryFilterByTag = this.repo
 				.createQueryBuilder()
 				.subQuery()
-				.select("painting_tags.paintingId")
+				.select("painting_tags.painting_id")
 				.from("painting_tags_tag", "painting_tags") // Many-to-Many 연결 테이블
-				.innerJoin("tag", "tag", "tag.id = painting_tags.tagId") // 연결 테이블과 Tag JOIN
+				.innerJoin("tag", "tag", "tag.id = painting_tags.tag_id") // 연결 테이블과 Tag JOIN
 				.where("tag.name IN (:...tagNames)") // tagNames 필터링
-				.groupBy("painting_tags.paintingId")
+				.groupBy("painting_tags.painting_id")
 				.having("COUNT(DISTINCT tag.id) = :tagCount") // 정확한 태그 갯수 매칭
 				.getQuery();
 
@@ -186,11 +181,11 @@ export class PaintingService {
 			const subQueryFilterByStyle = this.repo
 				.createQueryBuilder()
 				.subQuery()
-				.select("painting_styles.paintingId")
+				.select("painting_styles.painting_id")
 				.from("painting_styles_style", "painting_styles") // Many-to-Many 연결 테이블
-				.innerJoin("style", "style", "style.id = painting_styles.styleId")
+				.innerJoin("style", "style", "style.id = painting_styles.style_id")
 				.where("style.name IN (:...styleNames)")
-				.groupBy("painting_styles.paintingId")
+				.groupBy("painting_styles.painting_id")
 				.having("COUNT(DISTINCT style.id) = :styleCount")
 				.getQuery();
 
@@ -224,7 +219,7 @@ export class PaintingService {
 	 * @returns 모든 relation 필드를 갖는 painting 배열
 	 * @description ids[i]에 매칭되는 Painting을 찾지 못한 경우, 제외됨
 	 */
-	async getManyByIds(ids: string[]): Promise<Painting[]> {
+	async getManyByIds(ids: number[]): Promise<Painting[]> {
 		//TODO : 전달된 id 배열에 대응되는 Painting 반환하는 함수 구현
 		//-[x] : id가 중복되는 상황 예방
 		//-[ ] : id에 해당하는 Painting을 찾지 못한 상황 예외처리
@@ -235,7 +230,7 @@ export class PaintingService {
 			return [];
 		}
 
-		const targetIdSet = new Set<string>(ids);
+		const targetIdSet = new Set<number>(ids);
 		const query = this.repo
 			.createQueryBuilder("p")
 			.leftJoinAndSelect("p.tags", "tags")
@@ -248,13 +243,13 @@ export class PaintingService {
 		return paintings;
 	}
 
-	async validatePaintingIds(ids: string[]) {
-		const targetIdSet = new Set<string>(ids);
+	async validatePaintingIds(ids: number[]) {
+		const targetIdSet = new Set<number>(ids);
 
 		const paintings = await this.getManyByIds(Array.from(targetIdSet));
-		const foundIdSet = new Set<string>(paintings.map((p) => p.id));
+		const foundIdSet = new Set<number>(paintings.map((p) => p.id));
 		if (targetIdSet.size !== foundIdSet.size) {
-			const notFoundIdSet = new Set<string>();
+			const notFoundIdSet = new Set<number>();
 
 			for (const id of targetIdSet) {
 				if (!foundIdSet.has(id)) {
@@ -451,35 +446,25 @@ export class PaintingService {
 	}
 
 	public async getWeeklyPaintings() {
-		const latestMonday = getLatestMonday();
-		const path = CONFIG_FILE_PATH;
-		let artworkFileName: string = `artwork_of_week_${latestMonday}.json`;
+		const artistNames = [
+			"John Constable",
+			"Titian",
+			"Honore Daumier",
+			"Kazimir Malevich",
+			"Ivan Shishkin",
+			"Alphonse Mucha",
+			"Arkhip Kuindzhi",
+		];
 
-		if (!existsSync(path + artworkFileName)) {
-			Logger.error(`there is no file : ${path + artworkFileName}`);
-			artworkFileName = `artwork_of_week_default.json`;
-		}
-		const obj = loadObjectFromJSON<WeeklyArtWorkSet>(path + artworkFileName);
+		const paintings = await this.repo
+			.createQueryBuilder("p")
+			.select()
+			.innerJoinAndSelect("p.artist", "a")
+			.innerJoinAndSelect("p.tags", "tag")
+			.innerJoinAndSelect("p.styles", "styles")
+			.where("a.name IN (:...artistNames)", { artistNames })
+			.getMany();
 
-		const paintingIdSet = new Set<string>();
-		obj.data.forEach((data) => {
-			const id = data.painting.id;
-			if (id && id.trim().length > 0) {
-				paintingIdSet.add(id);
-			}
-		});
-
-		if (paintingIdSet.size == 0) {
-			throw Error("Weekly Paintings must exist ");
-		}
-		const MAX_LENGTH = 20;
-		if (paintingIdSet.size > MAX_LENGTH) {
-			throw Error(`Weekly Paintings must lower than ${MAX_LENGTH}`);
-		}
-
-		//validate set
-		const validPaintings = await this.getManyByIds([...paintingIdSet.values()]);
-
-		return validPaintings;
+		return paintings;
 	}
 }

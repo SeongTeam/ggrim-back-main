@@ -5,7 +5,15 @@ import { APP_NAME_KEY, NODE_ENV } from "../modules/_common/const/envKeys";
 
 //ref : https://pypystory.tistory.com/80
 
-const isProduction = process.env[NODE_ENV] === "production";
+/**Why this module can access ENV variable injected from nest.js app
+ * this module is only imported by bootstrap() where context is in nest.js app.
+ * If you change dependency of this module, you should refactor structure of accessing env variable
+ */
+const WINSTON_CONFIG = {
+	isProduction: process.env[NODE_ENV] === "production",
+	appName: process.env[APP_NAME_KEY] || "App_NAME_UNDEFINED",
+};
+console.debug(WINSTON_CONFIG);
 
 const dailyOptions = (level: string) => {
 	return {
@@ -34,8 +42,6 @@ const dailyOptions = (level: string) => {
 };
 */
 
-const appName = process.env[APP_NAME_KEY] || "App_NAME_UNDEFINED";
-
 export const winstonLogger = WinstonModule.createLogger({
 	format: winston.format.combine(
 		winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
@@ -47,12 +53,12 @@ export const winstonLogger = WinstonModule.createLogger({
 	),
 	transports: [
 		new winston.transports.Console({
-			level: isProduction ? "info" : "debug",
+			level: WINSTON_CONFIG.isProduction ? "info" : "debug",
 			format: winston.format.combine(
 				winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss.SSS" }),
 				winston.format.ms(),
 				winston.format.json(),
-				nestWinstonModuleUtilities.format.nestLike(appName, {
+				nestWinstonModuleUtilities.format.nestLike(WINSTON_CONFIG.appName, {
 					colors: true,
 					prettyPrint: true,
 					processId: true,

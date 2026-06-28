@@ -1,4 +1,4 @@
 const dotenv = require("dotenv");
-dotenv.config({ path: ".env.test" });
+dotenv.config({ path: "test/.env.test" });
 
 // E2E t

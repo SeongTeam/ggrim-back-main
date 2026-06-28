@@ -2,6 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { OneTimeToken } from "../../entity/oneTimeToken.entity";
 import { OneTimeTokenPurpose } from "../../types/oneTimeToken";
 import { ONE_TIME_TOKEN_PURPOSE } from "../../const";
+import { ObfuscateUtil } from "../../../../utils/obfuscate";
 
 export class HashedOneTimeTokenResponse {
 	readonly id: string;
@@ -25,7 +26,7 @@ export class HashedOneTimeTokenResponse {
 	readonly purpose: OneTimeTokenPurpose;
 
 	constructor(oneTimeToken: OneTimeToken) {
-		this.id = oneTimeToken.id;
+		this.id = ObfuscateUtil.obfuscateId(oneTimeToken.id);
 		this.hashedToken = oneTimeToken.token;
 		this.used_date = oneTimeToken.used_date ? oneTimeToken.used_date.toISOString() : null;
 		this.expired_date = oneTimeToken.expired_date.toISOString();

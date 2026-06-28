@@ -33,6 +33,7 @@ import {
 	SearchQuery,
 	transformToReplaceDto,
 } from "./util";
+import { ObfuscateUtil } from "../../../src/utils/obfuscate";
 
 if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 	console.log("Set setTimeout for debugging");
@@ -76,7 +77,7 @@ describe("PaintingController (e2e)", () => {
 		paintingService = moduleFixture.get(PaintingService);
 		userService = moduleFixture.get(UserService);
 		await dbService.resetDB();
-
+		await testService.initTables();
 		await app.listen(port);
 
 		//arrange relational resources to share cross over all Painting test
@@ -114,7 +115,7 @@ describe("PaintingController (e2e)", () => {
 		}
 
 		describe("success when deliver valid query", () => {
-			const paintingTitlePrefix = faker.book.title();
+			const paintingTitlePrefix = "subtitle";
 
 			beforeAll(async () => {
 				const prefixedPaintingStubs = Array(10)
@@ -354,7 +355,7 @@ describe("PaintingController (e2e)", () => {
 				{
 					testName: "deliver id",
 					query: {
-						ids: paintingStubs.map((stub) => stub.id),
+						ids: paintingStubs.map((stub) => ObfuscateUtil.obfuscateId(stub.id)),
 					},
 				},
 			])("test : $testName", ({ query }) => {
@@ -391,7 +392,9 @@ describe("PaintingController (e2e)", () => {
 			])("test : $testName", ({ invalidQuery }) => {
 				let receivedResponse: Awaited<ReturnType<typeof requestGetPaintings>>;
 				beforeAll(async () => {
-					receivedResponse = await requestGetPaintings(invalidQuery);
+					receivedResponse = await requestGetPaintings(
+						invalidQuery as unknown as { ids: string[] },
+					);
 				});
 				it("response should match openapi spec", () => {
 					expect(receivedResponse.response.status).toBe(HttpStatus.BAD_REQUEST);
@@ -424,7 +427,7 @@ describe("PaintingController (e2e)", () => {
 		describe("success when deliver valid body dto", () => {
 			let admin: User;
 			beforeAll(async () => {
-				[admin] = await testService.seedUsersSingleInsert(1, "admin");
+				[admin] = await testService.seedUsers(1, "admin");
 			});
 
 			describe.each([
@@ -462,8 +465,9 @@ describe("PaintingController (e2e)", () => {
 				it("entity should be created", async () => {
 					const receivedResBody = receivedRes.data!;
 
+					const resourceId = ObfuscateUtil.deobfuscateId(receivedResBody.id);
 					const expectedPainting = await paintingService.findOne({
-						where: { id: receivedResBody.id },
+						where: { id: resourceId },
 					});
 					expect(expectedPainting).toBeDefined();
 					await expectCreatePainting(moduleFixture, receivedResBody, body);
@@ -474,7 +478,7 @@ describe("PaintingController (e2e)", () => {
 		describe("fail when deliver invalid body dto", () => {
 			let admin: User;
 			beforeAll(async () => {
-				[admin] = await testService.seedUsersSingleInsert(1, "admin");
+				[admin] = await testService.seedUsers(1, "admin");
 			});
 
 			describe.each([
@@ -569,12 +573,16 @@ describe("PaintingController (e2e)", () => {
 		// - [x] 비권한 사용자 요청 테스트
 		// - [ ] 특수 상황 테스트 ( Huge query.page)
 
-		async function requestReplacePainting(id: string, body: ReplacePaintingDto, admin: User) {
+		async function requestReplacePainting(
+			externalId: string,
+			body: ReplacePaintingDto,
+			admin: User,
+		) {
 			const authorization = testService.getBearerAuthCredential(admin);
 			const response = await client.PUT(ApiPaths.PaintingController_replacePainting, {
 				params: {
 					path: {
-						id: id,
+						id: externalId,
 					},
 					header: {
 						authorization,
@@ -602,7 +610,7 @@ describe("PaintingController (e2e)", () => {
 					artist: _artists[artistIndex],
 				}));
 				await testService.insertPaintingStubs(insertPaintingArgs);
-				[admin] = await testService.seedUsersSingleInsert(1, "admin");
+				[admin] = await testService.seedUsers(1, "admin");
 			});
 
 			describe.each([
@@ -635,7 +643,8 @@ describe("PaintingController (e2e)", () => {
 				let receivedRes: Awaited<ReturnType<typeof requestReplacePainting>>;
 
 				beforeAll(async () => {
-					receivedRes = await requestReplacePainting(id, body, admin);
+					const externalId = ObfuscateUtil.obfuscateId(id);
+					receivedRes = await requestReplacePainting(externalId, body, admin);
 				});
 
 				it("response should match openapi spec", () => {
@@ -665,7 +674,7 @@ describe("PaintingController (e2e)", () => {
 					artist: getRandomElement(_artists),
 				}));
 				await testService.insertPaintingStubs(insertPaintingArgs);
-				[admin] = await testService.seedUsersSingleInsert(1, "admin");
+				[admin] = await testService.seedUsers(1, "admin");
 			});
 
 			describe.each([
@@ -704,7 +713,7 @@ describe("PaintingController (e2e)", () => {
 
 				beforeAll(async () => {
 					receivedRes = await requestReplacePainting(
-						invalidId,
+						invalidId as string,
 						invalidBody as ReplacePaintingDto,
 						admin,
 					);
@@ -751,8 +760,9 @@ describe("PaintingController (e2e)", () => {
 
 				beforeAll(async () => {
 					const user = (await userService.findOne({ where: { id: userId } }))!;
+					const externalId = ObfuscateUtil.obfuscateId(id);
 					receivedRes = await requestReplacePainting(
-						id,
+						externalId,
 						body as ReplacePaintingDto,
 						user,
 					);
@@ -771,13 +781,13 @@ describe("PaintingController (e2e)", () => {
 			// - [x] 나쁜 데이터 테스트 (비유효 body, 비유효 id path)
 			// - [ ] 비권한 사용자 요청 테스트
 			// - [ ] 특수 상황 테스트 ( Huge query.page)
-			async function requestDeletePainting(id: string, admin: User) {
+			async function requestDeletePainting(externalId: string, admin: User) {
 				const route = ApiPaths.PaintingController_deletePainting;
 				const adminAuthorization = testService.getBearerAuthCredential(admin);
 				const response = await client.DELETE(route, {
 					params: {
 						path: {
-							id,
+							id: externalId,
 						},
 						header: {
 							authorization: adminAuthorization,
@@ -800,7 +810,7 @@ describe("PaintingController (e2e)", () => {
 						artist: getRandomElement(_artists),
 					}));
 					await testService.insertPaintingStubs(insertPaintingArgs);
-					[admin] = await testService.seedUsersSingleInsert(1, "admin");
+					[admin] = await testService.seedUsers(1, "admin");
 				});
 
 				describe.each([{ testName: "deliver valid id", id: paintingStubs[0].id }])(
@@ -808,7 +818,8 @@ describe("PaintingController (e2e)", () => {
 					({ id }) => {
 						let receivedRes: Awaited<ReturnType<typeof requestDeletePainting>>;
 						beforeAll(async () => {
-							receivedRes = await requestDeletePainting(id, admin);
+							const externalId = ObfuscateUtil.obfuscateId(id);
+							receivedRes = await requestDeletePainting(externalId, admin);
 						});
 
 						it("response should match openapi spec", () => {
@@ -837,7 +848,7 @@ describe("PaintingController (e2e)", () => {
 						artist: getRandomElement(_artists),
 					}));
 					await testService.insertPaintingStubs(insertPaintingArgs);
-					[admin] = await testService.seedUsersSingleInsert(1, "admin");
+					[admin] = await testService.seedUsers(1, "admin");
 
 					const [deletedPainting] = await testService.insertPaintingStubs([
 						{
@@ -847,7 +858,7 @@ describe("PaintingController (e2e)", () => {
 							artist: getRandomElement(_artists),
 						},
 					]);
-					const qr = dbService.getQueryRunner();
+					const qr = await dbService.getQueryRunner();
 					await paintingService.deleteOne(qr, deletedPainting);
 					await qr.release();
 				});
@@ -857,7 +868,7 @@ describe("PaintingController (e2e)", () => {
 						testName: "deliver invalid format id",
 						invalidId: "invalid-format",
 					},
-					{ testName: "deliver not exist id", invalidId: faker.string.uuid() },
+					{ testName: "deliver not exist id", invalidId: 10000 },
 					{
 						testName: "deliver deleted id",
 						invalidId: deletedPaintingStub.id,
@@ -865,7 +876,10 @@ describe("PaintingController (e2e)", () => {
 				])(`test : $testName`, ({ invalidId }) => {
 					let receivedRes: Awaited<ReturnType<typeof requestDeletePainting>>;
 					beforeAll(async () => {
-						receivedRes = await requestDeletePainting(invalidId, admin);
+						receivedRes = await requestDeletePainting(
+							invalidId as unknown as string,
+							admin,
+						);
 					});
 
 					it("response should match openapi spec", () => {
@@ -902,7 +916,8 @@ describe("PaintingController (e2e)", () => {
 					beforeAll(async () => {
 						const user = await userService.findOne({ where: { id: userId } });
 						assert(user !== null);
-						receivedRes = await requestDeletePainting(id, user!);
+						const externalId = ObfuscateUtil.obfuscateId(id);
+						receivedRes = await requestDeletePainting(externalId, user!);
 					});
 
 					it("response should match openapi spec", () => {

@@ -15,7 +15,7 @@ import { ShowVerificationResponse } from "../../../src/modules/auth/dto/response
 export async function useVerifyInfo(testingModule: TestingModule, email: string, pinCode: string) {
 	const authService = testingModule.get(AuthService);
 	const dbService = testingModule.get(DatabaseService);
-	const qr = dbService.getQueryRunner();
+	const qr = await dbService.getQueryRunner();
 	const verification = await registerVerifyInfo(testingModule, email, pinCode);
 	const now = new Date();
 	const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
@@ -34,7 +34,7 @@ export async function registerVerifyInfo(
 ) {
 	const authService = testingModule.get(AuthService);
 	const dbService = testingModule.get(DatabaseService);
-	const qr = dbService.getQueryRunner();
+	const qr = await dbService.getQueryRunner();
 	const verification = await authService.createVerification(qr, email, pinCode);
 
 	await qr.release();
@@ -79,7 +79,7 @@ export async function deleteAllOneTimeTokens(
 
 export async function createOneTimeToken(
 	testingModule: TestingModule,
-	userId: string,
+	userId: number,
 	purpose: OneTimeTokenPurpose,
 ) {
 	const userService = testingModule.get(UserService);

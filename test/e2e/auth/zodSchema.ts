@@ -11,25 +11,25 @@ export const zSignInResponse = z.object({
 });
 
 export const zShowOneTimeTokenResponse = z.object({
-	id: z.uuid(),
+	id: z.string(),
 	token: z.jwt(),
-	used_date: z.iso.datetime().nullable(),
+	used_date: z.iso.datetime().nullish(),
 	expired_date: z.iso.datetime(),
 	purpose: z.enum(Object.values(ONE_TIME_TOKEN_PURPOSE)),
 });
 
 export const zShowVerification = z.object({
-	id: z.uuid(),
-	verification_success_date: z.iso.datetime().nullable(),
-	last_verified_date: z.iso.datetime().nullable(),
+	id: z.string(),
+	verification_success_date: z.iso.datetime().nullish(),
+	last_verified_date: z.iso.datetime().nullish(),
 	hashedPinCode: z.string().regex(bcryptPattern),
 	pin_code_expired_date: z.iso.datetime(),
 });
 
 export const zHashedOneTimeToken = z.object({
-	id: z.uuid(),
+	id: z.string(),
 	hashedToken: z.string().regex(bcryptPattern),
-	used_date: z.iso.datetime().nullable(),
+	used_date: z.iso.datetime().nullish(),
 	expired_date: z.iso.datetime(),
 	purpose: z.enum(Object.values(ONE_TIME_TOKEN_PURPOSE)),
 });

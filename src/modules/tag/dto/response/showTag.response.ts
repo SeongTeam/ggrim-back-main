@@ -1,3 +1,4 @@
+import { ObfuscateUtil } from "../../../../utils/obfuscate";
 import { ShowPainting } from "../../../painting/dto/response/showPainting.response";
 import { Tag } from "../../entities/tag.entity";
 
@@ -7,7 +8,7 @@ export class ShowTag {
 	readonly info_url: string | null;
 
 	constructor(tag: Tag) {
-		this.id = tag.id;
+		this.id = ObfuscateUtil.obfuscateId(tag.id);
 		this.name = tag.name;
 		this.info_url = tag.info_url;
 	}

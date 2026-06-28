@@ -6,7 +6,7 @@ import {
 	ParsedBody,
 	ParsedRequest,
 } from "@dataui/crud";
-import { Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe } from "@nestjs/common";
+import { Controller, Get, HttpCode, HttpStatus, Param } from "@nestjs/common";
 
 import { CreateStyleDTO } from "./dto/request/createStyle.dto";
 import { ReplaceStyleDTO } from "./dto/request/replaceStyle.dto";
@@ -17,8 +17,9 @@ import { isArray } from "class-validator";
 import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
 import { ServiceException } from "../_common/filter/exception/service/serviceException";
-import { ApiOkResponse } from "@nestjs/swagger";
+import { ApiOkResponse, ApiParam } from "@nestjs/swagger";
 import { Pagination } from "../_common/types";
+import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
 
 /*TODO
 - soft-deleted 상태인 데이터가 replace method 사용시 수정되는 것이 위험한지 고민하기
@@ -30,7 +31,7 @@ import { Pagination } from "../_common/types";
 	params: {
 		id: {
 			field: "id",
-			type: "uuid",
+			type: "string",
 			primary: true,
 		},
 	},
@@ -65,10 +66,17 @@ export class StyleController implements CrudController<Style> {
 	 *
 	 */
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@ApiOkResponse({ type: ShowStyleResponse })
 	@HttpCode(HttpStatus.OK)
 	@Get(":id")
-	async getOne(@Param("id", ParseUUIDPipe) id: string): Promise<ShowStyleResponse> {
+	async getOne(@Param("id", IdDeobfuscatePipe) id: number): Promise<ShowStyleResponse> {
 		const style = await this.service.findOne({
 			where: { id },
 			relations: { paintings: true },

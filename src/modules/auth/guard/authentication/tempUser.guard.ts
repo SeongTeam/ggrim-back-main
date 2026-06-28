@@ -7,7 +7,7 @@ import {
 	UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { isEmpty, isUUID } from "class-validator";
+import { isEmpty } from "class-validator";
 import { ServiceException } from "../../../_common/filter/exception/service/serviceException";
 import { User } from "../../../user/entity/user.entity";
 import { UserService } from "../../../user/user.service";
@@ -51,7 +51,8 @@ export class TempUserGuard implements CanActivate {
 		const req = context.switchToHttp().getRequest<Request>();
 
 		const oneTimeToken = req.headers[ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN] as string;
-		const oneTimeTokenID = req.headers[ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID] as string;
+		const rawOneTimeTokenID = req.headers[ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID] as string;
+		const oneTimeTokenID = Number(rawOneTimeTokenID);
 		const handlerPurpose = this.reflector.get<OneTimeTokenPurpose>(
 			PURPOSE_ONE_TIME_TOKEN_KEY,
 			context.getHandler(),
@@ -62,7 +63,7 @@ export class TempUserGuard implements CanActivate {
 		}
 
 		// check whether token is forged or not .
-		if (!(oneTimeTokenID && isUUID(oneTimeTokenID))) {
+		if (!oneTimeTokenID && isNaN(oneTimeTokenID)) {
 			throw new UnauthorizedException(
 				`Missing or invalid ${ONE_TIME_TOKEN_HEADER.X_ONE_TIME_TOKEN_ID} header field`,
 			);
@@ -108,7 +109,7 @@ export class TempUserGuard implements CanActivate {
 		}
 	}
 
-	private async verify(oneTimeToken: string, oneTimeTokenID: string) {
+	private async verify(oneTimeToken: string, oneTimeTokenID: number) {
 		const entity = await this.authService.findOneTimeToken({ where: { id: oneTimeTokenID } });
 		if (!entity) {
 			throw new UnauthorizedException(`invalid token ID. ${oneTimeTokenID}`);

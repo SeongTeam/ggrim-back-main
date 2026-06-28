@@ -9,7 +9,6 @@ import {
 	Inject,
 	Param,
 	ParseBoolPipe,
-	ParseUUIDPipe,
 	Post,
 	Put,
 	Query,
@@ -29,9 +28,10 @@ import { Pagination } from "../_common/types";
 import { ApiPaginationResponse } from "../_common/decorator/swagger/apiPaginationResponse";
 import { ShowPainting, ShowPaintingResponse } from "./dto/response/showPainting.response";
 import { UseRolesGuard } from "../auth/guard/decorator/authorization";
-import { ApiCreatedResponse, ApiOkResponse } from "@nestjs/swagger";
+import { ApiCreatedResponse, ApiOkResponse, ApiParam } from "@nestjs/swagger";
 import { GetByIdsQueryDTO } from "./dto/request/getByIds.query.dto";
 import { SearchPaintingQueryDTO } from "./dto/request/searchPainting.query.dto";
+import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
 
 @Controller("painting")
 export class PaintingController {
@@ -46,7 +46,7 @@ export class PaintingController {
 	 * @remarks {domain}/painting/by-ids?ids=id1&id2&id3
 	 * Example:
 	 * ```
-	 * GET backend/painting/by-ids?ids=409ba4c6-0553-4b72-a53a-d9b9857c253d&ids=4f4d9398-b10a-45b8-912c-6ccd0c6700ab
+	 * GET backend/painting/by-ids?ids=100&ids=200
 	 * ```
 	 */
 	@ApiOkResponse({ type: ShowPaintingResponse, isArray: true })
@@ -78,11 +78,18 @@ export class PaintingController {
 		return paintings.map((p) => new ShowPaintingResponse(p));
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@ApiOkResponse({ type: ShowPaintingResponse })
 	@HttpCode(HttpStatus.OK)
 	@Get(":id")
 	async getById(
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", IdDeobfuscatePipe) id: number,
 		@Query("isS3Access", new DefaultValuePipe(false), ParseBoolPipe) isS3Access: boolean,
 	): Promise<ShowPaintingResponse> {
 		let paintings = await this.service.getManyByIds([id]);
@@ -131,6 +138,13 @@ export class PaintingController {
 	// - [ ] 동일한 리소스의 병렬 수정 작업 ACID 보장 확인하기
 	// ? 질문: DB Query Transaction 사용시, API 요청에 대한 모든 Query 작업을 Transaction으로 결합해야지 ACID가 보장되는가? 다른 방법은 없는가?
 	// * 참고: https://tailwindcss.com/docs/animation
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@ApiOkResponse({ type: ShowPaintingResponse })
 	@HttpCode(HttpStatus.OK)
 	@UseRolesGuard("admin")
@@ -138,7 +152,7 @@ export class PaintingController {
 	@Put("/:id")
 	async replacePainting(
 		@DBQueryRunner() queryRunner: QueryRunner,
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", IdDeobfuscatePipe) id: number,
 		@Body() dto: ReplacePaintingDTO,
 	) {
 		const targetPainting = await this.service.findOne({ where: { id } });
@@ -151,13 +165,20 @@ export class PaintingController {
 		return new ShowPaintingResponse(replacedPainting);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@HttpCode(HttpStatus.OK)
 	@UseRolesGuard("admin")
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Delete("/:id")
 	async deletePainting(
 		@DBQueryRunner() queryRunner: QueryRunner,
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", IdDeobfuscatePipe) id: number,
 	) {
 		const targetPainting = await this.service.findOne({ where: { id } });
 		if (!targetPainting) {

@@ -1,32 +1,63 @@
-import { ArrayNotEmpty, IsArray, IsNumber, IsString, IsUUID, Min } from "class-validator";
+import { isArray, IsNumber, IsString, Min } from "class-validator";
 import { IsInArray } from "../../../../utils/classValidator";
 import { QUIZ_TYPE } from "../../const";
 import { QuizType } from "../../type";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 import { ApiProperty } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
+import { ObfuscateUtil } from "../../../../utils/obfuscate";
+import { isArrayEmpty } from "../../../../utils/validator";
 
 export class CreateQuizDTO {
-	/*TODO
-    - answerPainting 과 distractor painting 크기 제한하기
-    - 퀴즈 타입 사양에 맞추기
-  */
-	@IsArray()
-	@ArrayNotEmpty()
-	@IsUUID(undefined, {
+	@ApiProperty({ type: "string", isArray: true })
+	@Transform(
+		({ value }) => {
+			if (!isArray(value)) {
+				return null;
+			}
+			if (isArrayEmpty(value)) {
+				return null;
+			}
+			return value.map((v) => ObfuscateUtil.transformToId(v));
+		},
+		{ toClassOnly: true },
+	)
+	@IsNumber(undefined, {
 		each: true,
 	})
-	answerPaintingIds!: string[];
+	answerPaintingIds!: number[];
 
-	@IsArray()
-	@ArrayNotEmpty()
-	@IsUUID(undefined, {
+	@ApiProperty({ type: "string", isArray: true })
+	@Transform(
+		({ value }) => {
+			if (!isArray(value)) {
+				return null;
+			}
+			if (isArrayEmpty(value)) {
+				return null;
+			}
+			return value.map((v) => ObfuscateUtil.transformToId(v));
+		},
+		{ toClassOnly: true },
+	)
+	@IsNumber(undefined, {
 		each: true,
 	})
-	distractorPaintingIds!: string[];
+	distractorPaintingIds!: number[];
 
+	@ApiProperty({ type: "string" })
+	@Transform(
+		({ value }) => {
+			if (value === undefined) {
+				return undefined;
+			}
+			return ObfuscateUtil.transformToId(value);
+		},
+		{ toClassOnly: true },
+	)
 	@IsOptionalProperty()
-	@IsUUID(undefined)
-	examplePaintingId?: string;
+	@IsNumber(undefined)
+	examplePaintingId?: number;
 
 	@IsString()
 	title!: string;

@@ -30,4 +30,5 @@ export const migrationConfig = new DataSource({
 	migrationsRun: false, // 서버 구동 시 작성된 마이그레이션 파일을 기반으로 마이그레이션을 수행하게 할지 설정하는 옵션. false로 설정하여 직접 CLI로 마이그레이션 수행
 	migrations: [ROOT_DIR + `/migration/action/*.ts`], // 마이그레이션을 수행할 파일이 관리되는 경로 설정
 	migrationsTableName: "migrations", // 마이그레이션 이력이 기록되는 테이블 이름 설정
+	schema: "core",
 });

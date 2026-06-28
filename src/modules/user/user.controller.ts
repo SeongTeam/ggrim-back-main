@@ -9,7 +9,6 @@ import {
 	HttpStatus,
 	Inject,
 	Param,
-	ParseUUIDPipe,
 	Put,
 	Req,
 	UseInterceptors,
@@ -40,7 +39,9 @@ import { ApiOverride } from "../_common/decorator/swagger/CRUD/apiOverride";
 import { UseOwnerGuard, UseRolesGuard } from "../auth/guard/decorator/authorization";
 import { UseTempUserGuard } from "../auth/guard/decorator/authentication";
 import { Pagination } from "../_common/types";
-import { ApiOkResponse } from "@nestjs/swagger";
+import { ApiOkResponse, ApiParam } from "@nestjs/swagger";
+import { IdDeobfuscatePipe } from "../_common/pipe/IdDeobfucate.pipe";
+import { DeletedUserService } from "./deleted-user.service";
 
 @Crud({
 	model: {
@@ -52,7 +53,7 @@ import { ApiOkResponse } from "@nestjs/swagger";
 	params: {
 		id: {
 			field: "id",
-			type: "uuid",
+			type: "number",
 			primary: true,
 		},
 	},
@@ -80,10 +81,17 @@ export class UserController implements CrudController<User> {
 	// ? 질문: <의문점 또는 개선 방향>
 	// * 참고: <관련 정보나 링크>
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@ApiOkResponse({ type: ShowUserResponse })
 	@HttpCode(HttpStatus.OK)
 	@Get(":id")
-	async getOne(@Param("id", ParseUUIDPipe) id: string): Promise<ShowUserResponse> {
+	async getOne(@Param("id", IdDeobfuscatePipe) id: number): Promise<ShowUserResponse> {
 		const user = await this.service.findOne({
 			where: { id },
 		});
@@ -154,13 +162,17 @@ export class UserController implements CrudController<User> {
 	// ? 질문: <의문점 또는 개선 방향>
 	// * 참고: <관련 정보나 링크>
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@UseOwnerGuard(
 		{ guard: SecurityTokenGuard, purpose: "update-password" },
 		{
 			serviceClass: UserService,
-			idParam: "id",
-			serviceMethod: "findUserById",
-			ownerField: "id",
 		},
 	)
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -170,7 +182,7 @@ export class UserController implements CrudController<User> {
 		@Req() request: Request,
 		@Body() dto: ReplacePassWordDTO,
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", IdDeobfuscatePipe) id: number,
 	) {
 		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = authUserPayload;
@@ -183,13 +195,17 @@ export class UserController implements CrudController<User> {
 		await this.authService.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@UseOwnerGuard(
 		{ guard: TokenAuthGuard },
 		{
 			serviceClass: UserService,
-			idParam: "id",
-			serviceMethod: "findUserById",
-			ownerField: "id",
 		},
 	)
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -199,7 +215,7 @@ export class UserController implements CrudController<User> {
 		@Req() request: Request,
 		@Body() dto: ReplaceUsernameDTO,
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", IdDeobfuscatePipe) id: number,
 	) {
 		const { username: newUsername } = dto;
 		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
@@ -217,12 +233,19 @@ export class UserController implements CrudController<User> {
 		await this.service.updateUser(qr, user.id, dto);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@UseRolesGuard("admin")
 	@UseInterceptors(QueryRunnerInterceptor)
 	@Put(":id/role")
 	async replaceRole(
 		@DBQueryRunner() qr: QueryRunner,
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", IdDeobfuscatePipe) id: number,
 		@Body() dto: ReplaceRoleDTO,
 	) {
 		const user = await this.service.findOne({ where: { id } });
@@ -237,13 +260,17 @@ export class UserController implements CrudController<User> {
 		await this.service.updateUser(qr, user.id, dto);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@UseOwnerGuard(
 		{ guard: SecurityTokenGuard, purpose: "delete-account" },
 		{
 			serviceClass: UserService,
-			idParam: "id",
-			serviceMethod: "findUserById",
-			ownerField: "id",
 		},
 	)
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -252,7 +279,7 @@ export class UserController implements CrudController<User> {
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", IdDeobfuscatePipe) id: number,
 	) {
 		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user } = authUserPayload;
@@ -264,6 +291,13 @@ export class UserController implements CrudController<User> {
 		await this.authService.markOneTimeJWT(qr, SecurityTokenGuardResult.oneTimeTokenID);
 	}
 
+	@ApiParam({
+		name: "id",
+		type: String,
+		required: true,
+		description: "obfuscated id of the resource",
+		example: "so8jaGo",
+	})
 	@UseOwnerGuard(
 		{
 			guard: SecurityTokenGuard,
@@ -271,10 +305,7 @@ export class UserController implements CrudController<User> {
 			authOptions: { withDeleted: true },
 		},
 		{
-			serviceClass: UserService,
-			idParam: "id",
-			serviceMethod: "findDeletedUserById",
-			ownerField: "id",
+			serviceClass: DeletedUserService,
 		},
 	)
 	@UseInterceptors(QueryRunnerInterceptor)
@@ -283,7 +314,7 @@ export class UserController implements CrudController<User> {
 		@DBQueryRunner() qr: QueryRunner,
 		@Req() request: Request,
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		@Param("id", ParseUUIDPipe) id: string,
+		@Param("id", IdDeobfuscatePipe) id: number,
 	) {
 		const authUserPayload: AuthUserPayload = request[AUTH_GUARD_PAYLOAD.USER]!;
 		const { user: deletedUser } = authUserPayload;

@@ -1,6 +1,7 @@
 import {
 	CallHandler,
 	ExecutionContext,
+	HttpException,
 	HttpStatus,
 	Injectable,
 	NestInterceptor,
@@ -94,7 +95,11 @@ export class HttpLoggingInterceptor implements NestInterceptor {
 		const email = this.getUserAuthInfo(request);
 
 		const httpStatus: number =
-			error instanceof BaseException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+			error instanceof BaseException
+				? error.getStatus()
+				: error instanceof HttpException
+					? error.getStatus()
+					: HttpStatus.INTERNAL_SERVER_ERROR;
 
 		const format =
 			`accessing ${handlerKey} handler\n` +
@@ -108,7 +113,7 @@ export class HttpLoggingInterceptor implements NestInterceptor {
 			`Headers: ${JSON.stringify(headers, null, 2)}\n`;
 
 		/*TODO
-        - Pipe 또는 Validation 경고 문장 로그로 출력하기
+        - [x] Pipe 또는 Validation 경고 문장 로그로 출력하기
       */
 		if (httpStatus < 500) {
 			this.logger.warn(format, {

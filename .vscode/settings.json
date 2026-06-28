@@ -55,7 +55,7 @@
       ],
     "cSpell.enabled": true,  // Enable the spell checker
 
-	"jestrunner.jestCommand": "npx jest",
+	"jestrunner.jestCommand": "NODE_ENV=test npx jest ",
 	// "jestrunner.debugOptions": {
 	// 	"args" : ["--inspect-brk", 
 	// 		"-r", "tsconfig-paths/register" ,
