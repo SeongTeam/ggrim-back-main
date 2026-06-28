@@ -18,7 +18,7 @@ import { pick } from "../../../src/utils/object";
 import assert from "assert";
 import { arrangeDeletedUser, getOneTimeTokenHeader } from "./util";
 import { HeaderOneTimeToken } from "../_common/type";
-import { deobfuscateId, obfuscateId } from "../../../src/utils/obfuscate";
+import { ObfuscateUtil } from "../../../src/utils/obfuscate";
 
 if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 	console.log("Set setTimeout for debugging");
@@ -100,7 +100,7 @@ describe("UserController (e2e)", () => {
 				])("test : $testName", ({ id }) => {
 					let receivedRes: Awaited<ReturnType<typeof requestReadUser>>;
 					beforeAll(async () => {
-						const externalId = obfuscateId(id);
+						const externalId = ObfuscateUtil.obfuscateId(id);
 						receivedRes = await requestReadUser(externalId);
 					});
 					it("response should match the OpenAPI documentation.", () => {
@@ -201,7 +201,7 @@ describe("UserController (e2e)", () => {
 				});
 				it("User entity should be created", async () => {
 					const receivedBody = receivedRes.data!;
-					const resourceId = deobfuscateId(receivedBody.id);
+					const resourceId = ObfuscateUtil.deobfuscateId(receivedBody.id);
 					const receivedEntity = await userService.findOne({
 						where: { id: resourceId },
 					});
@@ -371,7 +371,7 @@ describe("UserController (e2e)", () => {
 							userEmail,
 							"update-password",
 						);
-						const externalUserId = obfuscateId(userId);
+						const externalUserId = ObfuscateUtil.obfuscateId(userId);
 						receivedRes = await requestUpdatePassword(externalUserId, body, header);
 					});
 
@@ -439,7 +439,7 @@ describe("UserController (e2e)", () => {
 							requestUserEmail,
 							"update-password",
 						);
-						const externalUserId = obfuscateId(userId);
+						const externalUserId = ObfuscateUtil.obfuscateId(userId);
 						receivedRes = await requestUpdatePassword(externalUserId, body, header);
 					});
 
@@ -504,7 +504,7 @@ describe("UserController (e2e)", () => {
 							"update-password",
 							oneTimeTokenOption,
 						);
-						const externalUserId = obfuscateId(userId);
+						const externalUserId = ObfuscateUtil.obfuscateId(userId);
 						receivedRes = await requestUpdatePassword(externalUserId, body, header);
 					});
 
@@ -532,7 +532,7 @@ describe("UserController (e2e)", () => {
 				await arrangeDeletedUser(moduleFixture, deletedUserStub);
 
 				//2. action
-				const externalUserId = obfuscateId(userId);
+				const externalUserId = ObfuscateUtil.obfuscateId(userId);
 				const receivedRes = await requestUpdatePassword(externalUserId, body, header);
 
 				//3. assert
@@ -595,7 +595,7 @@ describe("UserController (e2e)", () => {
 						const user = await userService.findOne({ where: { id: userId } });
 						assert(user !== null);
 						const authorization = testService.getBearerAuthCredential(user);
-						const externalUserId = obfuscateId(userId);
+						const externalUserId = ObfuscateUtil.obfuscateId(userId);
 						receivedRes = await requestUpdateUsername(
 							externalUserId,
 							body,
@@ -685,7 +685,7 @@ describe("UserController (e2e)", () => {
 				let receivedRes: Awaited<ReturnType<typeof requestUpdateUsername>>;
 
 				beforeAll(async () => {
-					const externalUserId = obfuscateId(userId);
+					const externalUserId = ObfuscateUtil.obfuscateId(userId);
 					receivedRes = await requestUpdateUsername(
 						externalUserId,
 						body,
@@ -739,7 +739,7 @@ describe("UserController (e2e)", () => {
 					});
 					assert(authorizationUser !== null);
 					const authorization = testService.getBearerAuthCredential(authorizationUser);
-					const externalUserId = obfuscateId(userId);
+					const externalUserId = ObfuscateUtil.obfuscateId(userId);
 					receivedRes = await requestUpdateUsername(externalUserId, body, authorization);
 				});
 
@@ -810,7 +810,7 @@ describe("UserController (e2e)", () => {
 						});
 						assert(requestUser !== null);
 						const authorization = testService.getBearerAuthCredential(requestUser);
-						const externalId = obfuscateId(id);
+						const externalId = ObfuscateUtil.obfuscateId(id);
 						receivedRes = await requestUpdateUserRole(externalId, body, authorization);
 					});
 
@@ -903,7 +903,7 @@ describe("UserController (e2e)", () => {
 					let receivedRes: Awaited<ReturnType<typeof requestUpdateUserRole>>;
 
 					beforeAll(async () => {
-						const externalId = obfuscateId(id);
+						const externalId = ObfuscateUtil.obfuscateId(id);
 						receivedRes = await requestUpdateUserRole(
 							externalId,
 							body,
@@ -951,7 +951,7 @@ describe("UserController (e2e)", () => {
 						});
 						assert(requestUser !== null);
 						const authorization = testService.getBearerAuthCredential(requestUser);
-						const externalId = obfuscateId(id);
+						const externalId = ObfuscateUtil.obfuscateId(id);
 						receivedRes = await requestUpdateUserRole(externalId, body, authorization);
 					});
 
@@ -981,7 +981,7 @@ describe("UserController (e2e)", () => {
 					await arrangeDeletedUser(moduleFixture, deletedAdminStub);
 
 					//2. action
-					const externalId = obfuscateId(targetUserStub.id);
+					const externalId = ObfuscateUtil.obfuscateId(targetUserStub.id);
 					const receivedRes = await requestUpdateUserRole(
 						externalId,
 						body,
@@ -1041,7 +1041,7 @@ describe("UserController (e2e)", () => {
 							requestUserEmail,
 							"delete-account",
 						);
-						const externalUserId = obfuscateId(userId);
+						const externalUserId = ObfuscateUtil.obfuscateId(userId);
 						receivedRes = await requestDeleteUser(externalUserId, header);
 					});
 
@@ -1146,7 +1146,7 @@ describe("UserController (e2e)", () => {
 								"delete-account",
 								oneTimeTokenOption,
 							);
-							const externalUserId = obfuscateId(userId);
+							const externalUserId = ObfuscateUtil.obfuscateId(userId);
 							receivedRes = await requestDeleteUser(externalUserId, header);
 						});
 
@@ -1173,7 +1173,7 @@ describe("UserController (e2e)", () => {
 				await arrangeDeletedUser(moduleFixture, deletedUserStub);
 
 				//2. action
-				const externalUserId = obfuscateId(userId);
+				const externalUserId = ObfuscateUtil.obfuscateId(userId);
 				const receivedRes = await requestDeleteUser(externalUserId, header);
 
 				//3. assert
@@ -1195,7 +1195,7 @@ describe("UserController (e2e)", () => {
 				await arrangeDeletedUser(moduleFixture, deletedUserStub);
 
 				//2. action
-				const externalUserId = obfuscateId(userId);
+				const externalUserId = ObfuscateUtil.obfuscateId(userId);
 				const receivedRes = await requestDeleteUser(externalUserId, header);
 
 				//3. assert
@@ -1215,7 +1215,7 @@ describe("UserController (e2e)", () => {
 				);
 
 				//2.action
-				const externalUserId = obfuscateId(targetUser.id);
+				const externalUserId = ObfuscateUtil.obfuscateId(targetUser.id);
 				const receivedRes = await requestDeleteUser(externalUserId, header);
 
 				//3.assert
@@ -1271,7 +1271,7 @@ describe("UserController (e2e)", () => {
 							requestUserEmail,
 							"recover-account",
 						);
-						const externalId = obfuscateId(userId);
+						const externalId = ObfuscateUtil.obfuscateId(userId);
 						receivedRes = await requestRecoverUser(externalId, header);
 					});
 
@@ -1342,7 +1342,7 @@ describe("UserController (e2e)", () => {
 				describe.each([
 					{
 						testName: "deliver faker oneTimeToken",
-						userId: obfuscateId(targetUserStub.id),
+						userId: ObfuscateUtil.obfuscateId(targetUserStub.id),
 						header: {
 							"x-one-time-token-identifier": faker.string.uuid(),
 							"x-one-time-token-value": faker.internet.jwt(),
@@ -1426,7 +1426,7 @@ describe("UserController (e2e)", () => {
 								"recover-account",
 								oneTimeTokenOption,
 							);
-							const externalId = obfuscateId(userId);
+							const externalId = ObfuscateUtil.obfuscateId(userId);
 							receivedRes = await requestRecoverUser(externalId, header);
 						});
 
@@ -1455,7 +1455,7 @@ describe("UserController (e2e)", () => {
 				await arrangeDeletedUser(moduleFixture, deletedUserStub);
 
 				//2. action
-				const externalId = obfuscateId(userId);
+				const externalId = ObfuscateUtil.obfuscateId(userId);
 				const receivedRes = await requestRecoverUser(externalId, header);
 
 				//3. assert

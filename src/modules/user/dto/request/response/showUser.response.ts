@@ -1,7 +1,7 @@
 import { User } from "../../../entity/user.entity";
 import { USER_ROLE, USER_STATE, UserRole, UserState } from "../../../const";
 import { ApiProperty } from "@nestjs/swagger";
-import { obfuscateId } from "../../../../../utils/obfuscate";
+import { ObfuscateUtil } from "../../../../../utils/obfuscate";
 
 export class ShowUserResponse {
 	id: string;
@@ -28,7 +28,7 @@ export class ShowUserResponse {
 	oauth_provider_id: string | null;
 
 	constructor(user: User) {
-		this.id = obfuscateId(user.id);
+		this.id = ObfuscateUtil.obfuscateId(user.id);
 		this.role = user.role;
 		this.username = user.username;
 		this.active = user.active;

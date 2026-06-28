@@ -5,7 +5,7 @@ import { ADMIN_ACCESS_KEY } from "../../metadata/adminAccess";
 import { CHECK_OWNER_KEY, CheckOwnerOption } from "../../metadata/owner";
 import { AUTH_GUARD_PAYLOAD } from "../const";
 import { Request } from "express";
-import { transformToId } from "../../../../utils/obfuscate";
+import { ObfuscateUtil } from "../../../../utils/obfuscate";
 
 // TODO: OwnerGuard 기능 개선
 // - [x] User Role = admin 일때, 통과시키기
@@ -52,7 +52,7 @@ export class OwnerGuard implements CanActivate {
 		const idParam = "id";
 		const externalId = request.params[idParam];
 
-		const resourceId = transformToId(externalId);
+		const resourceId = ObfuscateUtil.transformToId(externalId);
 
 		if (!resourceId) {
 			throw new BadRequestException(`id(${resourceId}) is invalid format. `);

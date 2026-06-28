@@ -3,7 +3,7 @@ import { ShowTag } from "../../../tag/dto/response/showTag.response";
 import { ShowArtist } from "../../../artist/dto/response/showArtist.response";
 import { ShowStyle } from "../../../style/dto/response/showStyle.response";
 import { ApiProperty } from "@nestjs/swagger";
-import { obfuscateId } from "../../../../utils/obfuscate";
+import { ObfuscateUtil } from "../../../../utils/obfuscate";
 
 export class ShowPainting {
 	readonly id: string;
@@ -14,7 +14,7 @@ export class ShowPainting {
 
 	public constructor(painting: Painting) {
 		const { id, title, width, height, image_url } = painting;
-		this.id = obfuscateId(id);
+		this.id = ObfuscateUtil.obfuscateId(id);
 		this.title = title;
 		this.width = width;
 		this.height = height;

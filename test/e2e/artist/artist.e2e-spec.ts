@@ -18,7 +18,7 @@ import { expectResponseBody } from "../_common/jest-zod";
 import { zShowArtist, zShowArtistResponse } from "./zodSchema";
 import { CondOperator, RequestQueryBuilder } from "@dataui/crud-request";
 import { zPagination } from "../_common/zodSchema";
-import { obfuscateId } from "../../../src/utils/obfuscate";
+import { ObfuscateUtil } from "../../../src/utils/obfuscate";
 
 if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 	console.log("Set setTimeout for debugging");
@@ -256,7 +256,7 @@ describe("ArtistController (e2e)", () => {
 			beforeAll(async () => {
 				await testService.truncateTable("artist");
 				await testService.insertArtistStubs([artistStub]);
-				const externalId = obfuscateId(artistStub.id);
+				const externalId = ObfuscateUtil.obfuscateId(artistStub.id);
 				response = await getArtist(externalId);
 			});
 

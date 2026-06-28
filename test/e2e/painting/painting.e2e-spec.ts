@@ -33,7 +33,7 @@ import {
 	SearchQuery,
 	transformToReplaceDto,
 } from "./util";
-import { deobfuscateId, obfuscateId } from "../../../src/utils/obfuscate";
+import { ObfuscateUtil } from "../../../src/utils/obfuscate";
 
 if (process.env.VSCODE_INSPECTOR_OPTIONS) {
 	console.log("Set setTimeout for debugging");
@@ -355,7 +355,7 @@ describe("PaintingController (e2e)", () => {
 				{
 					testName: "deliver id",
 					query: {
-						ids: paintingStubs.map((stub) => obfuscateId(stub.id)),
+						ids: paintingStubs.map((stub) => ObfuscateUtil.obfuscateId(stub.id)),
 					},
 				},
 			])("test : $testName", ({ query }) => {
@@ -465,7 +465,7 @@ describe("PaintingController (e2e)", () => {
 				it("entity should be created", async () => {
 					const receivedResBody = receivedRes.data!;
 
-					const resourceId = deobfuscateId(receivedResBody.id);
+					const resourceId = ObfuscateUtil.deobfuscateId(receivedResBody.id);
 					const expectedPainting = await paintingService.findOne({
 						where: { id: resourceId },
 					});
@@ -643,7 +643,7 @@ describe("PaintingController (e2e)", () => {
 				let receivedRes: Awaited<ReturnType<typeof requestReplacePainting>>;
 
 				beforeAll(async () => {
-					const externalId = obfuscateId(id);
+					const externalId = ObfuscateUtil.obfuscateId(id);
 					receivedRes = await requestReplacePainting(externalId, body, admin);
 				});
 
@@ -760,7 +760,7 @@ describe("PaintingController (e2e)", () => {
 
 				beforeAll(async () => {
 					const user = (await userService.findOne({ where: { id: userId } }))!;
-					const externalId = obfuscateId(id);
+					const externalId = ObfuscateUtil.obfuscateId(id);
 					receivedRes = await requestReplacePainting(
 						externalId,
 						body as ReplacePaintingDto,
@@ -818,7 +818,7 @@ describe("PaintingController (e2e)", () => {
 					({ id }) => {
 						let receivedRes: Awaited<ReturnType<typeof requestDeletePainting>>;
 						beforeAll(async () => {
-							const externalId = obfuscateId(id);
+							const externalId = ObfuscateUtil.obfuscateId(id);
 							receivedRes = await requestDeletePainting(externalId, admin);
 						});
 
@@ -916,7 +916,7 @@ describe("PaintingController (e2e)", () => {
 					beforeAll(async () => {
 						const user = await userService.findOne({ where: { id: userId } });
 						assert(user !== null);
-						const externalId = obfuscateId(id);
+						const externalId = ObfuscateUtil.obfuscateId(id);
 						receivedRes = await requestDeletePainting(externalId, user!);
 					});
 

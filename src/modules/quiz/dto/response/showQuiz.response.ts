@@ -8,7 +8,7 @@ import { ShowStyle } from "../../../style/dto/response/showStyle.response";
 import { ShowArtist } from "../../../artist/dto/response/showArtist.response";
 import { QUIZ_TYPE } from "../../const";
 import { isNotFalsy } from "../../../../utils/validator";
-import { obfuscateId } from "../../../../utils/obfuscate";
+import { ObfuscateUtil } from "../../../../utils/obfuscate";
 
 export class ShowQuiz {
 	readonly id: string;
@@ -28,7 +28,7 @@ export class ShowQuiz {
 	readonly showOwner: ShowUserResponse;
 
 	constructor(quiz: Quiz) {
-		this.id = obfuscateId(quiz.id);
+		this.id = ObfuscateUtil.obfuscateId(quiz.id);
 		this.title = quiz.title;
 		this.time_limit = quiz.time_limit;
 		this.created_date = quiz.created_date.toISOString();

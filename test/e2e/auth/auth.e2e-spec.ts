@@ -41,7 +41,7 @@ import {
 	registerVerifyInfo,
 	useVerifyInfo,
 } from "./util";
-import { deobfuscateId, obfuscateId } from "../../../src/utils/obfuscate";
+import { ObfuscateUtil } from "../../../src/utils/obfuscate";
 
 describe("AuthController (e2e)", () => {
 	function sleep(ms: number) {
@@ -392,7 +392,7 @@ describe("AuthController (e2e)", () => {
 
 				it("entity should be created in DB", async () => {
 					const receivedData = receivedRes.data!;
-					const resourceId = deobfuscateId(receivedData.id);
+					const resourceId = ObfuscateUtil.deobfuscateId(receivedData.id);
 					const receivedEntity = await authService.findOneTimeToken({
 						where: { id: resourceId },
 					});
@@ -619,7 +619,7 @@ describe("AuthController (e2e)", () => {
 						const receivedData = receivedRes.data!;
 
 						const receivedEntity = await authService.findOneTimeToken({
-							where: { id: deobfuscateId(receivedData.id) },
+							where: { id: ObfuscateUtil.deobfuscateId(receivedData.id) },
 						});
 						expect(receivedEntity).toBeDefined();
 						await expectOneTimeToken(moduleFixture, receivedData, receivedEntity!);
@@ -1018,7 +1018,7 @@ describe("AuthController (e2e)", () => {
 						const receivedData = receivedRes.data!;
 						const { oneTimeToken } = receivedData;
 						const receivedEntity = await authService.findOneTimeToken({
-							where: { id: deobfuscateId(oneTimeToken.id) },
+							where: { id: ObfuscateUtil.deobfuscateId(oneTimeToken.id) },
 						});
 						expect(receivedEntity).toBeDefined();
 
@@ -1134,7 +1134,7 @@ describe("AuthController (e2e)", () => {
 					}))!;
 					assert(receivedEntity !== null);
 
-					const externalId = obfuscateId(receivedEntity.id);
+					const externalId = ObfuscateUtil.obfuscateId(receivedEntity.id);
 					receivedRes = await requestGetSecurityToken({ ...userStub }, externalId);
 				});
 

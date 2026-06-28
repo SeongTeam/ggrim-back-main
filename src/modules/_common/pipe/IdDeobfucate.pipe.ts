@@ -1,16 +1,16 @@
 import { PipeTransform, Injectable, BadRequestException } from "@nestjs/common";
-import { deobfuscateId, validateDeobfuscated, validateObfuscated } from "../../../utils/obfuscate";
+import { ObfuscateUtil } from "../../../utils/obfuscate";
 
 @Injectable()
 export class IdDeobfuscatePipe implements PipeTransform<string, number> {
 	transform(obfuscated: string): number {
 		let message = `${obfuscated} is invalid format ID`;
-		if (!validateObfuscated(obfuscated)) {
+		if (!ObfuscateUtil.validateObfuscated(obfuscated)) {
 			throw new BadRequestException(message);
 		}
 		try {
-			const id = deobfuscateId(obfuscated);
-			if (!validateDeobfuscated(id)) {
+			const id = ObfuscateUtil.deobfuscateId(obfuscated);
+			if (!ObfuscateUtil.validateDeobfuscated(id)) {
 				throw new BadRequestException(message);
 			}
 			return id;

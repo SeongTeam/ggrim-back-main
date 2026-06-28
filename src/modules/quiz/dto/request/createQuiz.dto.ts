@@ -5,7 +5,7 @@ import { QuizType } from "../../type";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { transformToId } from "../../../../utils/obfuscate";
+import { ObfuscateUtil } from "../../../../utils/obfuscate";
 import { isArrayEmpty } from "../../../../utils/validator";
 
 export class CreateQuizDTO {
@@ -18,7 +18,7 @@ export class CreateQuizDTO {
 			if (isArrayEmpty(value)) {
 				return null;
 			}
-			return value.map((v) => transformToId(v));
+			return value.map((v) => ObfuscateUtil.transformToId(v));
 		},
 		{ toClassOnly: true },
 	)
@@ -36,7 +36,7 @@ export class CreateQuizDTO {
 			if (isArrayEmpty(value)) {
 				return null;
 			}
-			return value.map((v) => transformToId(v));
+			return value.map((v) => ObfuscateUtil.transformToId(v));
 		},
 		{ toClassOnly: true },
 	)
@@ -51,7 +51,7 @@ export class CreateQuizDTO {
 			if (value === undefined) {
 				return undefined;
 			}
-			return transformToId(value);
+			return ObfuscateUtil.transformToId(value);
 		},
 		{ toClassOnly: true },
 	)

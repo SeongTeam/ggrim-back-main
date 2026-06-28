@@ -58,7 +58,7 @@ import { factoryPaintingStub } from "../../_shared/stub/painting.stub";
 import { assert } from "console";
 import { UserService } from "../../../src/modules/user/user.service";
 import { generateId } from "../../_shared/stub/utils";
-import { deobfuscateId, obfuscateId } from "../../../src/utils/obfuscate";
+import { ObfuscateUtil } from "../../../src/utils/obfuscate";
 
 // TODO: QuizController API 테스트 구현
 // - [x] API 별로 테스트 시나리오 설계
@@ -162,7 +162,7 @@ describe("QuizController (e2e)", () => {
 					beforeAll(async () => {
 						const quizzes = await testService.seedOneChoiceQuizzes(1);
 						expectedQuiz = quizzes[0];
-						const externalId = obfuscateId(expectedQuiz.id);
+						const externalId = ObfuscateUtil.obfuscateId(expectedQuiz.id);
 						receivedRes = await requestSubmitQuiz(externalId, dto);
 
 						//run batch
@@ -235,7 +235,7 @@ describe("QuizController (e2e)", () => {
 				let receivedRes: Awaited<ReturnType<typeof requestSubmitQuiz>>;
 
 				beforeAll(async () => {
-					const externalId = obfuscateId(id);
+					const externalId = ObfuscateUtil.obfuscateId(id);
 					receivedRes = await requestSubmitQuiz(
 						externalId,
 						dto as { isCorrect: boolean },
@@ -277,7 +277,7 @@ describe("QuizController (e2e)", () => {
 					(like) => like.quiz_id === targetQuiz.id,
 				);
 
-				const externalId = obfuscateId(targetQuiz.id);
+				const externalId = ObfuscateUtil.obfuscateId(targetQuiz.id);
 				receivedRes = await requestReadReactions(externalId);
 			});
 
@@ -359,7 +359,7 @@ describe("QuizController (e2e)", () => {
 					const testUser = await testService.insertStubUser(factoryUserStub(userType));
 					const expectedQuiz = quizzes[0];
 
-					const externalId = obfuscateId(expectedQuiz.id);
+					const externalId = ObfuscateUtil.obfuscateId(expectedQuiz.id);
 					const auth = testService.getBearerAuthCredential(testUser);
 					const response = await requestCreateReaction(externalId, dto, auth);
 					receivedRes = response;
@@ -417,7 +417,7 @@ describe("QuizController (e2e)", () => {
 					const dto: CreateQuizReactionDto = {
 						type: laterReactionType,
 					};
-					const externalId = obfuscateId(expectedQuiz.id);
+					const externalId = ObfuscateUtil.obfuscateId(expectedQuiz.id);
 					const response = await requestCreateReaction(externalId, dto, auth);
 					receivedRes = response;
 					const findReactionFuncMap = {
@@ -548,7 +548,7 @@ describe("QuizController (e2e)", () => {
 				};
 
 				const invalidBearerAuth = faker.internet.jwt();
-				const externalId = obfuscateId(expectedQuiz.id);
+				const externalId = ObfuscateUtil.obfuscateId(expectedQuiz.id);
 				const response = await requestCreateReaction(externalId, dto, invalidBearerAuth);
 				receivedRes = response;
 			});
@@ -601,7 +601,7 @@ describe("QuizController (e2e)", () => {
 					const user = deletedReaction.user;
 
 					const auth = testService.getBearerAuthCredential(user);
-					const externalId = obfuscateId(expectedQuiz.id);
+					const externalId = ObfuscateUtil.obfuscateId(expectedQuiz.id);
 					const response = await requestDeleteReaction(externalId, auth);
 					receivedRes = response;
 					const findReactionFuncMap = {
@@ -639,7 +639,7 @@ describe("QuizController (e2e)", () => {
 
 						//request delete reaction
 						const auth = testService.getBearerAuthCredential(user);
-						const externalId = obfuscateId(quiz.id);
+						const externalId = ObfuscateUtil.obfuscateId(quiz.id);
 						const response = await requestDeleteReaction(externalId, auth);
 						receivedRes = response;
 						receivedReaction = (
@@ -758,7 +758,7 @@ describe("QuizController (e2e)", () => {
 				}
 			}
 
-			const resourceId = deobfuscateId(res.shortQuiz.id);
+			const resourceId = ObfuscateUtil.deobfuscateId(res.shortQuiz.id);
 			const expectedQuiz = await findAllRelationQuiz(resourceId);
 			expect(expectedQuiz).toBeDefined();
 			expect(res.shortQuiz).toEqual(new ShowQuiz(expectedQuiz!));
@@ -1362,8 +1362,10 @@ describe("QuizController (e2e)", () => {
 			const { time_limit: timeLimit, description, title } = factoryQuizStub();
 			const dto: CreateQuizDto = {
 				type: QUIZ_TYPE.ONE_CHOICE,
-				answerPaintingIds: [obfuscateId(answerPaintingId)],
-				distractorPaintingIds: distractorPaintingIds.map((id) => obfuscateId(id)),
+				answerPaintingIds: [ObfuscateUtil.obfuscateId(answerPaintingId)],
+				distractorPaintingIds: distractorPaintingIds.map((id) =>
+					ObfuscateUtil.obfuscateId(id),
+				),
 				title,
 				timeLimit,
 				description,
@@ -1423,10 +1425,10 @@ describe("QuizController (e2e)", () => {
 					testName: "deliver ONE_CHOICE type",
 					dto: {
 						type: QUIZ_TYPE.ONE_CHOICE,
-						answerPaintingIds: [obfuscateId(paintingStubs[0].id)],
+						answerPaintingIds: [ObfuscateUtil.obfuscateId(paintingStubs[0].id)],
 						distractorPaintingIds: paintingStubs
 							.slice(1, 4)
-							.map((stub) => obfuscateId(stub.id)),
+							.map((stub) => ObfuscateUtil.obfuscateId(stub.id)),
 						title: "quiz create",
 						timeLimit: 10,
 						description: "anything what you can",
@@ -1441,12 +1443,14 @@ describe("QuizController (e2e)", () => {
 				beforeAll(async () => {
 					const creator = await testService.insertStubUser(factoryUserStub(userType));
 
-					const answerPaintingResourceId = deobfuscateId(dto.answerPaintingIds[0]);
+					const answerPaintingResourceId = ObfuscateUtil.deobfuscateId(
+						dto.answerPaintingIds[0],
+					);
 					const answer = await paintingService.findOne({
 						where: { id: answerPaintingResourceId },
 					});
 					const distractorsResourceIds = dto.distractorPaintingIds.map((externalId) =>
-						deobfuscateId(externalId),
+						ObfuscateUtil.deobfuscateId(externalId),
 					);
 					const distractors = await paintingService.getManyByIds(distractorsResourceIds);
 
@@ -1463,7 +1467,7 @@ describe("QuizController (e2e)", () => {
 					};
 					const bearerAuth = testService.getBearerAuthCredential(creator);
 					receivedRes = await requestCreateQuiz(dto, bearerAuth);
-					const resourceId = deobfuscateId(receivedRes.data!.id);
+					const resourceId = ObfuscateUtil.deobfuscateId(receivedRes.data!.id);
 					receivedQuiz = await findAllRelationQuiz(resourceId);
 				});
 
@@ -1639,12 +1643,12 @@ describe("QuizController (e2e)", () => {
 					testName: "deliver too much distractorPaintingIds ",
 					inValidDto: {
 						type: QUIZ_TYPE.ONE_CHOICE,
-						answerPaintingIds: [obfuscateId(paintingStubs[0].id)],
+						answerPaintingIds: [ObfuscateUtil.obfuscateId(paintingStubs[0].id)],
 						distractorPaintingIds: paintingStubs
 							.slice(1, 10)
 							.map((stub) => stub.id)
 							.concat(deletedPaintingStub.id)
-							.map((id) => obfuscateId(id)),
+							.map((id) => ObfuscateUtil.obfuscateId(id)),
 						title: "quiz create",
 						timeLimit: 10,
 						description: faker.commerce.productDescription(),
@@ -1710,7 +1714,9 @@ describe("QuizController (e2e)", () => {
 		) {
 			assert(receivedPagination.data.length !== 0);
 			const quizzes = await Promise.all(
-				receivedPagination.data.map((info) => findAllRelationQuiz(deobfuscateId(info.id))),
+				receivedPagination.data.map((info) =>
+					findAllRelationQuiz(ObfuscateUtil.deobfuscateId(info.id)),
+				),
 			);
 
 			for (const quiz of quizzes) {
@@ -2011,7 +2017,7 @@ describe("QuizController (e2e)", () => {
 					testName: "deliver valid id and query",
 					id: quizStub.id,
 					query: {
-						userId: obfuscateId(userStub.id),
+						userId: ObfuscateUtil.obfuscateId(userStub.id),
 						isS3Access: false,
 					},
 				},
@@ -2030,7 +2036,7 @@ describe("QuizController (e2e)", () => {
 					expectedQuiz = (await findAllRelationQuiz(id))!;
 					assert(expectedQuiz !== null);
 
-					const externalId = obfuscateId(expectedQuiz.id);
+					const externalId = ObfuscateUtil.obfuscateId(expectedQuiz.id);
 					receivedRes = await requestReadQuiz(externalId, query);
 				});
 				it("response should match openapi doc", () => {
@@ -2082,17 +2088,17 @@ describe("QuizController (e2e)", () => {
 				describe.each([
 					{
 						testName: "after user create dislike",
-						id: obfuscateId(quizStub.id),
+						id: ObfuscateUtil.obfuscateId(quizStub.id),
 						query: {
-							userId: obfuscateId(userStub.id),
+							userId: ObfuscateUtil.obfuscateId(userStub.id),
 						},
 						reactionType: QUIZ_REACTION.dislike,
 					},
 					{
 						testName: "after user create like",
-						id: obfuscateId(quizStub.id),
+						id: ObfuscateUtil.obfuscateId(quizStub.id),
 						query: {
-							userId: obfuscateId(userStub.id),
+							userId: ObfuscateUtil.obfuscateId(userStub.id),
 						},
 						reactionType: QUIZ_REACTION.like,
 					},
@@ -2175,19 +2181,19 @@ describe("QuizController (e2e)", () => {
 				{
 					id: quizStub.id,
 					query: {
-						userId: obfuscateId(deletedUserStub.id),
+						userId: ObfuscateUtil.obfuscateId(deletedUserStub.id),
 					},
 				},
 				{
 					id: quizStub.id,
 					query: {
-						userId: obfuscateId(generateId()),
+						userId: ObfuscateUtil.obfuscateId(generateId()),
 					},
 				},
 				{
 					id: quizStub.id,
 					query: {
-						userId: obfuscateId(userStub.id),
+						userId: ObfuscateUtil.obfuscateId(userStub.id),
 						isS3Access: "this value is transformed to default",
 					},
 				},
@@ -2195,7 +2201,7 @@ describe("QuizController (e2e)", () => {
 				let receivedRes: Awaited<ReturnType<typeof requestReadQuiz>>;
 
 				beforeAll(async () => {
-					const externalId = obfuscateId(id);
+					const externalId = ObfuscateUtil.obfuscateId(id);
 					receivedRes = await requestReadQuiz(
 						externalId,
 						query as { isS3Access?: boolean; userId?: string },
@@ -2404,10 +2410,12 @@ describe("QuizController (e2e)", () => {
 					testName: "title, timeLimit,description 수정",
 					id: quizStub.id,
 					dto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => obfuscateId(p.id)),
+						answerPaintingIds: paintingStubs
+							.slice(0, 1)
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
 						distractorPaintingIds: paintingStubs
 							.slice(1, 4)
-							.map((p) => obfuscateId(p.id)),
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2418,10 +2426,12 @@ describe("QuizController (e2e)", () => {
 					testName: "answerPaintingIds와 distractorPaintingIds수정",
 					id: quizStub.id,
 					dto: {
-						answerPaintingIds: paintingStubs.slice(1, 2).map((p) => obfuscateId(p.id)),
+						answerPaintingIds: paintingStubs
+							.slice(1, 2)
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
 						distractorPaintingIds: paintingStubs
 							.slice(2, 5)
-							.map((p) => obfuscateId(p.id)),
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2434,12 +2444,14 @@ describe("QuizController (e2e)", () => {
 				let receivedQuiz: Quiz;
 
 				beforeAll(async () => {
-					const answerPaintingResourceId = deobfuscateId(dto.answerPaintingIds[0]);
+					const answerPaintingResourceId = ObfuscateUtil.deobfuscateId(
+						dto.answerPaintingIds[0],
+					);
 					const answer_painting = await paintingService.findOne({
 						where: { id: answerPaintingResourceId },
 					});
 					const distractorResourceIds = dto.distractorPaintingIds.map((id) =>
-						deobfuscateId(id),
+						ObfuscateUtil.deobfuscateId(id),
 					);
 					const distractor_paintings =
 						await paintingService.getManyByIds(distractorResourceIds);
@@ -2455,9 +2467,9 @@ describe("QuizController (e2e)", () => {
 					};
 
 					const bearerAuth = testService.getBearerAuthCredential(user);
-					const externalId = obfuscateId(id);
+					const externalId = ObfuscateUtil.obfuscateId(id);
 					receivedRes = await requestReplaceQuiz(externalId, dto, bearerAuth);
-					const resourceId = deobfuscateId(receivedRes.data!.id);
+					const resourceId = ObfuscateUtil.deobfuscateId(receivedRes.data!.id);
 					receivedQuiz = (await findAllRelationQuiz(resourceId))!;
 				});
 
@@ -2541,10 +2553,12 @@ describe("QuizController (e2e)", () => {
 					testName: "invalid quizId",
 					invalidId: 33333333,
 					invalidDto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => obfuscateId(p.id)),
+						answerPaintingIds: paintingStubs
+							.slice(0, 1)
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
 						distractorPaintingIds: paintingStubs
 							.slice(1, 4)
-							.map((p) => obfuscateId(p.id)),
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2555,10 +2569,12 @@ describe("QuizController (e2e)", () => {
 					testName: "deleted quizId",
 					invalidId: deletedQuizStub.id,
 					invalidDto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => obfuscateId(p.id)),
+						answerPaintingIds: paintingStubs
+							.slice(0, 1)
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
 						distractorPaintingIds: paintingStubs
 							.slice(1, 4)
-							.map((p) => obfuscateId(p.id)),
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2569,10 +2585,10 @@ describe("QuizController (e2e)", () => {
 					testName: "deleted paintingId in answer",
 					invalidId: quizStub.id,
 					invalidDto: {
-						answerPaintingIds: [obfuscateId(deletedPaintingStub.id)],
+						answerPaintingIds: [ObfuscateUtil.obfuscateId(deletedPaintingStub.id)],
 						distractorPaintingIds: paintingStubs
 							.slice(0, 3)
-							.map((p) => obfuscateId(p.id)),
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2582,10 +2598,12 @@ describe("QuizController (e2e)", () => {
 					testName: "deleted paintingId in distractor",
 					invalidId: quizStub.id,
 					invalidDto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => obfuscateId(p.id)),
+						answerPaintingIds: paintingStubs
+							.slice(0, 1)
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
 						distractorPaintingIds: [deletedPaintingStub.id]
 							.concat(paintingStubs.slice(1, 3).map((p) => p.id))
-							.map((id) => obfuscateId(id)),
+							.map((id) => ObfuscateUtil.obfuscateId(id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2606,8 +2624,12 @@ describe("QuizController (e2e)", () => {
 					testName: "over distractorIds",
 					invalidId: quizStub.id,
 					invalidDto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => obfuscateId(p.id)),
-						distractorPaintingIds: paintingStubs.slice(1).map((p) => obfuscateId(p.id)),
+						answerPaintingIds: paintingStubs
+							.slice(0, 1)
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
+						distractorPaintingIds: paintingStubs
+							.slice(1)
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2617,10 +2639,12 @@ describe("QuizController (e2e)", () => {
 					testName: "duplicate distractorIds",
 					invalidId: quizStub.id,
 					invalidDto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => obfuscateId(p.id)),
+						answerPaintingIds: paintingStubs
+							.slice(0, 1)
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
 						distractorPaintingIds: paintingStubs
 							.slice(0, 3)
-							.map((p) => obfuscateId(p.id)),
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2631,7 +2655,7 @@ describe("QuizController (e2e)", () => {
 
 				beforeAll(async () => {
 					const bearerAuth = testService.getBearerAuthCredential(user);
-					const externalId = obfuscateId(invalidId);
+					const externalId = ObfuscateUtil.obfuscateId(invalidId);
 					receivedRes = await requestReplaceQuiz(
 						externalId,
 						invalidDto as ReplaceQuizDto,
@@ -2692,10 +2716,12 @@ describe("QuizController (e2e)", () => {
 					testName: "tried by other user",
 					invalidId: quizStub.id,
 					invalidDto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => obfuscateId(p.id)),
+						answerPaintingIds: paintingStubs
+							.slice(0, 1)
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
 						distractorPaintingIds: paintingStubs
 							.slice(1, 4)
-							.map((p) => obfuscateId(p.id)),
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2706,10 +2732,12 @@ describe("QuizController (e2e)", () => {
 					testName: "tried by other admin",
 					invalidId: quizStub.id,
 					invalidDto: {
-						answerPaintingIds: paintingStubs.slice(0, 1).map((p) => obfuscateId(p.id)),
+						answerPaintingIds: paintingStubs
+							.slice(0, 1)
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
 						distractorPaintingIds: paintingStubs
 							.slice(1, 4)
-							.map((p) => obfuscateId(p.id)),
+							.map((p) => ObfuscateUtil.obfuscateId(p.id)),
 						title: faker.book.title(),
 						timeLimit: faker.number.int({ min: 0, max: 100 }),
 						description: faker.commerce.productDescription(),
@@ -2724,7 +2752,7 @@ describe("QuizController (e2e)", () => {
 					assert(user !== null);
 
 					const bearerAuth = testService.getBearerAuthCredential(user!);
-					const externalId = obfuscateId(invalidId);
+					const externalId = ObfuscateUtil.obfuscateId(invalidId);
 					receivedRes = await requestReplaceQuiz(
 						externalId,
 						invalidDto as ReplaceQuizDto,
@@ -2807,7 +2835,7 @@ describe("QuizController (e2e)", () => {
 				let receivedRes: Awaited<ReturnType<typeof requestDeleteQuiz>>;
 				let receivedQuiz: Quiz | null;
 				beforeAll(async () => {
-					const externalId = obfuscateId(id);
+					const externalId = ObfuscateUtil.obfuscateId(id);
 					const bearerAuth = testService.getBearerAuthCredential(user);
 					receivedRes = await requestDeleteQuiz(externalId, bearerAuth);
 					receivedQuiz = await findAllRelationQuiz(id);
@@ -2879,7 +2907,7 @@ describe("QuizController (e2e)", () => {
 				},
 				{
 					testName: "deliver deleted quiz id",
-					invalidId: obfuscateId(deletedQuizStub.id),
+					invalidId: ObfuscateUtil.obfuscateId(deletedQuizStub.id),
 					userId: ownerStub.id,
 				},
 			])("test : $testName", ({ invalidId, userId }) => {
@@ -2947,12 +2975,12 @@ describe("QuizController (e2e)", () => {
 			describe.each([
 				{
 					testName: "deliver other user id",
-					invalidId: obfuscateId(quizStub.id),
+					invalidId: ObfuscateUtil.obfuscateId(quizStub.id),
 					userId: otherUserStub.id,
 				},
 				{
 					testName: "deliver other admin id",
-					invalidId: obfuscateId(quizStub.id),
+					invalidId: ObfuscateUtil.obfuscateId(quizStub.id),
 					userId: otherAdminStub.id,
 				},
 			])("test : $testName", ({ invalidId, userId }) => {

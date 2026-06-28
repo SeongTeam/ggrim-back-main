@@ -2,7 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { IsArray, IsBoolean, IsNumber } from "class-validator";
 import { IsOptionalProperty } from "../../../_common/decorator/swagger/class-validator/isOptionalProperty";
-import { transformToId } from "../../../../utils/obfuscate";
+import { ObfuscateUtil } from "../../../../utils/obfuscate";
 
 export class GetByIdsQueryDTO {
 	@ApiProperty({
@@ -12,7 +12,9 @@ export class GetByIdsQueryDTO {
 	})
 	@Transform(
 		({ value }) =>
-			Array.isArray(value) ? value.map((v) => transformToId(v)) : [transformToId(value)],
+			Array.isArray(value)
+				? value.map((v) => ObfuscateUtil.transformToId(v))
+				: [ObfuscateUtil.transformToId(value)],
 		{
 			toClassOnly: true,
 		},

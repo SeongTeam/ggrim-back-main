@@ -11,7 +11,7 @@ import { TagDummy } from "../../_shared/stub/tag.stub";
 import { StyleDummy } from "../../_shared/stub/style.stub";
 import { ArtistDummy } from "../../_shared/stub/artist.stub";
 import { faker } from "@faker-js/faker";
-import { deobfuscateId } from "../../../src/utils/obfuscate";
+import { ObfuscateUtil } from "../../../src/utils/obfuscate";
 
 export type SearchQuery = NonNullable<
 	operations["PaintingController_searchMany"]["parameters"]["query"]
@@ -30,7 +30,9 @@ export async function expectSearchedPainting(
 		tags: expectedTags,
 		styles: expectedStyles,
 	} = query;
-	const resourceIds = receivedShowPaintings.map((showPainting) => deobfuscateId(showPainting.id));
+	const resourceIds = receivedShowPaintings.map((showPainting) =>
+		ObfuscateUtil.deobfuscateId(showPainting.id),
+	);
 	const receivedPaintings: Painting[] = await paintingService.getManyByIds(resourceIds);
 
 	assert(receivedShowPaintings.length === receivedPaintings.length);
@@ -77,7 +79,7 @@ export async function expectCreatePainting(
 	assert(receivedResBody);
 	const expectedBody = requestBody;
 
-	const resourceId = deobfuscateId(receivedResBody.id);
+	const resourceId = ObfuscateUtil.deobfuscateId(receivedResBody.id);
 	const receivedPainting = (await paintingService.findOne({
 		where: { id: resourceId },
 	}))!;
@@ -140,7 +142,7 @@ export async function expectReplacePainting(
 	const paintingService = testingModule.get(PaintingService);
 	assert(receivedResBody);
 	const expectedBody = requestBody;
-	const resourceId = deobfuscateId(receivedResBody.id);
+	const resourceId = ObfuscateUtil.deobfuscateId(receivedResBody.id);
 	const receivedPainting = (await paintingService.findOne({
 		where: { id: resourceId },
 	}))!;
